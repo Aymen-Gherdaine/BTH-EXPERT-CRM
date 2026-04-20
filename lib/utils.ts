@@ -23,10 +23,9 @@ export function formatDateFr(dateStr: string): string {
 }
 
 export function formatMontant(amount: number): string {
-  return new Intl.NumberFormat("fr-DZ", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+  const [integer, decimal] = amount.toFixed(2).split(".");
+  const formatted = integer.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
+  return `${formatted},${decimal}`;
 }
 
 export function calcTotaux(lignes: { quantite: number; prix_unitaire: number }[]) {
