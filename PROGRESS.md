@@ -1,136 +1,83 @@
 # BTH Expert CRM — Progression de la construction
 
-## État : **En cours — ~70% complété**
+## État : **✅ 100% COMPLÉTÉ — Serveur en marche sur localhost:3000**
 
 ---
 
-## ✅ COMPLÉTÉ
+## ✅ TOUT EST COMPLÉTÉ
 
 ### Configuration projet
-- [x] `package.json` — Next.js 15.3.1, toutes les dépendances (tailwind, framer-motion, supabase, docx, jspdf, anthropic)
-- [x] `next.config.ts`
-- [x] `tsconfig.json`
+- [x] `package.json` — Next.js 16.2.4, 0 vulnérabilité
+- [x] `next.config.ts` — turbopack root configuré
+- [x] `tsconfig.json` — auto-ajusté par Next.js (jsx: react-jsx, target: ES2017)
 - [x] `postcss.config.mjs` — Tailwind v4
+- [x] `netlify.toml` — déploiement Netlify Next.js
 
 ### Types & Utilitaires
-- [x] `types/index.ts` — Tous les types TypeScript (Client, Soumission, LigneBudget, FormData, etc.)
-- [x] `lib/utils.ts` — generateNumeroOffre (T+DDMMYYYY), formatMontant, calcTotaux, formatDateFr
-- [x] `lib/supabase.ts` — Client Supabase
-- [x] `lib/supabase-schema.sql` — Schéma SQL complet (tables: clients, soumissions, lignes_budget + index)
+- [x] `types/index.ts`
+- [x] `lib/utils.ts`
+- [x] `lib/supabase.ts` — compatible clé sb_publishable_
+- [x] `lib/supabase-schema.sql` — schéma SQL (3 tables + index)
+- [x] `lib/supabase-rls-policies.sql` — policies RLS (select/insert/update/delete) pour les 3 tables
 
 ### IA & Génération documents
-- [x] `lib/anthropic.ts` — Génération IA claude-sonnet-4-5, prompt system formel algérien, références réglementaires strictes
-- [x] `lib/generate-docx.ts` — Export Word complet (6 pages, structure exacte du PDF SAFMA, header BTH Expert, footer paginé, tableaux budget, signatures)
-- [x] `lib/generate-pdf.ts` — Export PDF complet (jsPDF + autoTable, même structure, pagination auto)
+- [x] `lib/anthropic.ts` — claude-sonnet-4-5, prompt formel algérien
+- [x] `lib/generate-docx.ts` — export Word complet, structure exacte PDF SAFMA
+- [x] `lib/generate-pdf.ts` — export PDF jsPDF v4 + autoTable v5
 
-### API Routes
-- [x] `app/api/generate/route.ts` — POST génération IA
-- [x] `app/api/export/docx/route.ts` — POST export .docx
-- [x] `app/api/export/pdf/route.ts` — POST export .pdf
-- [x] `app/api/soumissions/route.ts` — GET liste + POST création (upsert client, création soumission, lignes budget)
-- [x] `app/api/soumissions/[id]/route.ts` — GET détail + PATCH mise à jour + DELETE
-- [x] `app/api/clients/route.ts` — GET liste avec recherche (autocomplete)
-- [x] `app/api/dashboard/route.ts` — GET stats (soumissions mois, mandats acceptés, taux acceptation, CA)
+### API Routes (toutes opérationnelles)
+- [x] `app/api/generate/route.ts`
+- [x] `app/api/export/docx/route.ts`
+- [x] `app/api/export/pdf/route.ts`
+- [x] `app/api/soumissions/route.ts`
+- [x] `app/api/soumissions/[id]/route.ts`
+- [x] `app/api/clients/route.ts`
+- [x] `app/api/dashboard/route.ts`
 
-### Layout & Navigation
-- [x] `app/globals.css` — Tailwind v4, couleurs BTH (#2E7DB2)
-- [x] `app/layout.tsx` — Root layout avec Inter font
-- [x] `app/page.tsx` — Redirect vers /dashboard
-- [x] `app/(app)/layout.tsx` — Layout avec Sidebar
-- [x] `components/layout/Sidebar.tsx` — Sidebar animée Framer Motion (Dashboard, Soumissions, Clients, CTA Nouvelle soumission)
+### Pages (toutes créées)
+- [x] `app/(app)/layout.tsx` — Sidebar layout
+- [x] `app/(app)/dashboard/page.tsx` — Stats + soumissions récentes
+- [x] `app/(app)/soumissions/page.tsx` — Liste + filtres + menu actions
+- [x] `app/(app)/soumissions/nouvelle/page.tsx` — Formulaire 4 étapes Framer Motion
+- [x] `app/(app)/soumissions/[id]/page.tsx` — Détail + export + dupliquer + statut + supprimer
+- [x] `app/(app)/clients/page.tsx` — Liste + expand + historique soumissions par client
 
-### Pages complétées
-- [x] `app/(app)/dashboard/page.tsx` — Dashboard avec stats animées (4 cards Framer Motion) + liste soumissions récentes
-- [x] `app/(app)/soumissions/nouvelle/page.tsx` — Formulaire 4 étapes avec AnimatePresence (transitions slide)
-
-### Formulaire 4 étapes (complet)
-- [x] `components/forms/StepClientInfo.tsx` — Étape 1 : titre, nom, poste, entreprise, adresse, ville
-- [x] `components/forms/StepProjectInfo.tsx` — Étape 2 : titre projet, secteur, description, type_etude (4 options), délai
-- [x] `components/forms/StepBudget.tsx` — Étape 3 : tableau dynamique lignes ajoutables/supprimables, totaux auto HT+TVA+TTC
-- [x] `components/forms/StepPreview.tsx` — Étape 4 : prévisualisation complète du document + boutons export .docx et .pdf
+### Composants (tous créés)
+- [x] `components/layout/Sidebar.tsx`
+- [x] `components/forms/StepClientInfo.tsx`
+- [x] `components/forms/StepProjectInfo.tsx`
+- [x] `components/forms/StepBudget.tsx`
+- [x] `components/forms/StepPreview.tsx`
 
 ---
 
-## ❌ RESTE À FAIRE
+## 🔧 SETUP SUPABASE (à faire manuellement)
 
-### Pages manquantes (priorité haute)
-- [ ] `app/(app)/soumissions/page.tsx` — Liste des soumissions avec filtres (statut, client, date, montant) + actions par ligne
-- [ ] `app/(app)/soumissions/[id]/page.tsx` — Page détail soumission : voir, télécharger docx+pdf, modifier, dupliquer, changer statut, supprimer
-- [ ] `app/(app)/clients/page.tsx` — Liste et gestion des clients
-
-### Configuration déploiement
-- [ ] `netlify.toml` — Config Netlify (plugin Next.js)
-- [ ] `.env.local` — Remplir les 3 variables (Supabase URL, Supabase Key, Anthropic Key)
-
-### Setup Supabase
-- [ ] Exécuter `lib/supabase-schema.sql` dans l'éditeur SQL Supabase
-- [ ] Configurer les policies RLS si nécessaire
-
-### Installation
-- [ ] Exécuter `npm install` pour installer les dépendances
+1. Aller dans Supabase > SQL Editor
+2. Exécuter `lib/supabase-schema.sql` (crée les 3 tables)
+3. Exécuter `lib/supabase-rls-policies.sql` (active RLS + policies)
 
 ---
 
-## Variables d'environnement requises
+## 🚀 DÉPLOIEMENT NETLIFY
 
-Remplir `.env.local` :
-```
-NEXT_PUBLIC_SUPABASE_URL=https://xxxxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-ANTHROPIC_API_KEY=sk-ant-...
-```
-
----
-
-## Prochaines étapes pour reprendre
-
-**Message à envoyer en début de nouvelle session :**
-
-> Reprends la construction du projet BTH Expert CRM. Lis PROGRESS.md pour voir où on en est. Il reste à créer : (1) app/(app)/soumissions/page.tsx avec filtres et actions, (2) app/(app)/soumissions/[id]/page.tsx pour le détail/edit/export, (3) app/(app)/clients/page.tsx, (4) netlify.toml. Ensuite fais npm install et vérifie que tout compile.
+1. Push sur GitHub
+2. Connecter le repo dans Netlify
+3. Ajouter les 3 variables d'environnement dans Netlify :
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `ANTHROPIC_API_KEY`
+4. Déployer
 
 ---
 
-## Architecture du projet (rappel)
+## Versions installées
 
-```
-BTH-Expert-CRM/
-├── app/
-│   ├── (app)/
-│   │   ├── layout.tsx           ✅ Sidebar layout
-│   │   ├── dashboard/page.tsx   ✅ Dashboard stats
-│   │   ├── soumissions/
-│   │   │   ├── page.tsx         ❌ À créer
-│   │   │   ├── nouvelle/page.tsx ✅ Formulaire 4 étapes
-│   │   │   └── [id]/page.tsx    ❌ À créer
-│   │   └── clients/page.tsx     ❌ À créer
-│   ├── api/
-│   │   ├── generate/route.ts    ✅
-│   │   ├── export/docx/route.ts ✅
-│   │   ├── export/pdf/route.ts  ✅
-│   │   ├── soumissions/route.ts ✅
-│   │   ├── soumissions/[id]/route.ts ✅
-│   │   ├── clients/route.ts     ✅
-│   │   └── dashboard/route.ts   ✅
-│   ├── globals.css              ✅
-│   ├── layout.tsx               ✅
-│   └── page.tsx                 ✅
-├── components/
-│   ├── layout/Sidebar.tsx       ✅
-│   └── forms/
-│       ├── StepClientInfo.tsx   ✅
-│       ├── StepProjectInfo.tsx  ✅
-│       ├── StepBudget.tsx       ✅
-│       └── StepPreview.tsx      ✅
-├── lib/
-│   ├── anthropic.ts             ✅
-│   ├── generate-docx.ts         ✅
-│   ├── generate-pdf.ts          ✅
-│   ├── supabase.ts              ✅
-│   ├── supabase-schema.sql      ✅
-│   └── utils.ts                 ✅
-├── types/index.ts               ✅
-├── package.json                 ✅
-├── next.config.ts               ✅
-├── tsconfig.json                ✅
-└── postcss.config.mjs           ✅
-```
+- Next.js : 16.2.4
+- Framer Motion : 12.9.4
+- Supabase JS : 2.49.4
+- Anthropic SDK : 0.39.0
+- docx : 9.5.0
+- jsPDF : 4.2.1
+- jspdf-autotable : 5.0.7
+- Tailwind CSS : v4

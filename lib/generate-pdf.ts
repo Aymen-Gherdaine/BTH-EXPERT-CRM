@@ -90,7 +90,7 @@ export function generatePdf(
   client: Client,
   lignes: LigneBudget[],
   contexteData: { section_1: string; section_1_1: string }
-): Uint8Array {
+): ArrayBuffer {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.width;
   const contentWidth = pageWidth - 30;
@@ -470,5 +470,5 @@ export function generatePdf(
   // Add footer to last page
   addFooter(doc, page);
 
-  return doc.output("arraybuffer") as unknown as Uint8Array;
+  return doc.output("arraybuffer");
 }

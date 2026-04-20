@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
     const buffer = generatePdf(soumission, client, lignes, contexteData);
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="Offre_${soumission.numero_offre}.pdf"`,
