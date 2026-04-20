@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
 
     const buffer = await generateDocx(soumission, client, lignes, contexteData);
 
-    return new NextResponse(buffer, {
+    return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type":
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

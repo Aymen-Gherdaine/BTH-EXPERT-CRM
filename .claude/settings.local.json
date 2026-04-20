@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e \"const j = require\\('jspdf'\\); console.log\\('default:', typeof j.default, 'jsPDF:', typeof j.jsPDF\\)\")"
+    ]
+  }
+}

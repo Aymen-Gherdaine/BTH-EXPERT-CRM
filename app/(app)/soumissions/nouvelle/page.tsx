@@ -34,7 +34,9 @@ const defaultStep3: FormDataStep3 = {
   ],
 };
 
-const slideVariants = {
+import type { Variants } from "framer-motion";
+
+const slideVariants: Variants = {
   enter: (dir: number) => ({
     x: dir > 0 ? 60 : -60,
     opacity: 0,
@@ -42,12 +44,12 @@ const slideVariants = {
   center: {
     x: 0,
     opacity: 1,
-    transition: { duration: 0.3, ease: "easeOut" },
+    transition: { duration: 0.3, ease: "easeOut" as const },
   },
   exit: (dir: number) => ({
     x: dir > 0 ? -60 : 60,
     opacity: 0,
-    transition: { duration: 0.2, ease: "easeIn" },
+    transition: { duration: 0.2, ease: "easeIn" as const },
   }),
 };
 

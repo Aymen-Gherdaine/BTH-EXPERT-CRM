@@ -91,12 +91,12 @@ function tableHeaderCell(text: string): TableCell {
   });
 }
 
-function tableDataCell(text: string, align = AlignmentType.LEFT): TableCell {
+function tableDataCell(text: string, align: string = AlignmentType.LEFT): TableCell {
   return new TableCell({
     children: [
       new Paragraph({
         children: [new TextRun({ text, size: 18 })],
-        alignment: align,
+        alignment: align as typeof AlignmentType.LEFT,
       }),
     ],
     borders: {
@@ -509,8 +509,8 @@ export async function generateDocx(
               bottom: { style: BorderStyle.NONE },
               left: { style: BorderStyle.NONE },
               right: { style: BorderStyle.NONE },
-              insideH: { style: BorderStyle.NONE },
-              insideV: { style: BorderStyle.NONE },
+              insideHorizontal: { style: BorderStyle.NONE },
+              insideVertical: { style: BorderStyle.NONE },
             },
             rows: [
               new TableRow({
