@@ -33,18 +33,22 @@ function getHypotheses(type: TypeEtude): string[] {
 }
 
 function addHeader(doc: jsPDF) {
-  doc.setFontSize(11);
+  const pw = doc.internal.pageSize.width;
+  doc.setFontSize(12);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(...PRIMARY_RGB);
-  doc.text("BTH EXPERT", doc.internal.pageSize.width - 15, 12, { align: "right" });
-  doc.setFontSize(8);
+  (doc as jsPDF & { setCharSpace: (v: number) => void }).setCharSpace(1.5);
+  doc.text("BTH EXPERT", pw - 15, 11, { align: "right" });
+  (doc as jsPDF & { setCharSpace: (v: number) => void }).setCharSpace(0.8);
+  doc.setFontSize(7.5);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 100, 100);
-  doc.text("ENVIRONNEMENT", doc.internal.pageSize.width - 15, 17, { align: "right" });
-  doc.text("INGÉNIERIE", doc.internal.pageSize.width - 15, 21, { align: "right" });
+  doc.setTextColor(120, 120, 120);
+  doc.text("ENVIRONNEMENT", pw - 15, 16, { align: "right" });
+  doc.text("INGÉNIERIE", pw - 15, 20, { align: "right" });
+  (doc as jsPDF & { setCharSpace: (v: number) => void }).setCharSpace(0);
   doc.setDrawColor(...PRIMARY_RGB);
-  doc.setLineWidth(0.5);
-  doc.line(15, 25, doc.internal.pageSize.width - 15, 25);
+  doc.setLineWidth(0.4);
+  doc.line(15, 24, pw - 15, 24);
 }
 
 function addFooter(doc: jsPDF, pageNum: number) {
@@ -69,20 +73,20 @@ function sectionTitle(doc: jsPDF, text: string, y: number): number {
 
 function bodyText(doc: jsPDF, text: string, x: number, y: number, maxWidth: number): number {
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("times", "normal");
   doc.setTextColor(...TEXT_RGB);
   const lines = doc.splitTextToSize(text, maxWidth);
   doc.text(lines, x, y);
-  return y + lines.length * 5 + 3;
+  return y + lines.length * 5.2 + 3;
 }
 
 function bulletText(doc: jsPDF, text: string, y: number, maxWidth: number): number {
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("times", "normal");
   doc.setTextColor(...TEXT_RGB);
-  const lines = doc.splitTextToSize(`• ${text}`, maxWidth - 5);
+  const lines = doc.splitTextToSize(`\u25AA ${text}`, maxWidth - 5);
   doc.text(lines, 22, y);
-  return y + lines.length * 5 + 2;
+  return y + lines.length * 5.2 + 2;
 }
 
 export function generatePdf(
@@ -116,11 +120,13 @@ export function generatePdf(
   doc.text(client.ville, 15, y);
   y += 5;
 
-  // Offre No (right side)
-  doc.setFont("helvetica", "bold");
+  // Offre No (right side) — label line then number line, aligned with client info
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(...TEXT_RGB);
-  doc.text(`Offre No : ${soumission.numero_offre}`, pageWidth - 15, 35, { align: "right" });
+  doc.text("Offre No :", pageWidth - 15, 30, { align: "right" });
+  doc.setFont("helvetica", "bold");
+  doc.text(soumission.numero_offre, pageWidth - 15, 36, { align: "right" });
 
   // Date (left margin note)
   doc.setFontSize(9);
@@ -151,7 +157,7 @@ export function generatePdf(
 
   // Salutation + intro
   doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
+  doc.setFont("times", "normal");
   doc.setTextColor(...TEXT_RGB);
   doc.text(`${civiliteLong} ${client.nom_contact.split(" ")[0]},`, 15, y);
   y += 7;
@@ -323,24 +329,25 @@ export function generatePdf(
 
   autoTable(doc, {
     startY: y,
-    head: [["N°", "Désignation", "Q", "Prix (DZD)"]],
+    head: [],
     body: [
-      ...lignes.map((l, i) => [
-        String(i + 1),
-        l.designation,
-        String(l.quantite),
-        formatMontant(l.prix_unitaire),
-      ]),
-      [{ content: "Total hors taxes", colSpan: 3, styles: { halign: "right", fontStyle: "bold" } }, formatMontant(total_ht)],
-      [{ content: "TVA 19%", colSpan: 3, styles: { halign: "right", fontStyle: "bold" } }, formatMontant(tva)],
-      [{ content: "Total TTC", colSpan: 3, styles: { halign: "right", fontStyle: "bold", fillColor: GRAY_RGB } }, { content: formatMontant(total_ttc), styles: { fontStyle: "bold", fillColor: GRAY_RGB } }],
+      [
+        { content: "Total hors taxes", styles: { halign: "right" as const, fontStyle: "bold" as const } },
+        { content: formatMontant(total_ht), styles: { halign: "right" as const } },
+      ],
+      [
+        { content: "TVA 19%", styles: { halign: "right" as const, fontStyle: "bold" as const } },
+        { content: formatMontant(tva), styles: { halign: "right" as const } },
+      ],
+      [
+        { content: "Total TTC", styles: { halign: "right" as const, fontStyle: "bold" as const, fillColor: GRAY_RGB } },
+        { content: formatMontant(total_ttc), styles: { halign: "right" as const, fontStyle: "bold" as const, fillColor: GRAY_RGB } },
+      ],
     ],
-    headStyles: { fillColor: GRAY_RGB, textColor: TEXT_RGB, fontStyle: "bold", fontSize: 9 },
     bodyStyles: { fontSize: 9 },
     columnStyles: {
-      0: { halign: "center", cellWidth: 12 },
-      2: { halign: "center", cellWidth: 12 },
-      3: { halign: "right", cellWidth: 35 },
+      0: { halign: "right" as const },
+      1: { halign: "right" as const, cellWidth: 40 },
     },
     margin: { left: 15, right: 15 },
     theme: "grid",
@@ -434,37 +441,43 @@ export function generatePdf(
 
   y += 15;
 
-  // Signature blocks
+  // Signature blocks — two columns: left = Responsable, right = Autorisé
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(...TEXT_RGB);
   doc.text("Responsable de l'offre :", 15, y);
   doc.text("Autorisé par :", pageWidth / 2 + 10, y);
 
-  y += 20;
+  // Space for handwritten signatures (~35 mm)
+  y += 35;
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(...PRIMARY_RGB);
   doc.text("Hakim Belghouini", 15, y);
   doc.text("Amine Lahmer", pageWidth / 2 + 10, y);
   y += 5;
   doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
   doc.setTextColor(100, 100, 100);
   doc.text("Expert Co-gérant", 15, y);
   doc.text("Expert Gérant", pageWidth / 2 + 10, y);
 
-  y += 20;
-  doc.setFontSize(10);
+  y += 25;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
   doc.setTextColor(...TEXT_RGB);
   doc.text("Acceptation de l'offre :", 15, y);
 
-  y += 20;
+  // Space for client handwritten signature (~35 mm)
+  y += 35;
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
   doc.setTextColor(...PRIMARY_RGB);
   doc.text(`${client.titre} ${client.nom_contact}`, 15, y);
   y += 5;
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 100, 100);
   doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
   doc.text(`${client.poste} — ${client.entreprise}`, 15, y);
 
   // Add footer to last page

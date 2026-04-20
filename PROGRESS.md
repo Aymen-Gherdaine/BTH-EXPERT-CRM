@@ -1,10 +1,10 @@
 # BTH Expert CRM — Progression de la construction
 
-## État : **✅ 100% COMPLÉTÉ — Serveur en marche sur localhost:3000**
+## État : **🔧 EN COURS — Corrections design PDF/DOCX**
 
 ---
 
-## ✅ TOUT EST COMPLÉTÉ
+## ✅ FONCTIONNEL (base complète)
 
 ### Configuration projet
 - [x] `package.json` — Next.js 16.2.4, 0 vulnérabilité
@@ -18,11 +18,11 @@
 - [x] `lib/utils.ts`
 - [x] `lib/supabase.ts` — compatible clé sb_publishable_
 - [x] `lib/supabase-schema.sql` — schéma SQL (3 tables + index)
-- [x] `lib/supabase-rls-policies.sql` — policies RLS (select/insert/update/delete) pour les 3 tables
+- [x] `lib/supabase-rls-policies.sql` — policies RLS
 
 ### IA & Génération documents
 - [x] `lib/anthropic.ts` — claude-sonnet-4-5, prompt formel algérien
-- [x] `lib/generate-docx.ts` — export Word complet, structure exacte PDF SAFMA
+- [x] `lib/generate-docx.ts` — export Word complet
 - [x] `lib/generate-pdf.ts` — export PDF jsPDF v4 + autoTable v5
 
 ### API Routes (toutes opérationnelles)
@@ -36,18 +36,52 @@
 
 ### Pages (toutes créées)
 - [x] `app/(app)/layout.tsx` — Sidebar layout
-- [x] `app/(app)/dashboard/page.tsx` — Stats + soumissions récentes
-- [x] `app/(app)/soumissions/page.tsx` — Liste + filtres + menu actions
-- [x] `app/(app)/soumissions/nouvelle/page.tsx` — Formulaire 4 étapes Framer Motion
-- [x] `app/(app)/soumissions/[id]/page.tsx` — Détail + export + dupliquer + statut + supprimer
-- [x] `app/(app)/clients/page.tsx` — Liste + expand + historique soumissions par client
+- [x] `app/(app)/dashboard/page.tsx`
+- [x] `app/(app)/soumissions/page.tsx`
+- [x] `app/(app)/soumissions/nouvelle/page.tsx`
+- [x] `app/(app)/soumissions/[id]/page.tsx`
+- [x] `app/(app)/clients/page.tsx`
 
-### Composants (tous créés)
+### Composants
 - [x] `components/layout/Sidebar.tsx`
 - [x] `components/forms/StepClientInfo.tsx`
 - [x] `components/forms/StepProjectInfo.tsx`
 - [x] `components/forms/StepBudget.tsx`
 - [x] `components/forms/StepPreview.tsx`
+
+---
+
+## 🔧 CORRECTIONS PDF/DOCX EN COURS (session 2026-04-19)
+
+### ✅ Corrigé dans cette session
+
+| # | Problème | Fichier | Statut |
+|---|----------|---------|--------|
+| 1 | `formatMontant` affichait `100 /000,00` | `lib/utils.ts` | ✅ Corrigé — implémentation manuelle avec espace insécable |
+| 2 | Police amateur (tout Helvetica) | `lib/generate-pdf.ts` | ✅ Corrigé — body en Times, titres en Helvetica Bold |
+| 3 | Police DOCX (Calibri) | `lib/generate-docx.ts` | ✅ Corrigé — Times New Roman |
+| 4 | Tableau 4-2 dupliquait toutes les lignes | `lib/generate-pdf.ts` | ✅ Corrigé — Tableau 4-2 = recap seul (Total HT / TVA 19% / TTC) |
+| 5 | Tableau 4-2 DOCX dupliquait les lignes | `lib/generate-docx.ts` | ✅ Corrigé — même logique recap |
+| 6 | Signatures sans espace pour paraphes | `lib/generate-pdf.ts` | ✅ Corrigé — 35 mm d'espace avant chaque nom |
+| 7 | En-tête "BTH EXPERT" sans tracking | `lib/generate-pdf.ts` | ✅ Corrigé — `setCharSpace(1.5)` |
+| 8 | "Offre No :" sur une seule ligne | `lib/generate-pdf.ts` | ✅ Corrigé — label + numéro sur deux lignes (comme SAFMA p.1) |
+
+### ⏳ À vérifier après test visuel du PDF généré
+
+| # | Point | Détail |
+|---|-------|--------|
+| A | Espacement général | Vérifier que les sauts de page tombent aux bons endroits avec la police Times (metrics différentes d'Helvetica) |
+| B | Tableau 4-2 DOCX | Vérifier que le tableau sans header visuel est cohérent dans Word |
+| C | Logo BTH EXPERT | Actuellement texte seulement — prévoir import d'un vrai fichier logo PNG si disponible |
+| D | Couleur en-tête DOCX | Vérifier que la ligne bleue sous le header Word s'affiche correctement dans tous les éditeurs |
+| E | `setCharSpace` jsPDF | Confirmer que le rendu du tracking est visible et ne déplace pas le texte hors de la page |
+
+### ❌ Pas encore traité
+
+| # | Problème | Note |
+|---|----------|------|
+| F | Logo BTH EXPERT (image réelle) | Nécessite un fichier PNG/SVG du logo à placer en haut à droite — texte utilisé en attendant |
+| G | Page de garde distincte | Le modèle SAFMA n'en a pas, mais peut être demandé plus tard |
 
 ---
 

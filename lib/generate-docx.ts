@@ -192,7 +192,7 @@ export async function generateDocx(
     styles: {
       default: {
         document: {
-          run: { font: "Calibri", size: 20 },
+          run: { font: "Times New Roman", size: 20 },
         },
       },
     },
@@ -408,25 +408,6 @@ export async function generateDocx(
           new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
             rows: [
-              new TableRow({
-                children: [
-                  tableHeaderCell("N°"),
-                  tableHeaderCell("Désignation"),
-                  tableHeaderCell("Q"),
-                  tableHeaderCell("Prix (DZD)"),
-                ],
-              }),
-              ...lignes.map(
-                (l, i) =>
-                  new TableRow({
-                    children: [
-                      tableDataCell(String(i + 1), AlignmentType.CENTER),
-                      tableDataCell(l.designation),
-                      tableDataCell(String(l.quantite), AlignmentType.CENTER),
-                      tableDataCell(formatMontant(l.prix_unitaire), AlignmentType.RIGHT),
-                    ],
-                  })
-              ),
               tableTotalRow("Total hors taxes", formatMontant(total_ht)),
               tableTotalRow("TVA 19%", formatMontant(tva)),
               tableTotalRow("Total TTC", formatMontant(total_ttc), true),
