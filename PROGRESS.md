@@ -51,6 +51,36 @@
 
 ---
 
+## 🔧 AUTHENTIFICATION SUPABASE (session 2026-04-20)
+
+### ✅ Fait dans cette session
+
+| # | Fichier | Description |
+|---|---------|-------------|
+| 1 | `middleware.ts` (racine) | Middleware Next.js — protection toutes les routes, redirect `/login` si pas de session, redirect `/dashboard` si déjà connecté sur `/login` |
+| 2 | `lib/supabase-server.ts` | `createMiddlewareClient(request)` via `@supabase/ssr` — gère les cookies de session côté serveur |
+| 3 | `@supabase/ssr` installé | Package ajouté dans `package.json` — coexiste sans conflit avec `@supabase/supabase-js` |
+
+### ✅ Complété (session 2026-04-20 suite)
+
+| # | Fichier | Description |
+|---|---------|-------------|
+| A | `lib/supabase-browser.ts` | `createBrowserClient` de `@supabase/ssr` — pour les Client Components |
+| B | `app/(auth)/layout.tsx` | Layout minimaliste sans Sidebar pour les pages login |
+| C | `app/(auth)/login/page.tsx` | Page login — vérifie session côté serveur, rend `<LoginForm />` |
+| D | `components/auth/LoginForm.tsx` | Formulaire email + mot de passe, `signInWithPassword`, redirect après succès |
+| E | `app/(app)/layout.tsx` | Vérification session côté serveur ajoutée + redirect `/login` si non connecté |
+
+### ❌ Reste à faire (auth)
+
+| # | Point | Détail |
+|---|-------|--------|
+| A | Créer un utilisateur Supabase | Aller dans Supabase > Authentication > Users > Invite user — aucun système d'inscription prévu |
+| B | Bouton logout | Ajouter `supabase.auth.signOut()` + redirect `/login` dans `components/layout/Sidebar.tsx` |
+| C | Test visuel login | Vérifier le flux complet : accès `/dashboard` sans session → redirect `/login` → connexion → redirect `/dashboard` |
+
+---
+
 ## 🔧 CORRECTIONS PDF/DOCX EN COURS (session 2026-04-19)
 
 ### ✅ Corrigé dans cette session

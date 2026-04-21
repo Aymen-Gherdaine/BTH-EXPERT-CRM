@@ -1,13 +1,9 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import Sidebar from "@/components/layout/Sidebar";
+import LoginForm from "@/components/auth/LoginForm";
 
-export default async function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function LoginPage() {
   const cookieStore = await cookies();
 
   const supabase = createServerClient(
@@ -27,14 +23,9 @@ export default async function AppLayout({
     data: { session },
   } = await supabase.auth.getSession();
 
-  if (!session) {
-    redirect("/login");
+  if (session) {
+    redirect("/dashboard");
   }
 
-  return (
-    <div className="flex min-h-screen bg-[#F4F6F7]">
-      <Sidebar />
-      <main className="flex-1 overflow-auto">{children}</main>
-    </div>
-  );
+  return <LoginForm />;
 }
