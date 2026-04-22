@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import LoginForm from "@/components/auth/LoginForm";
+import HashTokenRedirect from "@/components/auth/HashTokenRedirect";
 
 export default async function LoginPage() {
   const cookieStore = await cookies();
@@ -27,5 +28,10 @@ export default async function LoginPage() {
     redirect("/dashboard");
   }
 
-  return <LoginForm />;
+  return (
+    <>
+      <HashTokenRedirect />
+      <LoginForm />
+    </>
+  );
 }

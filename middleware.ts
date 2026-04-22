@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 
 const PROTECTED_PREFIX = "/dashboard";
-const AUTH_ROUTES = ["/login"];
+const PUBLIC_ROUTES = ["/login", "/auth/callback", "/auth/set-password"];
 
 export async function middleware(request: NextRequest) {
   const { supabase, response } = createMiddlewareClient(request);
@@ -13,13 +13,13 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (!session && !AUTH_ROUTES.includes(pathname)) {
+  if (!session && !PUBLIC_ROUTES.includes(pathname)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     return NextResponse.redirect(loginUrl);
   }
 
-  if (session && AUTH_ROUTES.includes(pathname)) {
+  if (session && pathname === "/login") {
     const dashboardUrl = request.nextUrl.clone();
     dashboardUrl.pathname = "/dashboard";
     return NextResponse.redirect(dashboardUrl);
