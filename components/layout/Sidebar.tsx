@@ -40,8 +40,9 @@ export default function Sidebar() {
 
   return (
     <aside className="w-64 min-h-screen bg-white border-r border-gray-100 flex flex-col">
+
       {/* Logo */}
-      <div className="px-6 py-6 border-b border-gray-100">
+      <div className="px-6 py-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#2E7DB2" }}>
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -55,7 +56,7 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Nav */}
+      {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navItems.map((item) => {
           const active = pathname === item.href || pathname.startsWith(item.href + "/");
@@ -79,7 +80,7 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* New submission CTA */}
+      {/* Nouvelle soumission */}
       <div className="px-3 py-4 border-t border-gray-100">
         <Link href="/soumissions/nouvelle">
           <motion.div
@@ -95,6 +96,7 @@ export default function Sidebar() {
           </motion.div>
         </Link>
       </div>
+
     </aside>
   );
 }
