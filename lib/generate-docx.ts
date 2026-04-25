@@ -19,6 +19,7 @@ import {
   TabStopPosition,
   convertInchesToTwip,
   UnderlineType,
+  ImageRun,
 } from "docx";
 import { Client, LigneBudget, Soumission, TypeEtude } from "@/types";
 import { formatDateFr, formatMontant } from "./utils";
@@ -173,6 +174,18 @@ export interface ParametresDocx {
   signataire2_nom?: string;
   signataire2_titre?: string;
   tva_pct?: number;
+  signature_responsable_url?: string;
+  signature_autorise_url?: string;
+}
+
+async function fetchImageBuffer(url: string): Promise<Buffer | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    return Buffer.from(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
 }
 
 export async function generateDocx(
@@ -182,6 +195,11 @@ export async function generateDocx(
   contexteData: { section_1: string; section_1_1: string },
   parametres?: ParametresDocx
 ): Promise<Buffer> {
+  const [sig1buf, sig2buf] = await Promise.all([
+    parametres?.signature_responsable_url ? fetchImageBuffer(parametres.signature_responsable_url) : Promise.resolve(null),
+    parametres?.signature_autorise_url ? fetchImageBuffer(parametres.signature_autorise_url) : Promise.resolve(null),
+  ]);
+
   const dateStr = formatDateFr(soumission.date_offre);
   const civiliteLong =
     client.titre === "M." ? "Monsieur" : client.titre === "Mme" ? "Madame" : client.titre;
@@ -526,7 +544,9 @@ export async function generateDocx(
                 children: [
                   new TableCell({
                     children: [
-                      new Paragraph({ children: [new TextRun({ text: "", size: 18 })], spacing: { before: 600 } }),
+                      sig1buf
+                        ? new Paragraph({ children: [new ImageRun({ data: sig1buf, transformation: { width: 150, height: 60 }, type: "png" })] })
+                        : new Paragraph({ children: [new TextRun({ text: "", size: 18 })], spacing: { before: 600 } }),
                       new Paragraph({
                         children: [new TextRun({ text: parametres?.signataire1_nom ?? "Hakim Belghouini", bold: true, color: PRIMARY, size: 18 })],
                       }),
@@ -537,7 +557,9 @@ export async function generateDocx(
                   }),
                   new TableCell({
                     children: [
-                      new Paragraph({ children: [new TextRun({ text: "", size: 18 })], spacing: { before: 600 } }),
+                      sig2buf
+                        ? new Paragraph({ children: [new ImageRun({ data: sig2buf, transformation: { width: 150, height: 60 }, type: "png" })] })
+                        : new Paragraph({ children: [new TextRun({ text: "", size: 18 })], spacing: { before: 600 } }),
                       new Paragraph({
                         children: [new TextRun({ text: parametres?.signataire2_nom ?? "Amine Lahmer", bold: true, color: PRIMARY, size: 18 })],
                       }),

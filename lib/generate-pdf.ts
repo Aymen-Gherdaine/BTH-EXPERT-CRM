@@ -94,15 +94,28 @@ export interface ParametresPdf {
   signataire1_titre?: string;
   signataire2_nom?: string;
   signataire2_titre?: string;
+  signature_responsable_url?: string;
+  signature_autorise_url?: string;
 }
 
-export function generatePdf(
+async function fetchImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const ab = await res.arrayBuffer();
+    return Buffer.from(ab).toString("base64");
+  } catch {
+    return null;
+  }
+}
+
+export async function generatePdf(
   soumission: Soumission,
   client: Client,
   lignes: LigneBudget[],
   contexteData: { section_1: string; section_1_1: string },
   parametres?: ParametresPdf
-): ArrayBuffer {
+): Promise<ArrayBuffer> {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.width;
   const contentWidth = pageWidth - 30;
@@ -455,6 +468,15 @@ export function generatePdf(
   doc.setTextColor(...TEXT_RGB);
   doc.text("Responsable de l'offre :", 15, y);
   doc.text("Autorisé par :", pageWidth / 2 + 10, y);
+
+  // Fetch signature images in parallel if URLs provided
+  const sigY = y + 3;
+  const [sig1b64, sig2b64] = await Promise.all([
+    parametres?.signature_responsable_url ? fetchImageAsBase64(parametres.signature_responsable_url) : Promise.resolve(null),
+    parametres?.signature_autorise_url ? fetchImageAsBase64(parametres.signature_autorise_url) : Promise.resolve(null),
+  ]);
+  if (sig1b64) doc.addImage("data:image/png;base64," + sig1b64, "PNG", 15, sigY, 50, 25);
+  if (sig2b64) doc.addImage("data:image/png;base64," + sig2b64, "PNG", pageWidth / 2 + 10, sigY, 50, 25);
 
   // Space for handwritten signatures (~35 mm)
   y += 35;

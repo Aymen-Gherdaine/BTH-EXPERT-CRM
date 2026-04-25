@@ -20,6 +20,8 @@ export interface Parametres {
   delai_jours: number;
   validite_jours: number;
   modalites_paiement: string;
+  signature_responsable_url: string;
+  signature_autorise_url: string;
 }
 
 const DEFAULTS: Parametres = {
@@ -37,6 +39,8 @@ const DEFAULTS: Parametres = {
   delai_jours: 45,
   validite_jours: 30,
   modalites_paiement: "50% à l'acceptation, 50% à la remise des livrables",
+  signature_responsable_url: "",
+  signature_autorise_url: "",
 };
 
 // ── Composants UI ────────────────────────────────────────────
@@ -145,14 +149,35 @@ export default function ParametresPage() {
             delai_jours: data.delai_jours ?? DEFAULTS.delai_jours,
             validite_jours: data.validite_jours ?? DEFAULTS.validite_jours,
             modalites_paiement: data.modalites_paiement ?? DEFAULTS.modalites_paiement,
+            signature_responsable_url: data.signature_responsable_url ?? "",
+            signature_autorise_url: data.signature_autorise_url ?? "",
           });
         }
         setLoading(false);
       });
   }, []);
 
+  const [uploadingSignature, setUploadingSignature] = useState<"responsable" | "autorise" | null>(null);
+
   function set<K extends keyof Parametres>(key: K, value: Parametres[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handleSignatureUpload(
+    file: File,
+    field: "signature_responsable_url" | "signature_autorise_url",
+    filename: string
+  ) {
+    const supabase = createSupabaseBrowserClient();
+    setUploadingSignature(field === "signature_responsable_url" ? "responsable" : "autorise");
+    const { data, error } = await supabase.storage
+      .from("signatures")
+      .upload(filename, file, { upsert: true, contentType: file.type });
+    if (!error && data) {
+      const { data: { publicUrl } } = supabase.storage.from("signatures").getPublicUrl(data.path);
+      set(field, publicUrl);
+    }
+    setUploadingSignature(null);
   }
 
   async function handleSave(e: React.FormEvent) {
@@ -281,6 +306,59 @@ export default function ParametresPage() {
             className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2e1e] focus:border-transparent transition resize-none"
           />
         </Field>
+      </SectionCard>
+
+      {/* ── Section 4 : Signatures ── */}
+      <SectionCard title="Signatures numérisées">
+        <p className="text-xs text-gray-400">
+          Ces images seront intégrées automatiquement dans les PDF et DOCX générés. Format PNG ou JPG recommandé, fond transparent ou blanc, 1 Mo max.
+        </p>
+        <div className="grid grid-cols-2 gap-6 mt-2">
+          {(
+            [
+              {
+                label: "Responsable de l'offre",
+                field: "signature_responsable_url" as const,
+                filename: "signature-responsable.png",
+                which: "responsable" as const,
+              },
+              {
+                label: "Autorisé par",
+                field: "signature_autorise_url" as const,
+                filename: "signature-autorise.png",
+                which: "autorise" as const,
+              },
+            ] as const
+          ).map(({ label, field, filename, which }) => (
+            <div key={field} className="space-y-2">
+              <p className="text-sm font-medium text-gray-700">{label}</p>
+              <div className="border border-dashed border-gray-200 rounded-lg h-24 flex items-center justify-center overflow-hidden bg-gray-50">
+                {form[field] ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={form[field]} alt={label} className="max-h-full max-w-full object-contain p-2" />
+                ) : (
+                  <span className="text-xs text-gray-400">Aucune signature</span>
+                )}
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer w-fit">
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  className="hidden"
+                  disabled={uploadingSignature !== null}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleSignatureUpload(file, field, filename);
+                    e.target.value = "";
+                  }}
+                />
+                <span className="px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-600 disabled:opacity-50">
+                  {uploadingSignature === which ? "Envoi…" : form[field] ? "Remplacer" : "Choisir une image"}
+                </span>
+              </label>
+            </div>
+          ))}
+        </div>
       </SectionCard>
 
       {/* ── Feedback + Bouton ── */}

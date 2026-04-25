@@ -131,15 +131,25 @@
 
 ---
 
+## ✅ PAGE PARAMÈTRES (session 2026-04-25)
+
+- [x] `app/(app)/parametres/page.tsx` — 3 sections : informations société (nom, adresse, ville, email, tél, site web), signataires par défaut (2 × nom + titre), valeurs par défaut (TVA %, délai jours, validité jours, modalités paiement) ; chargement depuis Supabase au démarrage, upsert `id=1` à la sauvegarde, feedback succès/erreur
+- [x] `lib/supabase-parametres.sql` — table `parametres` ligne unique (contrainte `id=1`), valeurs par défaut intégrées, RLS (lecture + modification pour utilisateurs connectés) — **à exécuter dans Supabase SQL Editor**
+- [x] `lib/generate-pdf.ts` — interface `ParametresPdf` + param optionnel ajouté à `generatePdf()`, signataires dynamiques avec fallback sur les valeurs hardcodées
+- [x] `lib/generate-docx.ts` — interface `ParametresDocx` + param optionnel ajouté à `generateDocx()`, TVA dynamique (`tva_pct / 100`), signataires dynamiques avec fallback
+- [x] `components/layout/Header.tsx` — lien "Paramètres" déjà présent, pas de modification nécessaire
+
+---
+
 ## 🔲 RESTE À FAIRE
 
 ### Pages & UI
-- [ ] `/parametres` — paramètres de l'application
 - [ ] Dashboard — statistiques réelles, KPIs, activité récente (page créée mais vide)
 - [ ] Soumissions — vérifier UX complète (liste, filtres, statuts)
 - [ ] Clients — vérifier UX complète
 
 ### Fonctionnalités métier
+- [ ] Brancher les paramètres sur les exports : mettre à jour `app/api/export/pdf/route.ts` et `app/api/export/docx/route.ts` pour fetcher les paramètres Supabase et les passer à `generatePdf()` / `generateDocx()`
 - [ ] Génération IA — tester et valider les sections générées via API Anthropic
 - [ ] Export PDF — test visuel complet conforme à Soumission_Sarl SAFMA.pdf
 - [ ] Export DOCX — test visuel complet
