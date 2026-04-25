@@ -167,11 +167,20 @@ function getHypotheses(type: TypeEtude): string[] {
   return base;
 }
 
+export interface ParametresDocx {
+  signataire1_nom?: string;
+  signataire1_titre?: string;
+  signataire2_nom?: string;
+  signataire2_titre?: string;
+  tva_pct?: number;
+}
+
 export async function generateDocx(
   soumission: Soumission,
   client: Client,
   lignes: LigneBudget[],
-  contexteData: { section_1: string; section_1_1: string }
+  contexteData: { section_1: string; section_1_1: string },
+  parametres?: ParametresDocx
 ): Promise<Buffer> {
   const dateStr = formatDateFr(soumission.date_offre);
   const civiliteLong =
@@ -185,7 +194,8 @@ export async function generateDocx(
   const hypotheses = getHypotheses(soumission.type_etude);
 
   const total_ht = lignes.reduce((s, l) => s + l.quantite * l.prix_unitaire, 0);
-  const tva = total_ht * 0.19;
+  const tvaRate = (parametres?.tva_pct ?? 19) / 100;
+  const tva = total_ht * tvaRate;
   const total_ttc = total_ht + tva;
 
   const doc = new Document({
@@ -518,10 +528,10 @@ export async function generateDocx(
                     children: [
                       new Paragraph({ children: [new TextRun({ text: "", size: 18 })], spacing: { before: 600 } }),
                       new Paragraph({
-                        children: [new TextRun({ text: "Hakim Belghouini", bold: true, color: PRIMARY, size: 18 })],
+                        children: [new TextRun({ text: parametres?.signataire1_nom ?? "Hakim Belghouini", bold: true, color: PRIMARY, size: 18 })],
                       }),
                       new Paragraph({
-                        children: [new TextRun({ text: "Expert Co-gérant", size: 16, color: "666666" })],
+                        children: [new TextRun({ text: parametres?.signataire1_titre ?? "Expert Co-gérant", size: 16, color: "666666" })],
                       }),
                     ],
                   }),
@@ -529,10 +539,10 @@ export async function generateDocx(
                     children: [
                       new Paragraph({ children: [new TextRun({ text: "", size: 18 })], spacing: { before: 600 } }),
                       new Paragraph({
-                        children: [new TextRun({ text: "Amine Lahmer", bold: true, color: PRIMARY, size: 18 })],
+                        children: [new TextRun({ text: parametres?.signataire2_nom ?? "Amine Lahmer", bold: true, color: PRIMARY, size: 18 })],
                       }),
                       new Paragraph({
-                        children: [new TextRun({ text: "Expert Gérant", size: 16, color: "666666" })],
+                        children: [new TextRun({ text: parametres?.signataire2_titre ?? "Expert Gérant", size: 16, color: "666666" })],
                       }),
                     ],
                   }),

@@ -89,11 +89,19 @@ function bulletText(doc: jsPDF, text: string, y: number, maxWidth: number): numb
   return y + lines.length * 5.2 + 2;
 }
 
+export interface ParametresPdf {
+  signataire1_nom?: string;
+  signataire1_titre?: string;
+  signataire2_nom?: string;
+  signataire2_titre?: string;
+}
+
 export function generatePdf(
   soumission: Soumission,
   client: Client,
   lignes: LigneBudget[],
-  contexteData: { section_1: string; section_1_1: string }
+  contexteData: { section_1: string; section_1_1: string },
+  parametres?: ParametresPdf
 ): ArrayBuffer {
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.width;
@@ -453,14 +461,14 @@ export function generatePdf(
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(...PRIMARY_RGB);
-  doc.text("Hakim Belghouini", 15, y);
-  doc.text("Amine Lahmer", pageWidth / 2 + 10, y);
+  doc.text(parametres?.signataire1_nom ?? "Hakim Belghouini", 15, y);
+  doc.text(parametres?.signataire2_nom ?? "Amine Lahmer", pageWidth / 2 + 10, y);
   y += 5;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(100, 100, 100);
-  doc.text("Expert Co-gérant", 15, y);
-  doc.text("Expert Gérant", pageWidth / 2 + 10, y);
+  doc.text(parametres?.signataire1_titre ?? "Expert Co-gérant", 15, y);
+  doc.text(parametres?.signataire2_titre ?? "Expert Gérant", pageWidth / 2 + 10, y);
 
   y += 25;
   doc.setFontSize(9);
