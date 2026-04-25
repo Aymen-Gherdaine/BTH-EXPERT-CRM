@@ -123,7 +123,7 @@ export default function SoumissionsPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white cursor-pointer"
-            style={{ backgroundColor: "#2E7DB2" }}
+            style={{ backgroundColor: "#1a2e1e" }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -150,7 +150,7 @@ export default function SoumissionsPage() {
             value={filterSearch}
             onChange={(e) => setFilterSearch(e.target.value)}
             placeholder="Rechercher par client, projet, N° offre…"
-            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#2E7DB2] bg-white transition-colors"
+            className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#1a2e1e] bg-white transition-colors"
           />
         </div>
 
@@ -160,7 +160,7 @@ export default function SoumissionsPage() {
             onClick={() => setFilterStatut("")}
             className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all cursor-pointer ${
               filterStatut === ""
-                ? "border-[#2E7DB2] bg-[#2E7DB2]/5 text-[#2E7DB2]"
+                ? "border-[#1a2e1e] bg-[#1a2e1e]/5 text-[#1a2e1e]"
                 : "border-gray-200 text-gray-600 bg-white hover:border-gray-300"
             }`}
           >
@@ -172,7 +172,7 @@ export default function SoumissionsPage() {
               onClick={() => setFilterStatut(filterStatut === s ? "" : s)}
               className={`px-4 py-2 rounded-xl text-sm font-medium border transition-all cursor-pointer ${
                 filterStatut === s
-                  ? "border-[#2E7DB2] bg-[#2E7DB2]/5 text-[#2E7DB2]"
+                  ? "border-[#1a2e1e] bg-[#1a2e1e]/5 text-[#1a2e1e]"
                   : "border-gray-200 text-gray-600 bg-white hover:border-gray-300"
               }`}
             >
@@ -185,7 +185,7 @@ export default function SoumissionsPage() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as "date" | "montant")}
-          className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 bg-white outline-none focus:border-[#2E7DB2] cursor-pointer"
+          className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 bg-white outline-none focus:border-[#1a2e1e] cursor-pointer"
         >
           <option value="date">Trier par date</option>
           <option value="montant">Trier par montant</option>
@@ -209,7 +209,7 @@ export default function SoumissionsPage() {
             </div>
             <p className="text-gray-500 text-sm">Aucune soumission trouvée</p>
             <Link href="/soumissions/nouvelle">
-              <span className="text-sm font-medium mt-2 inline-block cursor-pointer" style={{ color: "#2E7DB2" }}>
+              <span className="text-sm font-medium mt-2 inline-block cursor-pointer" style={{ color: "#1a2e1e" }}>
                 Créer votre première soumission →
               </span>
             </Link>
@@ -238,7 +238,7 @@ export default function SoumissionsPage() {
                 >
                   {/* Projet / Client */}
                   <Link href={`/soumissions/${s.id}`} className="min-w-0 cursor-pointer">
-                    <p className="font-medium text-sm text-gray-900 truncate group-hover:text-[#2E7DB2] transition-colors">
+                    <p className="font-medium text-sm text-gray-900 truncate group-hover:text-[#1a2e1e] transition-colors">
                       {s.titre_projet}
                     </p>
                     <p className="text-xs text-gray-400 mt-0.5">

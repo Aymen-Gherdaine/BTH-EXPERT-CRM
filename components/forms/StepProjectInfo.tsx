@@ -71,7 +71,7 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
             className={`w-full px-4 py-2.5 border rounded-xl text-sm outline-none transition-all focus:ring-2 ${
               errors.titre_projet
                 ? "border-red-300 focus:ring-red-100"
-                : "border-gray-200 focus:border-[#2E7DB2] focus:ring-[#2E7DB2]/10"
+                : "border-gray-200 focus:border-[#1a2e1e] focus:ring-[#1a2e1e]/10"
             }`}
           />
           {errors.titre_projet && (
@@ -92,7 +92,7 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
             className={`w-full px-4 py-2.5 border rounded-xl text-sm outline-none transition-all focus:ring-2 ${
               errors.secteur_activite
                 ? "border-red-300 focus:ring-red-100"
-                : "border-gray-200 focus:border-[#2E7DB2] focus:ring-[#2E7DB2]/10"
+                : "border-gray-200 focus:border-[#1a2e1e] focus:ring-[#1a2e1e]/10"
             }`}
           />
           {errors.secteur_activite && (
@@ -113,7 +113,7 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
             className={`w-full px-4 py-2.5 border rounded-xl text-sm outline-none transition-all focus:ring-2 resize-none ${
               errors.description_projet
                 ? "border-red-300 focus:ring-red-100"
-                : "border-gray-200 focus:border-[#2E7DB2] focus:ring-[#2E7DB2]/10"
+                : "border-gray-200 focus:border-[#1a2e1e] focus:ring-[#1a2e1e]/10"
             }`}
           />
           {errors.description_projet && (
@@ -134,13 +134,13 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
                 onClick={() => setForm({ ...form, type_etude: opt.value })}
                 className={`text-left px-4 py-3 rounded-xl border transition-all cursor-pointer ${
                   form.type_etude === opt.value
-                    ? "border-[#2E7DB2] bg-[#2E7DB2]/5"
+                    ? "border-[#1a2e1e] bg-[#1a2e1e]/5"
                     : "border-gray-200 hover:border-gray-300"
                 }`}
               >
                 <p
                   className={`text-sm font-medium ${
-                    form.type_etude === opt.value ? "text-[#2E7DB2]" : "text-gray-800"
+                    form.type_etude === opt.value ? "text-[#1a2e1e]" : "text-gray-800"
                   }`}
                 >
                   {opt.label}
@@ -164,7 +164,7 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
                 onClick={() => setForm({ ...form, delai_jours: d })}
                 className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer ${
                   form.delai_jours === d
-                    ? "border-[#2E7DB2] bg-[#2E7DB2]/5 text-[#2E7DB2]"
+                    ? "border-[#1a2e1e] bg-[#1a2e1e]/5 text-[#1a2e1e]"
                     : "border-gray-200 text-gray-600 hover:border-gray-300"
                 }`}
               >
@@ -179,20 +179,20 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
               }
               placeholder="Autre"
               min={1}
-              className="w-20 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#2E7DB2]"
+              className="w-20 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#1a2e1e]"
             />
           </div>
         </div>
       </div>
 
       {/* Note IA */}
-      <div className="mt-6 p-4 bg-[#2E7DB2]/5 rounded-xl border border-[#2E7DB2]/20">
+      <div className="mt-6 p-4 bg-[#1a2e1e]/5 rounded-xl border border-[#1a2e1e]/20">
         <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-[#2E7DB2] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-[#1a2e1e] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
           </svg>
           <div>
-            <p className="text-sm font-medium text-[#2E7DB2]">Génération IA</p>
+            <p className="text-sm font-medium text-[#1a2e1e]">Génération IA</p>
             <p className="text-xs text-gray-500 mt-0.5">
               Les sections "Contexte et objectifs" et "Objectifs du projet" seront générées automatiquement par Claude AI en style formel algérien.
             </p>
@@ -216,7 +216,7 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
           type="submit"
           disabled={loading}
           className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90 disabled:opacity-60"
-          style={{ backgroundColor: "#2E7DB2" }}
+          style={{ backgroundColor: "#1a2e1e" }}
         >
           {loading ? (
             <>

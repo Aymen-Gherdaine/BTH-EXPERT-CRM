@@ -288,7 +288,7 @@ export default function SoumissionDetailPage() {
             onClick={() => handleExport("pdf")}
             disabled={!!exporting || !contexte}
             className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-white transition-all cursor-pointer disabled:opacity-50 hover:opacity-90"
-            style={{ backgroundColor: "#2E7DB2" }}
+            style={{ backgroundColor: "#1a2e1e" }}
           >
             {exporting === "pdf" ? (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -380,18 +380,18 @@ export default function SoumissionDetailPage() {
           >
             <div className="flex items-center gap-2 mb-4">
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Contenu généré par IA</h2>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[#2E7DB2]/10 text-[#2E7DB2] font-medium">Claude AI</span>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[#1a2e1e]/10 text-[#1a2e1e] font-medium">Claude AI</span>
             </div>
 
             <div className="mb-4">
-              <h3 className="text-sm font-semibold mb-2" style={{ color: "#2E7DB2" }}>1. Contexte et objectifs</h3>
+              <h3 className="text-sm font-semibold mb-2" style={{ color: "#1a2e1e" }}>1. Contexte et objectifs</h3>
               {contexte.section_1.split("\n").filter(p => p.trim()).map((p, i) => (
                 <p key={i} className="text-sm text-gray-700 mb-2 leading-relaxed">{p.trim()}</p>
               ))}
             </div>
 
             <div>
-              <h3 className="text-sm font-semibold mb-2" style={{ color: "#2E7DB2" }}>1.1 Objectifs du projet</h3>
+              <h3 className="text-sm font-semibold mb-2" style={{ color: "#1a2e1e" }}>1.1 Objectifs du projet</h3>
               <ul className="space-y-1.5">
                 {objectifs.map((obj, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
@@ -450,7 +450,7 @@ export default function SoumissionDetailPage() {
               </div>
               <div className="flex justify-between text-base font-bold border-t border-gray-300 pt-2">
                 <span className="text-gray-900">Total TTC</span>
-                <span style={{ color: "#2E7DB2" }}>{formatMontant(soumission.total_ttc)} DZD</span>
+                <span style={{ color: "#1a2e1e" }}>{formatMontant(soumission.total_ttc)} DZD</span>
               </div>
             </div>
           </div>

@@ -138,7 +138,7 @@ export default function NouvelleSoumissionPage() {
                     : "bg-gray-100 text-gray-400"
                 }`}
                 style={
-                  i <= step ? { backgroundColor: "#2E7DB2" } : {}
+                  i <= step ? { backgroundColor: "#1a2e1e" } : {}
                 }
               >
                 {i < step ? (
@@ -162,7 +162,7 @@ export default function NouvelleSoumissionPage() {
                 className={`flex-1 h-0.5 mx-3 transition-colors ${
                   i < step ? "" : "bg-gray-200"
                 }`}
-                style={i < step ? { backgroundColor: "#2E7DB2" } : {}}
+                style={i < step ? { backgroundColor: "#1a2e1e" } : {}}
               />
             )}
           </div>

@@ -49,7 +49,7 @@ export default function StepClientInfo({ data, onNext }: Props) {
           className={`w-full px-4 py-2.5 border rounded-xl text-sm outline-none transition-all focus:ring-2 ${
             errors[key]
               ? "border-red-300 focus:ring-red-100"
-              : "border-gray-200 focus:border-[#2E7DB2] focus:ring-[#2E7DB2]/10"
+              : "border-gray-200 focus:border-[#1a2e1e] focus:ring-[#1a2e1e]/10"
           }`}
         />
         {errors[key] && <p className="text-red-500 text-xs mt-1">{errors[key]}</p>}
@@ -75,7 +75,7 @@ export default function StepClientInfo({ data, onNext }: Props) {
                 onClick={() => setForm({ ...form, titre: t })}
                 className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer ${
                   form.titre === t
-                    ? "border-[#2E7DB2] bg-[#2E7DB2]/5 text-[#2E7DB2]"
+                    ? "border-[#1a2e1e] bg-[#1a2e1e]/5 text-[#1a2e1e]"
                     : "border-gray-200 text-gray-600 hover:border-gray-300"
                 }`}
               >
@@ -98,7 +98,7 @@ export default function StepClientInfo({ data, onNext }: Props) {
         <button
           type="submit"
           className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90"
-          style={{ backgroundColor: "#2E7DB2" }}
+          style={{ backgroundColor: "#1a2e1e" }}
         >
           Suivant
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

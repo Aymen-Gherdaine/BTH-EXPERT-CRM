@@ -137,7 +137,7 @@ export default function StepPreview({
             onClick={() => handleExport("pdf")}
             disabled={!!exporting}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border text-white transition-all cursor-pointer disabled:opacity-50 hover:opacity-90"
-            style={{ backgroundColor: "#2E7DB2", borderColor: "#2E7DB2" }}
+            style={{ backgroundColor: "#1a2e1e", borderColor: "#1a2e1e" }}
           >
             {exporting === "pdf" ? (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -168,7 +168,7 @@ export default function StepPreview({
           </div>
           <div className="text-right">
             <p className="text-xs text-gray-500">Offre No :</p>
-            <p className="font-bold text-sm" style={{ color: "#2E7DB2" }}>
+            <p className="font-bold text-sm" style={{ color: "#1a2e1e" }}>
               {generateNumeroOffre()}
             </p>
             <p className="text-xs text-gray-400 mt-1">
@@ -184,10 +184,10 @@ export default function StepPreview({
         {/* Subject */}
         <div className="p-6">
           <p className="font-bold text-sm text-gray-700 mb-1">OBJET :</p>
-          <p className="font-semibold text-sm mb-1" style={{ color: "#2E7DB2" }}>
+          <p className="font-semibold text-sm mb-1" style={{ color: "#1a2e1e" }}>
             Offre de services professionnels
           </p>
-          <p className="font-semibold text-sm" style={{ color: "#2E7DB2" }}>
+          <p className="font-semibold text-sm" style={{ color: "#1a2e1e" }}>
             {step2.titre_projet}
           </p>
         </div>
@@ -205,14 +205,14 @@ export default function StepPreview({
 
         {/* Section 1 */}
         <div className="p-6">
-          <h3 className="font-bold text-base mb-3" style={{ color: "#2E7DB2" }}>
+          <h3 className="font-bold text-base mb-3" style={{ color: "#1a2e1e" }}>
             1. Contexte et objectifs
           </h3>
           {contexte.section_1.split("\n").filter(p => p.trim()).map((p, i) => (
             <p key={i} className="text-sm text-gray-700 mb-3 leading-relaxed">{p.trim()}</p>
           ))}
 
-          <h4 className="font-semibold text-sm mb-2 mt-4" style={{ color: "#2E7DB2" }}>
+          <h4 className="font-semibold text-sm mb-2 mt-4" style={{ color: "#1a2e1e" }}>
             1.1 Objectifs du projet
           </h4>
           <p className="text-sm text-gray-700 mb-2">Les objectifs du projet et du mandat sont les suivants :</p>
@@ -228,7 +228,7 @@ export default function StepPreview({
 
         {/* Budget summary */}
         <div className="p-6">
-          <h3 className="font-bold text-base mb-3" style={{ color: "#2E7DB2" }}>
+          <h3 className="font-bold text-base mb-3" style={{ color: "#1a2e1e" }}>
             4. Budget
           </h3>
           <div className="overflow-x-auto">
@@ -258,9 +258,9 @@ export default function StepPreview({
                   <td colSpan={3} className="px-3 py-2 text-right text-gray-600 text-xs">TVA 19%</td>
                   <td className="px-3 py-2 text-right text-gray-700">{formatMontant(tva)}</td>
                 </tr>
-                <tr className="border-t border-gray-200 bg-[#2E7DB2]/5">
+                <tr className="border-t border-gray-200 bg-[#1a2e1e]/5">
                   <td colSpan={3} className="px-3 py-2 text-right font-bold text-gray-900 text-sm">Total TTC</td>
-                  <td className="px-3 py-2 text-right font-bold text-lg" style={{ color: "#2E7DB2" }}>
+                  <td className="px-3 py-2 text-right font-bold text-lg" style={{ color: "#1a2e1e" }}>
                     {formatMontant(total_ttc)}
                   </td>
                 </tr>
@@ -284,12 +284,12 @@ export default function StepPreview({
         <div className="p-6 grid grid-cols-2 gap-6">
           <div>
             <p className="text-xs text-gray-500 mb-3">Responsable de l'offre :</p>
-            <p className="font-semibold text-sm" style={{ color: "#2E7DB2" }}>Hakim Belghouini</p>
+            <p className="font-semibold text-sm" style={{ color: "#1a2e1e" }}>Hakim Belghouini</p>
             <p className="text-xs text-gray-400">Expert Co-gérant</p>
           </div>
           <div>
             <p className="text-xs text-gray-500 mb-3">Autorisé par :</p>
-            <p className="font-semibold text-sm" style={{ color: "#2E7DB2" }}>Amine Lahmer</p>
+            <p className="font-semibold text-sm" style={{ color: "#1a2e1e" }}>Amine Lahmer</p>
             <p className="text-xs text-gray-400">Expert Gérant</p>
           </div>
         </div>
@@ -313,7 +313,7 @@ export default function StepPreview({
           onClick={onSave}
           disabled={saving}
           className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90 disabled:opacity-60"
-          style={{ backgroundColor: "#2E7DB2" }}
+          style={{ backgroundColor: "#1a2e1e" }}
         >
           {saving ? (
             <>
