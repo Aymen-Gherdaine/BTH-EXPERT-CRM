@@ -51,7 +51,7 @@ export default function DashboardPage() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
-      color: "#2E7DB2",
+      color: "#1a2e1e",
     },
     {
       label: "Mandats acceptés (DZD)",
@@ -89,7 +89,7 @@ export default function DashboardPage() {
     <div className="p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Tableau de bord</h1>
-        <p className="text-gray-500 text-sm mt-1">Vue d'ensemble des activités BTH Expert</p>
+        <p className="text-gray-500 text-sm mt-1">Vue d'ensemble des activités BTH Hub</p>
       </div>
 
       {/* Stats grid */}
@@ -131,7 +131,7 @@ export default function DashboardPage() {
           <Link
             href="/soumissions"
             className="text-sm font-medium transition-colors"
-            style={{ color: "#2E7DB2" }}
+            style={{ color: "#1a2e1e" }}
           >
             Voir tout →
           </Link>
@@ -149,7 +149,7 @@ export default function DashboardPage() {
             <Link href="/soumissions/nouvelle">
               <span
                 className="text-sm font-medium mt-2 inline-block cursor-pointer"
-                style={{ color: "#2E7DB2" }}
+                style={{ color: "#1a2e1e" }}
               >
                 Créer votre première soumission →
               </span>

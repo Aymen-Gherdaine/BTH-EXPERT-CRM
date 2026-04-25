@@ -5,8 +5,8 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "BTH Expert CRM",
-  description: "Système de gestion des soumissions - BTH Expert Environnement Ingénierie",
+  title: "BTH Hub",
+  description: "BTH Hub — Gestion des offres",
 };
 
 export default function RootLayout({

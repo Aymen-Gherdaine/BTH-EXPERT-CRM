@@ -79,7 +79,7 @@ export default function ClientsPage() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white cursor-pointer"
-            style={{ backgroundColor: "#2E7DB2" }}
+            style={{ backgroundColor: "#1a2e1e" }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -104,7 +104,7 @@ export default function ClientsPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Rechercher par entreprise ou contact…"
-          className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:border-[#2E7DB2] transition-colors"
+          className="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:border-[#1a2e1e] transition-colors"
         />
       </div>
 
@@ -155,7 +155,7 @@ export default function ClientsPage() {
                       {/* Avatar */}
                       <div
                         className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
-                        style={{ backgroundColor: "#2E7DB2" }}
+                        style={{ backgroundColor: "#1a2e1e" }}
                       >
                         {client.entreprise.charAt(0).toUpperCase()}
                       </div>
@@ -232,7 +232,7 @@ export default function ClientsPage() {
                             <div className="space-y-2">
                               {clientSoumissions.map((s) => (
                                 <Link key={s.id} href={`/soumissions/${s.id}`}>
-                                  <div className="flex items-center justify-between bg-white rounded-xl px-4 py-3 hover:shadow-sm transition-all cursor-pointer border border-gray-100 hover:border-[#2E7DB2]/30">
+                                  <div className="flex items-center justify-between bg-white rounded-xl px-4 py-3 hover:shadow-sm transition-all cursor-pointer border border-gray-100 hover:border-[#1a2e1e]/30">
                                     <div className="min-w-0">
                                       <p className="text-sm font-medium text-gray-900 truncate">{s.titre_projet}</p>
                                       <p className="text-xs text-gray-400 mt-0.5">
@@ -266,7 +266,7 @@ export default function ClientsPage() {
                               </span>
                               <span>
                                 CA total :{" "}
-                                <strong style={{ color: "#2E7DB2" }}>
+                                <strong style={{ color: "#1a2e1e" }}>
                                   {formatMontant(
                                     clientSoumissions
                                       .filter((s) => s.statut === "Acceptée")

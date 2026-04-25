@@ -44,13 +44,13 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="px-6 py-5 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#2E7DB2" }}>
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#1a2e1e" }}>
             <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 004 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div>
-            <p className="font-bold text-sm text-gray-900">BTH Expert</p>
+            <p className="font-bold text-sm text-gray-900">BTH Hub</p>
             <p className="text-xs text-gray-400">Environnement · Ingénierie</p>
           </div>
         </div>
@@ -70,7 +70,7 @@ export default function Sidebar() {
                     ? "text-white"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 )}
-                style={active ? { backgroundColor: "#2E7DB2" } : {}}
+                style={active ? { backgroundColor: "#1a2e1e" } : {}}
               >
                 {item.icon}
                 {item.label}
@@ -87,7 +87,7 @@ export default function Sidebar() {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-white cursor-pointer"
-            style={{ backgroundColor: "#2E7DB2" }}
+            style={{ backgroundColor: "#1a2e1e" }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

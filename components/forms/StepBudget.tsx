@@ -108,7 +108,7 @@ export default function StepBudget({ data, onBack, onNext }: Props) {
                 value={ligne.designation}
                 onChange={(e) => updateLigne(idx, "designation", e.target.value)}
                 placeholder="Désignation de la prestation..."
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#2E7DB2] transition-colors mr-3"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#1a2e1e] transition-colors mr-3"
               />
 
               <input
@@ -118,7 +118,7 @@ export default function StepBudget({ data, onBack, onNext }: Props) {
                   updateLigne(idx, "quantite", parseInt(e.target.value) || 1)
                 }
                 min={1}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-center outline-none focus:border-[#2E7DB2] transition-colors mx-1"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-center outline-none focus:border-[#1a2e1e] transition-colors mx-1"
               />
 
               <input
@@ -130,7 +130,7 @@ export default function StepBudget({ data, onBack, onNext }: Props) {
                 min={0}
                 step={1000}
                 placeholder="0"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-right outline-none focus:border-[#2E7DB2] transition-colors ml-1"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-right outline-none focus:border-[#1a2e1e] transition-colors ml-1"
               />
 
               <button
@@ -153,7 +153,7 @@ export default function StepBudget({ data, onBack, onNext }: Props) {
         type="button"
         onClick={addLigne}
         className="flex items-center gap-2 text-sm font-medium mb-6 transition-colors cursor-pointer"
-        style={{ color: "#2E7DB2" }}
+        style={{ color: "#1a2e1e" }}
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -174,7 +174,7 @@ export default function StepBudget({ data, onBack, onNext }: Props) {
           </div>
           <div className="pt-2 mt-2 border-t border-gray-200 flex justify-between">
             <span className="font-semibold text-gray-900">Total TTC</span>
-            <span className="font-bold text-lg" style={{ color: "#2E7DB2" }}>
+            <span className="font-bold text-lg" style={{ color: "#1a2e1e" }}>
               {formatMontant(total_ttc)} DZD
             </span>
           </div>
@@ -197,7 +197,7 @@ export default function StepBudget({ data, onBack, onNext }: Props) {
           type="button"
           onClick={handleNext}
           className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90"
-          style={{ backgroundColor: "#2E7DB2" }}
+          style={{ backgroundColor: "#1a2e1e" }}
         >
           Prévisualiser
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
