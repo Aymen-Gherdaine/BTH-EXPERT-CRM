@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
       contexteData: { section_1: string; section_1_1: string };
     } = await req.json();
 
-    const buffer = generatePdf(soumission, client, lignes, contexteData);
+    const buffer = await generatePdf(soumission, client, lignes, contexteData);
 
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
