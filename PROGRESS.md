@@ -123,10 +123,17 @@
 
 ---
 
+## ✅ PAGE PROFIL (session 2026-04-25)
+
+- [x] `app/(app)/profil/page.tsx` — section 1 : avatar (upload → Supabase Storage bucket "avatars", preview immédiate), nom complet modifiable, email en lecture seule, `updateUser()` + `router.refresh()` ; section 2 : changement mot de passe avec icône œil, validation 8 car. + correspondance
+- [x] `lib/supabase-storage.sql` — script SQL bucket "avatars" (public, 5 Mo max, JPEG/PNG/WEBP/GIF) + 4 policies RLS (lecture publique, upload/update/delete par propriétaire uniquement) — **à exécuter manuellement dans Supabase SQL Editor**
+- [x] `components/layout/Sidebar.tsx` — "Mon profil" retiré de la nav (accessible uniquement via dropdown header)
+
+---
+
 ## 🔲 RESTE À FAIRE
 
 ### Pages & UI
-- [ ] `/profil` — page profil utilisateur (modifier nom, photo, mot de passe)
 - [ ] `/parametres` — paramètres de l'application
 - [ ] Dashboard — statistiques réelles, KPIs, activité récente (page créée mais vide)
 - [ ] Soumissions — vérifier UX complète (liste, filtres, statuts)
