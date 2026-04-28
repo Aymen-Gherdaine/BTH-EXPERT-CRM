@@ -65,9 +65,15 @@ export function buildDocumentData(
     .filter((l) => l.trim().startsWith("-"))
     .map((l) => l.replace(/^-\s*/, "").trim());
 
+  const titreLong =
+    client.titre === "M." ? "Monsieur" :
+    client.titre === "Mme" ? "Madame" :
+    client.titre;
+
   return {
     // Client
     titre: client.titre,
+    titre_long: titreLong,
     nom_client: client.nom_contact,
     nom_client_majuscule: client.nom_contact.toUpperCase(),
     poste_client: client.poste,
@@ -80,7 +86,7 @@ export function buildDocumentData(
     date_offre: formatDateFr(soumission.date_offre),
     // Projet
     titre_projet: soumission.titre_projet,
-    description_mission: `Sarl BTH EXPERT a le plaisir de vous transmettre son offre de services professionnels relative au projet ${soumission.titre_projet.toLowerCase()}.`,
+    description_mission: soumission.titre_projet.toLowerCase(),
     contexte_paragraphe_1: paragraphes[0] ?? "",
     contexte_paragraphe_2: paragraphes[1] ?? "",
     // Objectifs

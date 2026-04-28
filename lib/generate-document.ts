@@ -56,6 +56,7 @@ export interface LigneBudget {
 export interface DocumentData {
   // Client
   titre: string;
+  titre_long: string;
   nom_client: string;
   nom_client_majuscule: string;
   poste_client: string;
@@ -119,6 +120,7 @@ export function generateDocument(data: DocumentData): Buffer {
   doc.render({
     // Client
     titre: data.titre,
+    titre_long: data.titre_long,
     nom_client: data.nom_client,
     nom_client_majuscule: data.nom_client_majuscule,
     poste_client: data.poste_client,
