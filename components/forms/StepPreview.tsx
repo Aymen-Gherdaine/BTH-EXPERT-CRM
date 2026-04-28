@@ -31,6 +31,7 @@ export default function StepPreview({
   onSave,
 }: Props) {
   const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
+  const [numeroOffre] = useState(() => generateNumeroOffre());
 
   const total_ht = step3.lignes.reduce(
     (s, l) => s + l.quantite * l.prix_unitaire,
@@ -54,7 +55,6 @@ export default function StepPreview({
   async function handleExport(format: "docx" | "pdf") {
     setExporting(format);
     try {
-      const numeroOffre = generateNumeroOffre();
       const today = new Date().toISOString().split("T")[0];
 
       const payload = {
@@ -169,7 +169,7 @@ export default function StepPreview({
           <div className="text-right">
             <p className="text-xs text-gray-500">Offre No :</p>
             <p className="font-bold text-sm" style={{ color: "#1a2e1e" }}>
-              {generateNumeroOffre()}
+              {numeroOffre}
             </p>
             <p className="text-xs text-gray-400 mt-1">
               {new Date().toLocaleDateString("fr-FR", {

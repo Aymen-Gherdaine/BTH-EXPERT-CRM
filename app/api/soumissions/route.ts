@@ -1,9 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { generateNumeroOffre } from "@/lib/utils";
 import { FormDataComplete } from "@/types";
 
+async function getSupabase() {
+  const cookieStore = await cookies();
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll(); },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {}
+        },
+      },
+    }
+  );
+}
+
 export async function GET(req: NextRequest) {
+  const supabase = await getSupabase();
   const { searchParams } = new URL(req.url);
   const statut = searchParams.get("statut");
   const client_id = searchParams.get("client_id");
@@ -24,6 +46,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = await getSupabase();
     const body: { formData: FormDataComplete; contexte: { section_1: string; section_1_1: string } } = await req.json();
     const { formData, contexte } = body;
 
