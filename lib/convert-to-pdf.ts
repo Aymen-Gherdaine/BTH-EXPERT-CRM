@@ -3,11 +3,7 @@ export async function convertToPdf(docxBuffer: Buffer): Promise<Buffer> {
   if (!apiKey) throw new Error('CLOUDMERSIVE_API_KEY is not set');
 
   const formData = new FormData();
-  const arrayBuf = docxBuffer.buffer.slice(
-    docxBuffer.byteOffset,
-    docxBuffer.byteOffset + docxBuffer.byteLength,
-  ) as ArrayBuffer;
-  formData.append('inputFile', new Blob([arrayBuf], {
+  formData.append('inputFile', new Blob([new Uint8Array(docxBuffer)], {
     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   }), 'document.docx');
 
