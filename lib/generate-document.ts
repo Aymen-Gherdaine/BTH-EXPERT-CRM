@@ -105,6 +105,20 @@ export function generateDocument(data: DocumentData): Buffer {
   const templateBuffer = fs.readFileSync(TEMPLATE_PATH);
   const zip = new PizZip(templateBuffer);
 
+  // Fix 1: Remove date picker SDT wrapper so Cloudmersive renders {date_offre} as plain text
+  let docXml = zip.files['word/document.xml'].asText();
+  docXml = docXml.replace(
+    /<w:sdt><w:sdtPr>[\s\S]*?<w:date\b[\s\S]*?<\/w:sdtPr><w:sdtContent>([\s\S]*?)<\/w:sdtContent><\/w:sdt>/g,
+    '$1'
+  );
+
+  // Fix 2: Change first-page-only header to default header so Cloudmersive renders the logo
+  docXml = docXml
+    .replace(/<w:titlePg\/>/g, '')
+    .replace(/(<w:headerReference\b[^>]*)w:type="first"/g, '$1w:type="default"');
+
+  zip.file('word/document.xml', docXml);
+
   const doc = new Docxtemplater(zip, {
     paragraphLoop: true,
     linebreaks: true,
