@@ -101,21 +101,50 @@ export interface DocumentData {
   signataire_2_titre: string;
 }
 
-export function generateDocument(data: DocumentData): Buffer {
+export function generateDocument(data: DocumentData, forPdf = false): Buffer {
   const templateBuffer = fs.readFileSync(TEMPLATE_PATH);
   const zip = new PizZip(templateBuffer);
 
-  // Fix 1: Remove date picker SDT wrapper so Cloudmersive renders {date_offre} as plain text
+  // Remove date picker SDT wrapper so Cloudmersive renders {date_offre} as plain text.
+  // Negative lookahead prevents the regex from crossing into adjacent SDTs.
   let docXml = zip.files['word/document.xml'].asText();
   docXml = docXml.replace(
-    /<w:sdt><w:sdtPr>[\s\S]*?<w:date\b[\s\S]*?<\/w:sdtPr><w:sdtContent>([\s\S]*?)<\/w:sdtContent><\/w:sdt>/g,
+    /<w:sdt><w:sdtPr>(?:(?!<\/w:sdt>)[\s\S])*?<w:date\b(?:(?!<\/w:sdt>)[\s\S])*?<\/w:sdtPr><w:sdtContent>((?:(?!<\/w:sdt>)[\s\S])*?)<\/w:sdtContent><\/w:sdt>/g,
     '$1'
   );
 
-  // Fix 2: Change first-page-only header to default header so Cloudmersive renders the logo
-  docXml = docXml
-    .replace(/<w:titlePg\/>/g, '')
-    .replace(/(<w:headerReference\b[^>]*)w:type="first"/g, '$1w:type="default"');
+  if (forPdf) {
+    // Cloudmersive doesn't render Word headers, so the logo would be missing.
+    // Copy the logo drawing from header1.xml into the document body.
+    const headerXml = zip.files['word/header1.xml']?.asText() ?? '';
+    const headerRelsXml = zip.files['word/_rels/header1.xml.rels']?.asText() ?? '';
+
+    const drawingMatch = /<w:drawing>[\s\S]*?<\/w:drawing>/.exec(headerXml);
+    const embedMatch = drawingMatch ? /r:embed="([^"]+)"/.exec(drawingMatch[0]) : null;
+
+    if (drawingMatch && embedMatch) {
+      const headerRId = embedMatch[1];
+      const targetMatch = new RegExp(`Id="${headerRId}"[^>]*Target="([^"]+)"`).exec(headerRelsXml);
+      const headerTarget = targetMatch ? /Target="([^"]+)"/.exec(targetMatch[0])?.[1] ?? '' : '';
+      const imgTarget = headerTarget.startsWith('../') ? headerTarget.slice(3) : headerTarget;
+
+      if (imgTarget) {
+        const newRId = 'rIdLogoBody';
+        let docRelsXml = zip.files['word/_rels/document.xml.rels'].asText();
+        if (!docRelsXml.includes(newRId)) {
+          docRelsXml = docRelsXml.replace(
+            '</Relationships>',
+            `<Relationship Id="${newRId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${imgTarget}"/></Relationships>`
+          );
+          zip.file('word/_rels/document.xml.rels', docRelsXml);
+        }
+
+        const bodyDrawing = drawingMatch[0].replace(`r:embed="${headerRId}"`, `r:embed="${newRId}"`);
+        const logoPara = `<w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r>${bodyDrawing}</w:r></w:p>`;
+        docXml = docXml.replace('<w:body>', `<w:body>${logoPara}`);
+      }
+    }
+  }
 
   zip.file('word/document.xml', docXml);
 

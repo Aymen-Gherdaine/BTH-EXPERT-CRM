@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     const data = buildDocumentData(soumission, client, lignes, contexteData, parametres ?? {});
-    const docxBuffer = generateDocument(data);
+    const docxBuffer = generateDocument(data, true);
     const pdfBuffer = await convertToPdf(docxBuffer);
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
