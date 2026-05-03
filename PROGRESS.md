@@ -1,6 +1,6 @@
 # BTH Hub — Progression
 
-Dernière mise à jour : mai 2026
+Dernière mise à jour : 3 mai 2026
 
 ---
 
@@ -18,6 +18,14 @@ Dernière mise à jour : mai 2026
 - Soumissions : liste + nouvelle (formulaire 4 étapes) + [id]
 - Clients, Profil (avatar, nom, password), Paramètres (société, signataires, TVA, délais, signatures)
 - Sidebar + Header avec dropdown user
+- BottomNav mobile fixe (md:hidden), role-aware
+- Module Prospection complet (P-1 → P-3)
+  - RBAC rôles admin / charge_projet / commercial
+  - Tables `prospects` + `visites` avec RLS Supabase
+  - UI Planning (Aujourd'hui / Cette semaine / Non traités) + Tous (groupé par date)
+  - Fiche prospect : historique visites, édition, suppression
+  - Formulaire nouveau prospect 2 étapes animé
+  - Composants ProspectCard, PlanningZone, VisiteForm
 
 ### API Routes
 - `/api/generate` — génération IA Anthropic
@@ -124,28 +132,30 @@ Commit : `feat: add prospects Excel export and relance badge`
 
 ## 📋 RESTE À FAIRE — Priorité globale
 
-### Haute
+### Haute (prochaines sessions)
 1. ✅ P-1 : Système de rôles RBAC
 2. ✅ P-2 : Tables prospects + visites + API routes
 3. ✅ P-3 : Interface Prospection mobile-first
-4. ⬜ P-4 : Export Excel + badges alertes
-5. ⬜ Refaire `template-standard.docx` à partir du modèle AT PHARMA
-6. ⬜ Brancher paramètres sur les exports (fetcher table `parametres` dans routes API)
-7. ⬜ Dashboard — vraies stats Supabase
+4. ⬜ **P-4 : Export Excel + badge alertes header**
+   - `GET /api/prospects/export` → .xlsx via SheetJS (Entreprise, Secteur, Contact, Tel, Adresse, Dernière visite, Prochain contact, Statut)
+   - Bouton "Exporter" dans `/prospection`
+   - Badge rouge header = count relances en retard + aujourd'hui (rôles commercial + admin)
+5. ⬜ **Dashboard — vraies stats Supabase** (nb soumissions, CA total, taux acceptation, prospects actifs)
+6. ⬜ **Brancher paramètres sur les exports** (fetcher table `parametres` dans routes API export DOCX/PDF)
+7. ⬜ **Refaire `template-standard.docx`** à partir du modèle AT PHARMA Phase II
 
 ### Moyenne
-8. ⬜ Migrer vers Render + LibreOffice (remplace Cloudmersive)
-9. ⬜ Sanitizer texte IA avant injection template
-10. ⬜ Responsive pages existantes (dashboard, soumissions, clients)
-11. ⬜ UX soumissions : filtres, voir/modifier/dupliquer/supprimer
-12. ⬜ UX clients : liste + historique soumissions
-13. ⬜ Page édition contenu IA avant téléchargement
-14. ⬜ Template détaillé type Sonatrach (en attente exemple client)
+8. ⬜ Migrer vers Render + LibreOffice headless (remplace Cloudmersive — meilleure fidélité PDF)
+9. ⬜ Sanitizer texte IA avant injection template (caractères spéciaux, guillemets)
+10. ⬜ UX soumissions : filtres par statut/date, modifier, dupliquer, supprimer
+11. ⬜ Page édition contenu IA avant téléchargement (relecture avant export)
+12. ⬜ Template détaillé type Sonatrach (en attente exemple client)
+13. ⬜ Prospects : statut `converti` → lien automatique vers soumission créée
 
 ### Déploiement
-15. ⬜ Variables Netlify : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `ANTHROPIC_API_KEY`, `CLOUDMERSIVE_API_KEY`
-16. ⬜ Supabase Redirect URLs : ajouter `https://bth-hub.netlify.app/auth/callback`
-17. ⬜ Push GitHub + déploiement Netlify
+14. ⬜ Variables Netlify : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `ANTHROPIC_API_KEY`, `CLOUDMERSIVE_API_KEY`
+15. ⬜ Supabase Redirect URLs : ajouter `https://bth-hub.netlify.app/auth/callback`
+16. ⬜ Déploiement Netlify production
 
 ---
 
@@ -184,7 +194,9 @@ Structure observée dans `ODS_AT_PHARMAPhase_II.pdf` :
 - `soumissions` : id, numero_offre, date_offre, client_id, titre_projet, secteur_activite, description_projet, type_etude, delai_jours, total_ht, tva, total_ttc, statut, contexte_genere, created_at
 - `lignes_budget` : id, soumission_id, numero, designation, quantite, prix_unitaire, ordre
 - `parametres` : id=1 (unique), nom_societe, adresse, signataire1_nom/titre, signataire2_nom/titre, signature_responsable_url, signature_autorise_url, tva_pct, delai_jours, validite_jours, modalites_paiement
-- `profiles` : à modifier — ajouter colonne `role` (Tâche P-1)
+- `profiles` : id, email, full_name, avatar_url, role (`admin`|`charge_projet`|`commercial`)
+- `prospects` : id, entreprise, secteur_activite, nom_contact, poste_contact, telephone, email, adresse, notes_generales, statut_global, created_by, created_at, updated_at
+- `visites` : id, prospect_id (FK→prospects CASCADE), date_visite, resultat, notes_visite, date_prochaine_action, action_requise, commercial_id, created_at
 - Buckets Storage : `avatars`, `signatures`
 
 ---
