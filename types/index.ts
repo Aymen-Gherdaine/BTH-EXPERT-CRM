@@ -1,3 +1,5 @@
+export type UserRole = 'admin' | 'charge_projet' | 'commercial';
+
 export type TitreContact = "M." | "Mme" | "Dr." | "Pr.";
 
 export type TypeEtude =
@@ -86,4 +88,41 @@ export interface DashboardStats {
   total_mandats_acceptes: number;
   taux_acceptation: number;
   montant_total_mois: number;
+}
+
+export type StatutProspect = 'actif' | 'sans_suite' | 'converti';
+export type ResultatVisite =
+  | 'soumission_demandee'
+  | 'rappel_planifie'
+  | 'pas_interesse'
+  | 'absent'
+  | 'autre';
+
+export interface Visite {
+  id: string;
+  prospect_id: string;
+  date_visite: string;
+  resultat: ResultatVisite;
+  notes_visite: string | null;
+  date_prochaine_action: string | null;
+  action_requise: string | null;
+  commercial_id: string;
+  created_at: string;
+}
+
+export interface Prospect {
+  id: string;
+  entreprise: string;
+  secteur_activite: string;
+  nom_contact: string;
+  poste_contact: string;
+  telephone: string;
+  email: string | null;
+  adresse: string;
+  notes_generales: string | null;
+  statut_global: StatutProspect;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  visites?: Visite[];
 }

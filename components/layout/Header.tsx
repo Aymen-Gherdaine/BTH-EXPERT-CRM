@@ -82,7 +82,18 @@ export default function Header() {
   }
 
   return (
-    <header className="h-14 bg-white border-b border-gray-100 flex items-center justify-end px-6 sticky top-0 z-40">
+    <header className="h-14 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-40">
+      {/* Logo — visible uniquement sur mobile (sidebar cachée) */}
+      <div className="flex items-center gap-2.5 md:hidden">
+        <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#1a2e1e" }}>
+          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 004 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <span className="font-bold text-sm text-gray-900">BTH Hub</span>
+      </div>
+      {/* Spacer desktop — la sidebar prend la gauche */}
+      <div className="hidden md:block" />
       {user ? (
         <div className="relative" ref={ref}>
           {/* Trigger */}

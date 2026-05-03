@@ -1,12 +1,9 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
-import BottomNav from "@/components/layout/BottomNav";
 import type { UserRole } from "@/types";
 
-export default async function AppLayout({
+export default async function ProspectionLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -42,14 +39,9 @@ export default async function AppLayout({
 
   const role: UserRole = (profile?.role as UserRole) ?? "admin";
 
-  return (
-    <div className="flex min-h-screen bg-[#F4F6F7] overflow-x-hidden">
-      <Sidebar role={role} />
-      <div className="flex-1 flex flex-col min-h-screen min-w-0 overflow-x-hidden">
-        <Header />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0">{children}</main>
-      </div>
-      <BottomNav role={role} />
-    </div>
-  );
+  if (role !== "admin" && role !== "commercial") {
+    redirect("/dashboard");
+  }
+
+  return <>{children}</>;
 }
