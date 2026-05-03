@@ -11,10 +11,12 @@
 @layer base {
   html {
     font-family: "Inter", system-ui, sans-serif;
+    overflow-x: hidden;
   }
 
   body {
     @apply bg-white text-gray-900;
+    overflow-x: hidden;
   }
 }
 
