@@ -1,6 +1,6 @@
 # BTH Hub — Progression
 
-Dernière mise à jour : 3 mai 2026
+Dernière mise à jour : 3 mai 2026 (session 2)
 
 ---
 
@@ -26,6 +26,15 @@ Dernière mise à jour : 3 mai 2026
   - Fiche prospect : historique visites, édition, suppression
   - Formulaire nouveau prospect 2 étapes animé
   - Composants ProspectCard, PlanningZone, VisiteForm
+- Module Prospection — améliorations session 2 :
+  - Édition + suppression prospect depuis la fiche `/prospection/[id]`
+  - Suppression prospect depuis le tableau "Tous" (menu ⋮)
+  - API DELETE `/api/prospects/[id]` ajoutée
+  - Onglet "Tous" : tableau avec filtres (secteur, résultat, tri) + pagination 10/page
+  - Sidebar/Header sticky (h-screen + overflow-hidden sur layout)
+  - Clients : même style tableau que soumissions + pagination 10/page
+  - Soumissions : pagination 10/page ajoutée
+  - Selects avec flèche SVG custom (`appearance-none` + chevron absolu)
 
 ### API Routes
 - `/api/generate` — génération IA Anthropic

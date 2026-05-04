@@ -43,9 +43,9 @@ export default async function AppLayout({
   const role: UserRole = (profile?.role as UserRole) ?? "admin";
 
   return (
-    <div className="flex min-h-screen bg-[#F4F6F7] overflow-x-hidden">
+    <div className="flex h-screen bg-[#F4F6F7] overflow-hidden">
       <Sidebar role={role} />
-      <div className="flex-1 flex flex-col min-h-screen min-w-0 overflow-x-hidden">
+      <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">
         <Header />
         <main className="flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0">{children}</main>
       </div>
