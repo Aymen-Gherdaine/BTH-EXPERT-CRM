@@ -1,6 +1,6 @@
 # BTH Hub — Progression
 
-Dernière mise à jour : 3 mai 2026 (session 2)
+Dernière mise à jour : 3 mai 2026 (session 3)
 
 ---
 
@@ -35,6 +35,9 @@ Dernière mise à jour : 3 mai 2026 (session 2)
   - Clients : même style tableau que soumissions + pagination 10/page
   - Soumissions : pagination 10/page ajoutée
   - Selects avec flèche SVG custom (`appearance-none` + chevron absolu)
+- Planning : refonte en tableau unifié (4 sections : Aujourd'hui / Cette semaine / Non traités / Sans relance)
+  - Barre couleur urgence par ligne, bannière rouge si non traités
+  - Colonnes : Entreprise + secteur / Contact / Date relance / Action requise / Dernier résultat
 
 ### API Routes
 - `/api/generate` — génération IA Anthropic
