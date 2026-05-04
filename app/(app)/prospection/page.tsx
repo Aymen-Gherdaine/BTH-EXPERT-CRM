@@ -5,8 +5,6 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Prospect, Visite } from "@/types";
 import { formatDateFr } from "@/lib/utils";
-import PlanningZone from "@/components/prospection/PlanningZone";
-import ProspectCard from "@/components/prospection/ProspectCard";
 
 const PAGE_SIZE = 10;
 
@@ -199,66 +197,28 @@ export default function ProspectionPage() {
         </div>
       ) : tab === "planning" ? (
 
-        /* ── ONGLET PLANNING ── */
-        <div className="space-y-7 max-w-2xl mx-auto">
-          <PlanningZone
-            title="Aujourd'hui"
-            subtitle="Prospects à contacter ou visiter aujourd'hui."
-            color="#2563eb" bgColor="#dbeafe"
-            prospects={aujourdHui} urgency="aujourd_hui"
-            emptyLabel="Aucune action prévue aujourd'hui — bonne journée !" />
-          <PlanningZone
-            title="Cette semaine"
-            subtitle="Relances planifiées dans les 7 prochains jours."
-            color="#6b7280" bgColor="#f3f4f6"
-            prospects={cetteSemaine} urgency="semaine"
-            emptyLabel="Aucune action prévue cette semaine" />
-          <PlanningZone
-            title="Non traités"
-            subtitle="La date de relance est passée sans action. Ces prospects attendent une réponse — contacte-les dès que possible."
-            color="#ef4444" bgColor="#fee2e2"
-            prospects={enRetard} urgency="retard"
-            emptyLabel="Aucun prospect en attente — tout est à jour ✓"
-            alertBanner={
-              enRetard.length > 0 ? (
-                <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                  <svg className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                  </svg>
-                  <p className="text-xs text-red-700 leading-relaxed">
-                    <span className="font-semibold">{enRetard.length} prospect{enRetard.length > 1 ? "s" : ""}</span> n'ont pas été relancés à la date prévue.
-                    Ouvre chaque fiche pour noter le résultat et planifier la prochaine action.
-                  </p>
-                </div>
-              ) : undefined
-            }
-          />
-
-          {nonPlanifies.length > 0 && (
-            <motion.section initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-3 h-3 rounded-full bg-gray-300 flex-shrink-0" />
-                <h2 className="font-semibold text-gray-400 text-sm">Sans relance planifiée</h2>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-400">
-                  {nonPlanifies.length}
-                </span>
-              </div>
-              <p className="text-xs text-gray-400 mb-3 ml-6">
-                Ces prospects n'ont pas de date de prochain contact. Ouvre leur fiche pour planifier une relance.
+        /* ── ONGLET PLANNING — TABLEAU ── */
+        <div>
+          {/* Bannière urgence */}
+          {enRetard.length > 0 && (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-4 py-3 mb-4">
+              <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              </svg>
+              <p className="text-sm text-red-700">
+                <span className="font-semibold">{enRetard.length} prospect{enRetard.length > 1 ? "s" : ""} non traité{enRetard.length > 1 ? "s" : ""}</span>
+                {" "}— la date de relance est dépassée. Ouvre chaque fiche pour enregistrer l'action.
               </p>
-              <div className="space-y-2.5">
-                {nonPlanifies.map((p, i) => (
-                  <ProspectCard key={p.id} prospect={p} index={i} />
-                ))}
-              </div>
-            </motion.section>
+            </motion.div>
           )}
 
-          {prospects.length === 0 && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-16">
+          {prospects.length === 0 ? (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
               <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
               <p className="text-gray-500 text-sm mb-3">Aucun prospect pour l'instant</p>
@@ -267,6 +227,170 @@ export default function ProspectionPage() {
                   Ajouter votre premier prospect →
                 </span>
               </Link>
+            </motion.div>
+          ) : (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+
+              {/* En-tête tableau */}
+              <div className="grid grid-cols-[20px_2fr_1.5fr_140px_1.5fr_1fr_40px] gap-0 px-6 py-3 bg-[#F4F6F7] border-b border-gray-100">
+                <span />
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Entreprise</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Contact</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date relance</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Action requise</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Dernier résultat</span>
+                <span />
+              </div>
+
+              {/* Sections avec séparateurs */}
+              {([
+                {
+                  key: "today",
+                  label: "Aujourd'hui",
+                  desc: "À contacter aujourd'hui",
+                  dot: "bg-blue-500",
+                  labelStyle: "bg-blue-100 text-blue-700",
+                  rowBg: "hover:bg-blue-50/30",
+                  dateCls: "text-blue-600 font-semibold",
+                  items: aujourdHui,
+                },
+                {
+                  key: "semaine",
+                  label: "Cette semaine",
+                  desc: "Relances dans les 7 prochains jours",
+                  dot: "bg-gray-400",
+                  labelStyle: "bg-gray-100 text-gray-600",
+                  rowBg: "hover:bg-gray-50/60",
+                  dateCls: "text-gray-700",
+                  items: cetteSemaine,
+                },
+                {
+                  key: "retard",
+                  label: "Non traités",
+                  desc: "Date de relance dépassée",
+                  dot: "bg-red-500",
+                  labelStyle: "bg-red-100 text-red-700",
+                  rowBg: "hover:bg-red-50/40",
+                  dateCls: "text-red-600 font-semibold",
+                  items: enRetard,
+                },
+                {
+                  key: "nonplan",
+                  label: "Sans relance planifiée",
+                  desc: "Aucune prochaine action définie",
+                  dot: "bg-gray-300",
+                  labelStyle: "bg-gray-100 text-gray-400",
+                  rowBg: "hover:bg-gray-50/40",
+                  dateCls: "text-gray-400",
+                  items: nonPlanifies,
+                },
+              ]).map((section) => (
+                <div key={section.key}>
+                  {/* Séparateur section */}
+                  <div className="flex items-center gap-3 px-6 py-2.5 bg-gray-50 border-y border-gray-100">
+                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${section.dot}`} />
+                    <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${section.labelStyle}`}>
+                      {section.label}
+                    </span>
+                    <span className="text-xs text-gray-400">{section.desc}</span>
+                    <div className="flex-1" />
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${section.labelStyle}`}>
+                      {section.items.length}
+                    </span>
+                  </div>
+
+                  {section.items.length === 0 ? (
+                    <div className="px-6 py-4 text-xs text-gray-400 italic">
+                      {section.key === "retard" && "Aucun prospect en retard — tout est à jour ✓"}
+                      {section.key === "today" && "Aucune action prévue aujourd'hui"}
+                      {section.key === "semaine" && "Aucune relance planifiée cette semaine"}
+                      {section.key === "nonplan" && "Tous les prospects ont une relance planifiée"}
+                    </div>
+                  ) : (
+                    <AnimatePresence>
+                      {section.items.map((p, i) => {
+                        const lastV  = getLastVisite(p);
+                        const dateAct = getDateAction(p);
+                        const resultatStyle = lastV?.resultat ? (RESULTAT_STYLES[lastV.resultat] ?? "bg-gray-100 text-gray-500") : "";
+                        return (
+                          <motion.div key={p.id}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: i * 0.03 }}>
+                            <Link href={`/prospection/${p.id}`}>
+                              <div className={`grid grid-cols-[20px_2fr_1.5fr_140px_1.5fr_1fr_40px] gap-0 items-center px-6 py-3.5 border-b border-gray-50 transition-colors group cursor-pointer ${section.rowBg}`}>
+
+                                {/* Barre couleur urgence */}
+                                <div className={`w-1 h-8 rounded-full flex-shrink-0 ${section.dot}`} />
+
+                                {/* Entreprise */}
+                                <div className="flex items-center gap-3 min-w-0 pr-3">
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
+                                    style={{ backgroundColor: "#1a2e1e" }}>
+                                    {p.entreprise.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-medium text-sm text-gray-900 truncate group-hover:text-[#1a2e1e] transition-colors">
+                                      {p.entreprise}
+                                    </p>
+                                    <p className="text-xs text-gray-400 truncate">{p.secteur_activite}</p>
+                                  </div>
+                                </div>
+
+                                {/* Contact */}
+                                <div className="min-w-0 pr-3">
+                                  <p className="text-sm text-gray-700 truncate">{p.nom_contact}</p>
+                                  {p.poste_contact && <p className="text-xs text-gray-400 truncate">{p.poste_contact}</p>}
+                                </div>
+
+                                {/* Date relance */}
+                                <div>
+                                  {dateAct ? (
+                                    <span className={`text-sm ${section.dateCls}`}>
+                                      {formatDateFr(lastV!.date_prochaine_action!)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-gray-300 italic">—</span>
+                                  )}
+                                </div>
+
+                                {/* Action requise */}
+                                <div className="min-w-0 pr-3">
+                                  {lastV?.action_requise ? (
+                                    <p className="text-sm text-gray-600 truncate">{lastV.action_requise}</p>
+                                  ) : (
+                                    <span className="text-xs text-gray-300 italic">—</span>
+                                  )}
+                                </div>
+
+                                {/* Dernier résultat */}
+                                <div>
+                                  {lastV?.resultat ? (
+                                    <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${resultatStyle}`}>
+                                      {RESULTAT_LABELS[lastV.resultat]}
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-gray-300 italic">Jamais visité</span>
+                                  )}
+                                </div>
+
+                                {/* Flèche */}
+                                <div className="flex justify-center">
+                                  <svg className="w-4 h-4 text-gray-300 group-hover:text-[#1a2e1e] transition-colors"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                  </svg>
+                                </div>
+                              </div>
+                            </Link>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  )}
+                </div>
+              ))}
             </motion.div>
           )}
         </div>
