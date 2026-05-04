@@ -62,7 +62,7 @@ export default function Sidebar({ role }: { role: UserRole }) {
   const visibleItems = navItems.filter((item) => item.roles.includes(role));
 
   return (
-    <aside className="hidden md:flex w-64 min-h-screen bg-white border-r border-gray-100 flex-col">
+    <aside className="hidden md:flex w-64 h-screen bg-white border-r border-gray-100 flex-col flex-shrink-0">
 
       {/* Logo */}
       <div className="px-6 py-5 border-b border-gray-100">
