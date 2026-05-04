@@ -230,10 +230,10 @@ export default function ProspectionPage() {
             </motion.div>
           ) : (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-visible">
 
               {/* En-tête tableau */}
-              <div className="grid grid-cols-[20px_2fr_1.5fr_140px_1.5fr_1fr_40px] gap-0 px-6 py-3 bg-[#F4F6F7] border-b border-gray-100">
+              <div className="grid grid-cols-[20px_2fr_1.5fr_140px_1.5fr_1fr_40px] gap-0 px-6 py-3 bg-[#F4F6F7] border-b border-gray-100 rounded-t-2xl">
                 <span />
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Entreprise</span>
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Contact</span>
@@ -481,7 +481,7 @@ export default function ProspectionPage() {
           </div>
 
           {/* Tableau */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-visible">
             {filtered.length === 0 ? (
               <div className="p-16 text-center">
                 <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
@@ -496,7 +496,7 @@ export default function ProspectionPage() {
             ) : (
               <>
                 {/* En-tête */}
-                <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_44px] gap-0 px-6 py-3 bg-[#F4F6F7] border-b border-gray-100">
+                <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_1fr_44px] gap-0 px-6 py-3 bg-[#F4F6F7] border-b border-gray-100 rounded-t-2xl">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Entreprise</span>
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Secteur</span>
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Contact</span>

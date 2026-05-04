@@ -206,7 +206,7 @@ export default function SoumissionsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-visible">
         {loading ? (
           <div className="p-8 space-y-3">
             {[1, 2, 3, 4].map((i) => (
@@ -230,7 +230,7 @@ export default function SoumissionsPage() {
         ) : (
           <>
             {/* Table header */}
-            <div className="grid grid-cols-[1fr_160px_120px_130px_48px] gap-0 px-6 py-3 bg-[#F4F6F7] border-b border-gray-100">
+            <div className="grid grid-cols-[1fr_160px_120px_130px_48px] gap-0 px-6 py-3 bg-[#F4F6F7] border-b border-gray-100 rounded-t-2xl">
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Projet / Client</span>
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Date</span>
               <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Montant TTC</span>
