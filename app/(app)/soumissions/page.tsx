@@ -39,6 +39,8 @@ const STATUT_ICONS: Record<StatutSoumission, React.ReactNode> = {
   ),
 };
 
+const PAGE_SIZE = 10;
+
 export default function SoumissionsPage() {
   const router = useRouter();
   const [soumissions, setSoumissions] = useState<Soumission[]>([]);
@@ -46,12 +48,14 @@ export default function SoumissionsPage() {
   const [filterStatut, setFilterStatut] = useState<StatutSoumission | "">("");
   const [filterSearch, setFilterSearch] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "montant">("date");
+  const [page, setPage] = useState(1);
   const [actionMenuId, setActionMenuId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [changingStatutId, setChangingStatutId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setPage(1);
     const params = new URLSearchParams();
     if (filterStatut) params.set("statut", filterStatut);
     const res = await fetch(`/api/soumissions?${params}`);
@@ -79,6 +83,9 @@ export default function SoumissionsPage() {
       if (sortBy === "montant") return b.total_ttc - a.total_ttc;
       return new Date(b.date_offre).getTime() - new Date(a.date_offre).getTime();
     });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   async function handleDelete(id: string) {
     if (!confirm("Supprimer cette soumission définitivement ?")) return;
@@ -182,14 +189,20 @@ export default function SoumissionsPage() {
         </div>
 
         {/* Sort */}
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as "date" | "montant")}
-          className="px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 bg-white outline-none focus:border-[#1a2e1e] cursor-pointer"
-        >
-          <option value="date">Trier par date</option>
-          <option value="montant">Trier par montant</option>
-        </select>
+        <div className="relative">
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as "date" | "montant")}
+            className="appearance-none pl-4 pr-9 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-700 bg-white outline-none focus:border-[#1a2e1e] cursor-pointer transition-colors"
+          >
+            <option value="date">Trier par date</option>
+            <option value="montant">Trier par montant</option>
+          </select>
+          <svg className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"
+            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
       </div>
 
       {/* Table */}
@@ -227,7 +240,7 @@ export default function SoumissionsPage() {
 
             {/* Rows */}
             <AnimatePresence>
-              {filtered.map((s, i) => (
+              {paginated.map((s, i) => (
                 <motion.div
                   key={s.id}
                   initial={{ opacity: 0 }}
@@ -347,6 +360,54 @@ export default function SoumissionsPage() {
                 </motion.div>
               ))}
             </AnimatePresence>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white">
+                <p className="text-xs text-gray-400">
+                  {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} sur {filtered.length} soumission{filtered.length !== 1 ? "s" : ""}
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ←
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((n) => n === 1 || n === totalPages || Math.abs(n - page) <= 1)
+                    .reduce<(number | "…")[]>((acc, n, idx, arr) => {
+                      if (idx > 0 && n - (arr[idx - 1] as number) > 1) acc.push("…");
+                      acc.push(n);
+                      return acc;
+                    }, [])
+                    .map((n, idx) =>
+                      n === "…" ? (
+                        <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 text-sm">…</span>
+                      ) : (
+                        <button
+                          key={n}
+                          onClick={() => setPage(n as number)}
+                          className="w-8 h-8 rounded-lg text-sm font-medium transition-colors"
+                          style={page === n
+                            ? { backgroundColor: "#1a2e1e", color: "white" }
+                            : { color: "#374151" }}
+                        >
+                          {n}
+                        </button>
+                      )
+                    )}
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

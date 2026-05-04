@@ -4,26 +4,29 @@ import { useEffect, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Client, Soumission, StatutSoumission } from "@/types";
-import { formatMontant, formatDateFr } from "@/lib/utils";
+import { formatDateFr } from "@/lib/utils";
 
-const STATUT_STYLES: Record<StatutSoumission, { bg: string; text: string }> = {
-  Brouillon: { bg: "bg-gray-100",     text: "text-gray-600"    },
-  Envoyée:   { bg: "bg-blue-100",     text: "text-blue-700"    },
-  Acceptée:  { bg: "bg-emerald-100",  text: "text-emerald-700" },
-  Refusée:   { bg: "bg-red-100",      text: "text-red-600"     },
-};
+const PAGE_SIZE = 10;
 
 interface ClientWithSoumissions extends Client {
   soumissions?: Soumission[];
 }
 
+const STATUT_STYLES: Record<StatutSoumission, string> = {
+  Brouillon: "bg-gray-100 text-gray-600",
+  Envoyée:   "bg-blue-100 text-blue-700",
+  Acceptée:  "bg-emerald-100 text-emerald-700",
+  Refusée:   "bg-red-100 text-red-600",
+};
+
 export default function ClientsPage() {
-  const [clients, setClients]           = useState<ClientWithSoumissions[]>([]);
-  const [loading, setLoading]           = useState(true);
-  const [search, setSearch]             = useState("");
+  const [clients, setClients]     = useState<ClientWithSoumissions[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [search, setSearch]       = useState("");
+  const [page, setPage]           = useState(1);
   const [expandedId, setExpandedId]     = useState<string | null>(null);
   const [soumissionsMap, setSoumissionsMap] = useState<Record<string, Soumission[]>>({});
-  const [loadingS, setLoadingS]         = useState<string | null>(null);
+  const [loadingS, setLoadingS]   = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -31,6 +34,7 @@ export default function ClientsPage() {
     const res  = await fetch(`/api/clients${params}`);
     const json = await res.json();
     setClients(json.data ?? []);
+    setPage(1);
     setLoading(false);
   }, [search]);
 
@@ -50,8 +54,12 @@ export default function ClientsPage() {
     setLoadingS(null);
   }
 
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(clients.length / PAGE_SIZE));
+  const paginated  = clients.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-2xl mx-auto">
+    <div className="p-4 sm:p-6 md:p-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -60,17 +68,6 @@ export default function ClientsPage() {
             {clients.length} client{clients.length !== 1 ? "s" : ""} enregistré{clients.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Link href="/soumissions/nouvelle">
-          <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white"
-            style={{ backgroundColor: "#1a2e1e" }}>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <span className="hidden sm:block">Nouvelle soumission</span>
-            <span className="sm:hidden">Nouveau</span>
-          </motion.button>
-        </Link>
       </div>
 
       {/* Recherche */}
@@ -81,7 +78,7 @@ export default function ClientsPage() {
         </svg>
         <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
           placeholder="Rechercher par entreprise ou contact…"
-          className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:border-[#1a2e1e] transition-colors" />
+          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:border-[#1a2e1e] transition-colors" />
         {search && (
           <button onClick={() => setSearch("")}
             className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
@@ -92,101 +89,102 @@ export default function ClientsPage() {
         )}
       </div>
 
-      {/* Liste */}
-      {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-white rounded-2xl border border-gray-100 animate-pulse" />
-          ))}
-        </div>
-      ) : clients.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-14 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+      {/* Table */}
+      <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="p-8 space-y-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-14 bg-gray-50 rounded-xl animate-pulse" />
+            ))}
           </div>
-          <p className="text-gray-500 text-sm">
-            {search ? "Aucun client trouvé pour cette recherche" : "Aucun client pour l'instant"}
-          </p>
-          <p className="text-xs text-gray-400 mt-1">Les clients sont créés automatiquement lors d'une soumission</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <AnimatePresence>
-            {clients.map((client, i) => {
-              const isExpanded   = expandedId === client.id;
-              const clientSoum   = soumissionsMap[client.id] ?? [];
-              const isFetchingS  = loadingS === client.id;
-              const nbAcceptees  = clientSoum.filter((s) => s.statut === "Acceptée").length;
-              const caTotal      = clientSoum.filter((s) => s.statut === "Acceptée").reduce((sum, s) => sum + s.total_ttc, 0);
+        ) : clients.length === 0 ? (
+          <div className="p-16 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-7 h-7 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </div>
+            <p className="text-gray-500 text-sm">
+              {search ? "Aucun client trouvé pour cette recherche" : "Aucun client pour l'instant"}
+            </p>
+            <p className="text-xs text-gray-400 mt-1">Les clients sont créés automatiquement lors d'une soumission</p>
+          </div>
+        ) : (
+          <>
+            {/* En-tête tableau */}
+            <div className="grid grid-cols-[2fr_1.5fr_1fr_1fr_44px] gap-0 px-6 py-3 bg-[#F4F6F7] border-b border-gray-100">
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Entreprise</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Contact</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Ville</span>
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Client depuis</span>
+              <span />
+            </div>
 
-              return (
-                <motion.div key={client.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            {/* Lignes */}
+            <AnimatePresence>
+              {paginated.map((client, i) => {
+                const isExpanded  = expandedId === client.id;
+                const clientSoum  = soumissionsMap[client.id] ?? [];
+                const isFetching  = loadingS === client.id;
 
-                  {/* Ligne principale */}
-                  <div className="flex items-center gap-3 px-4 py-4 cursor-pointer hover:bg-gray-50/60 transition-colors"
-                    onClick={() => toggleExpand(client.id)}>
+                return (
+                  <motion.div key={client.id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.03 }}>
 
-                    {/* Avatar — vert forêt toujours */}
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0"
-                      style={{ backgroundColor: "#1a2e1e" }}>
-                      {client.entreprise.charAt(0).toUpperCase()}
+                    {/* Ligne principale */}
+                    <div
+                      className="grid grid-cols-[2fr_1.5fr_1fr_1fr_44px] gap-0 items-center px-6 py-4 border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer group"
+                      onClick={() => toggleExpand(client.id)}
+                    >
+                      {/* Entreprise */}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                          style={{ backgroundColor: "#1a2e1e" }}>
+                          {client.entreprise.charAt(0).toUpperCase()}
+                        </div>
+                        <p className="font-medium text-sm text-gray-900 truncate group-hover:text-[#1a2e1e] transition-colors">
+                          {client.entreprise}
+                        </p>
+                      </div>
+
+                      {/* Contact */}
+                      <div className="min-w-0">
+                        <p className="text-sm text-gray-700 truncate">{client.titre} {client.nom_contact}</p>
+                        <p className="text-xs text-gray-400 truncate">{client.poste}</p>
+                      </div>
+
+                      {/* Ville */}
+                      <span className="text-sm text-gray-500 truncate">{client.ville}</span>
+
+                      {/* Date */}
+                      <span className="text-sm text-gray-500">{formatDateFr(client.created_at)}</span>
+
+                      {/* Chevron */}
+                      <div className="flex justify-center">
+                        <motion.svg animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}
+                          className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </motion.svg>
+                      </div>
                     </div>
 
-                    {/* Infos */}
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">{client.entreprise}</p>
-                      <p className="text-sm text-gray-500 truncate">
-                        {client.titre} {client.nom_contact}
-                        <span className="text-gray-300 mx-1.5">·</span>
-                        {client.poste}
-                      </p>
-                      <p className="text-xs text-gray-400 mt-0.5">{client.ville}</p>
-                    </div>
-
-                    {/* Chevron */}
-                    <motion.svg animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}
-                      className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </motion.svg>
-                  </div>
-
-                  {/* Section dépliée */}
-                  <AnimatePresence>
-                    {isExpanded && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }}
-                        className="overflow-hidden border-t border-gray-100">
-                        <div className="px-4 py-4 bg-[#F4F6F7] space-y-4">
-
-                          {/* Détails contact */}
-                          <div className="grid grid-cols-2 gap-3 text-sm">
-                            <div>
-                              <p className="text-xs text-gray-400 mb-0.5">Adresse</p>
-                              <p className="text-gray-700 text-xs leading-snug">{client.adresse}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-400 mb-0.5">Ville</p>
-                              <p className="text-gray-700 text-xs">{client.ville}</p>
-                            </div>
-                            <div>
-                              <p className="text-xs text-gray-400 mb-0.5">Client depuis</p>
-                              <p className="text-gray-700 text-xs">{formatDateFr(client.created_at)}</p>
-                            </div>
-                          </div>
-
-                          {/* Soumissions */}
-                          <div>
-                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                              Historique des soumissions
+                    {/* Section dépliée — soumissions */}
+                    <AnimatePresence>
+                      {isExpanded && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.22 }}
+                          className="overflow-hidden border-b border-gray-100">
+                          <div className="px-6 py-4 bg-[#F4F6F7]">
+                            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                              Soumissions de ce client
                             </p>
 
-                            {isFetchingS ? (
+                            {isFetching ? (
                               <div className="space-y-2">
                                 {[1, 2].map((j) => <div key={j} className="h-10 bg-white rounded-xl animate-pulse" />)}
                               </div>
@@ -194,68 +192,80 @@ export default function ClientsPage() {
                               <p className="text-xs text-gray-400 italic py-2">Aucune soumission pour ce client</p>
                             ) : (
                               <div className="space-y-2">
-                                {clientSoum.map((s) => {
-                                  const st = STATUT_STYLES[s.statut];
-                                  return (
-                                    <Link key={s.id} href={`/soumissions/${s.id}`}>
-                                      <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 hover:shadow-sm transition-all border border-gray-100 hover:border-[#1a2e1e]/20 cursor-pointer">
-                                        {/* Titre soumission */}
-                                        <div className="flex-1 min-w-0">
-                                          <p className="text-sm font-medium text-gray-900 truncate">{s.titre_projet}</p>
-                                          <p className="text-xs text-gray-400 mt-0.5">
-                                            {s.numero_offre} · {formatDateFr(s.date_offre)}
-                                          </p>
-                                        </div>
-                                        {/* Montant + statut */}
-                                        <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                                          <span className="text-sm font-semibold text-gray-900">
-                                            {formatMontant(s.total_ttc)} DZD
-                                          </span>
-                                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${st.bg} ${st.text}`}>
-                                            {s.statut}
-                                          </span>
-                                        </div>
+                                {clientSoum.map((s) => (
+                                  <Link key={s.id} href={`/soumissions/${s.id}`}>
+                                    <div className="flex items-center gap-3 bg-white rounded-xl px-4 py-3 hover:shadow-sm transition-all border border-gray-100 hover:border-[#1a2e1e]/20 cursor-pointer">
+                                      <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-gray-900 truncate">{s.titre_projet}</p>
+                                        <p className="text-xs text-gray-400 mt-0.5">{s.numero_offre} · {formatDateFr(s.date_offre)}</p>
                                       </div>
-                                    </Link>
-                                  );
-                                })}
+                                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium flex-shrink-0 ${STATUT_STYLES[s.statut]}`}>
+                                        {s.statut}
+                                      </span>
+                                    </div>
+                                  </Link>
+                                ))}
                               </div>
                             )}
                           </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
 
-                          {/* Stats résumé */}
-                          {clientSoum.length > 0 && (
-                            <div className="flex items-center gap-4 pt-1 border-t border-gray-200 text-xs flex-wrap">
-                              <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-gray-300" />
-                                <span className="text-gray-500">
-                                  <span className="font-semibold text-gray-800">{clientSoum.length}</span> soumission{clientSoum.length > 1 ? "s" : ""}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                                <span className="text-gray-500">
-                                  <span className="font-semibold text-gray-800">{nbAcceptees}</span> acceptée{nbAcceptees > 1 ? "s" : ""}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: "#1a2e1e" }} />
-                                <span className="text-gray-500">
-                                  CA : <span className="font-semibold" style={{ color: "#1a2e1e" }}>{formatMontant(caTotal)} DZD</span>
-                                </span>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 bg-white">
+                <p className="text-xs text-gray-400">
+                  {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, clients.length)} sur {clients.length} clients
+                </p>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    ←
+                  </button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1)
+                    .filter((n) => n === 1 || n === totalPages || Math.abs(n - page) <= 1)
+                    .reduce<(number | "…")[]>((acc, n, idx, arr) => {
+                      if (idx > 0 && n - (arr[idx - 1] as number) > 1) acc.push("…");
+                      acc.push(n);
+                      return acc;
+                    }, [])
+                    .map((n, idx) =>
+                      n === "…" ? (
+                        <span key={`ellipsis-${idx}`} className="px-2 text-gray-400 text-sm">…</span>
+                      ) : (
+                        <button
+                          key={n}
+                          onClick={() => setPage(n as number)}
+                          className="w-8 h-8 rounded-lg text-sm font-medium transition-colors"
+                          style={page === n
+                            ? { backgroundColor: "#1a2e1e", color: "white" }
+                            : { color: "#374151" }}
+                        >
+                          {n}
+                        </button>
+                      )
                     )}
-                  </AnimatePresence>
-                </motion.div>
-              );
-            })}
-          </AnimatePresence>
-        </div>
-      )}
+                  <button
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="px-3 py-1.5 rounded-lg text-sm text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 }
