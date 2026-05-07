@@ -126,3 +126,23 @@ export interface Prospect {
   updated_at: string;
   visites?: Visite[];
 }
+
+export type CategorieDepense =
+  | 'mission'
+  | 'vehicule'
+  | 'repas'
+  | 'materiel'
+  | 'communication'
+  | 'autre';
+
+export interface Depense {
+  id: string;
+  employe_id: string;
+  categorie: CategorieDepense;
+  montant: number;
+  description: string | null;
+  date_depense: string;
+  justificatif_url: string | null;
+  projet_lie: string | null;
+  created_at: string;
+}

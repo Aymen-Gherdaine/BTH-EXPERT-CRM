@@ -142,6 +142,85 @@ Commit : `feat: add prospects Excel export and relance badge`
 
 ---
 
+## 📋 MODULE DÉPENSES — Plan de développement
+
+> Contexte : Outil de suivi des coûts opérationnels, pas un système de remboursement.
+> Objectif : Suivre les dépenses par employé et par projet pour calculer les vraies marges bénéficiaires.
+
+### ⚠️ Ordre des tâches non négociable : D-1 → D-2 → D-3 → D-4
+
+---
+
+### Tâche D-1 — Table Supabase + Storage + RLS ✅ TERMINÉ
+
+Actions :
+- Créer table `depenses` :
+  - `id uuid PRIMARY KEY DEFAULT gen_random_uuid()`
+  - `employe_id uuid REFERENCES profiles(id)` — toujours défini côté serveur via `auth.uid()`, jamais depuis le body
+  - `categorie text` — `'mission'` | `'vehicule'` | `'repas'` | `'materiel'` | `'communication'` | `'autre'`
+  - `montant numeric NOT NULL`
+  - `description text`
+  - `date_depense date NOT NULL DEFAULT CURRENT_DATE`
+  - `justificatif_url text` (nullable — photo reçu optionnelle)
+  - `projet_lie uuid REFERENCES soumissions(id)` (nullable — lie la dépense à un projet pour le calcul de marge)
+  - `created_at timestamptz DEFAULT now()`
+- Policies RLS (5 obligatoires) :
+  - Employé SELECT : `employe_id = auth.uid()`
+  - Employé INSERT : `WITH CHECK employe_id = auth.uid()`
+  - Employé UPDATE : `employe_id = auth.uid()` (ses propres lignes uniquement)
+  - Employé DELETE : `employe_id = auth.uid()` (ses propres lignes uniquement)
+  - Admin ALL : `EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')`
+- Bucket Storage `justificatifs` — privé, non public
+  - Chemin fichiers : `justificatifs/{user_id}/{depense_id}.jpg`
+  - RLS Storage : l'employé accède uniquement à son propre dossier via `(storage.foldername(name))[1] = auth.uid()::text`
+  - URLs signées uniquement (expiry 1h) — jamais d'URL publiques permanentes
+
+Commit : `feat: add depenses table + justificatifs bucket + RLS policies`
+
+---
+
+### Tâche D-2 — API routes ⬜ À faire
+
+Actions :
+- `GET/POST /api/depenses` — `employe_id` toujours écrasé par `auth.uid()` côté serveur
+- `PATCH/DELETE /api/depenses/[id]` — vérification propriété côté serveur avant toute mutation
+- `GET /api/depenses/export` — admin uniquement, export Excel via SheetJS
+- `GET /api/depenses/stats` — admin uniquement, retourne :
+  - Totaux par employé, par catégorie, par mois
+  - Marge par projet : CA soumission − dépenses liées = marge réelle
+
+Commit : `feat: add depenses API routes with server-side security`
+
+---
+
+### Tâche D-3 — Interface employé (mobile-first + Framer Motion) ⬜ À faire
+
+**Standard : UI/UX Pro Max. Mobile-first absolu. Framer Motion systématique.**
+
+Page `/depenses` — tableau de bord personnel :
+- Cartes résumé : total du mois, répartition par catégorie
+- Formulaire ajout rapide (2 champs minimum : montant + catégorie, reste optionnel)
+- Capture photo optionnelle pour justificatif
+- Historique dépenses personnelles avec édition/suppression sur ses propres entrées
+- Si `projet_lie` renseigné, afficher le nom du projet lié
+
+Commit : `feat: add employee depenses interface mobile-first`
+
+---
+
+### Tâche D-4 — Dashboard admin ⬜ À faire
+
+Page `/admin/depenses` :
+- Vue consolidée : tous les employés, coûts totaux société
+- Filtres : par employé, par catégorie, par période, par projet lié
+- Carte marge par projet : CA soumission − dépenses liées = marge réelle
+- Graphique tendance coûts mensuels (animé Framer Motion)
+- Bouton export Excel
+
+Commit : `feat: add admin depenses dashboard with margin analysis`
+
+---
+
 ## 📋 RESTE À FAIRE — Priorité globale
 
 ### Haute (prochaines sessions)
@@ -152,22 +231,26 @@ Commit : `feat: add prospects Excel export and relance badge`
    - `GET /api/prospects/export` → .xlsx via SheetJS (Entreprise, Secteur, Contact, Tel, Adresse, Dernière visite, Prochain contact, Statut)
    - Bouton "Exporter" dans `/prospection`
    - Badge rouge header = count relances en retard + aujourd'hui (rôles commercial + admin)
-5. ⬜ **Dashboard — vraies stats Supabase** (nb soumissions, CA total, taux acceptation, prospects actifs)
-6. ⬜ **Brancher paramètres sur les exports** (fetcher table `parametres` dans routes API export DOCX/PDF)
-7. ⬜ **Refaire `template-standard.docx`** à partir du modèle AT PHARMA Phase II
+5. ✅ **D-1 : Table `depenses` + bucket `justificatifs` + RLS policies**
+6. ⬜ **D-2 : API routes dépenses avec sécurité serveur**
+7. ⬜ **D-3 : Interface employé dépenses mobile-first**
+8. ⬜ **D-4 : Dashboard admin dépenses avec analyse des marges**
+9. ⬜ **Dashboard — vraies stats Supabase** (nb soumissions, CA total, taux acceptation, prospects actifs)
+10. ⬜ **Brancher paramètres sur les exports** (fetcher table `parametres` dans routes API export DOCX/PDF)
+11. ⬜ **Refaire `template-standard.docx`** à partir du modèle AT PHARMA Phase II
 
 ### Moyenne
-8. ⬜ Migrer vers Render + LibreOffice headless (remplace Cloudmersive — meilleure fidélité PDF)
-9. ⬜ Sanitizer texte IA avant injection template (caractères spéciaux, guillemets)
-10. ⬜ UX soumissions : filtres par statut/date, modifier, dupliquer, supprimer
-11. ⬜ Page édition contenu IA avant téléchargement (relecture avant export)
-12. ⬜ Template détaillé type Sonatrach (en attente exemple client)
-13. ⬜ Prospects : statut `converti` → lien automatique vers soumission créée
+12. ⬜ Migrer vers Render + LibreOffice headless (remplace Cloudmersive — meilleure fidélité PDF)
+13. ⬜ Sanitizer texte IA avant injection template (caractères spéciaux, guillemets)
+14. ⬜ UX soumissions : filtres par statut/date, modifier, dupliquer, supprimer
+15. ⬜ Page édition contenu IA avant téléchargement (relecture avant export)
+16. ⬜ Template détaillé type Sonatrach (en attente exemple client)
+17. ⬜ Prospects : statut `converti` → lien automatique vers soumission créée
 
 ### Déploiement
-14. ⬜ Variables Netlify : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `ANTHROPIC_API_KEY`, `CLOUDMERSIVE_API_KEY`
-15. ⬜ Supabase Redirect URLs : ajouter `https://bth-hub.netlify.app/auth/callback`
-16. ⬜ Déploiement Netlify production
+18. ⬜ Variables Netlify : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `ANTHROPIC_API_KEY`, `CLOUDMERSIVE_API_KEY`
+19. ⬜ Supabase Redirect URLs : ajouter `https://bth-hub.netlify.app/auth/callback`
+20. ⬜ Déploiement Netlify production
 
 ---
 
