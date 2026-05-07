@@ -65,7 +65,7 @@ const navItems: NavItem[] = [
     ),
   },
   {
-    href: "/admin/depenses",
+    href: "/couts-marges",
     label: "Coûts & Marges",
     roles: ["admin"],
     icon: (
