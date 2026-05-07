@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("depenses")
-    .select("*, soumissions(id, titre_projet, numero_offre)")
+    .select("*, profiles(full_name), soumissions(id, titre_projet, numero_offre, total_ht)")
     .order("date_depense", { ascending: false });
 
   if (categorie) query = query.eq("categorie", categorie);

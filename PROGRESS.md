@@ -208,7 +208,7 @@ Commit : `feat: add employee depenses interface mobile-first`
 
 ---
 
-### Tâche D-4 — Dashboard admin ⬜ À faire
+### Tâche D-4 — Dashboard admin ✅ TERMINÉ
 
 Page `/admin/depenses` :
 - Vue consolidée : tous les employés, coûts totaux société
@@ -234,7 +234,7 @@ Commit : `feat: add admin depenses dashboard with margin analysis`
 5. ✅ **D-1 : Table `depenses` + bucket `justificatifs` + RLS policies**
 6. ✅ **D-2 : API routes dépenses avec sécurité serveur**
 7. ✅ **D-3 : Interface employé dépenses mobile-first**
-8. ⬜ **D-4 : Dashboard admin dépenses avec analyse des marges**
+8. ✅ **D-4 : Dashboard admin dépenses avec analyse des marges**
 9. ⬜ **Dashboard — vraies stats Supabase** (nb soumissions, CA total, taux acceptation, prospects actifs)
 10. ⬜ **Brancher paramètres sur les exports** (fetcher table `parametres` dans routes API export DOCX/PDF)
 11. ⬜ **Refaire `template-standard.docx`** à partir du modèle AT PHARMA Phase II
