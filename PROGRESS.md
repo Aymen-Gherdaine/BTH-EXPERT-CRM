@@ -193,7 +193,7 @@ Commit : `feat: add depenses API routes with server-side security`
 
 ---
 
-### Tâche D-3 — Interface employé (mobile-first + Framer Motion) ⬜ À faire
+### Tâche D-3 — Interface employé (mobile-first + Framer Motion) ✅ TERMINÉ
 
 **Standard : UI/UX Pro Max. Mobile-first absolu. Framer Motion systématique.**
 
@@ -233,7 +233,7 @@ Commit : `feat: add admin depenses dashboard with margin analysis`
    - Badge rouge header = count relances en retard + aujourd'hui (rôles commercial + admin)
 5. ✅ **D-1 : Table `depenses` + bucket `justificatifs` + RLS policies**
 6. ✅ **D-2 : API routes dépenses avec sécurité serveur**
-7. ⬜ **D-3 : Interface employé dépenses mobile-first**
+7. ✅ **D-3 : Interface employé dépenses mobile-first**
 8. ⬜ **D-4 : Dashboard admin dépenses avec analyse des marges**
 9. ⬜ **Dashboard — vraies stats Supabase** (nb soumissions, CA total, taux acceptation, prospects actifs)
 10. ⬜ **Brancher paramètres sur les exports** (fetcher table `parametres` dans routes API export DOCX/PDF)
