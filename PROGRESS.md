@@ -179,7 +179,7 @@ Commit : `feat: add depenses table + justificatifs bucket + RLS policies`
 
 ---
 
-### Tâche D-2 — API routes ⬜ À faire
+### Tâche D-2 — API routes ✅ TERMINÉ
 
 Actions :
 - `GET/POST /api/depenses` — `employe_id` toujours écrasé par `auth.uid()` côté serveur
@@ -232,7 +232,7 @@ Commit : `feat: add admin depenses dashboard with margin analysis`
    - Bouton "Exporter" dans `/prospection`
    - Badge rouge header = count relances en retard + aujourd'hui (rôles commercial + admin)
 5. ✅ **D-1 : Table `depenses` + bucket `justificatifs` + RLS policies**
-6. ⬜ **D-2 : API routes dépenses avec sécurité serveur**
+6. ✅ **D-2 : API routes dépenses avec sécurité serveur**
 7. ⬜ **D-3 : Interface employé dépenses mobile-first**
 8. ⬜ **D-4 : Dashboard admin dépenses avec analyse des marges**
 9. ⬜ **Dashboard — vraies stats Supabase** (nb soumissions, CA total, taux acceptation, prospects actifs)
