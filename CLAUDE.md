@@ -14,6 +14,30 @@
 
 ---
 
+## Skills — Utilisation obligatoire
+
+> Ces skills sont installés et doivent être utilisés systématiquement selon le contexte.
+> Ne pas les ignorer — ils définissent le niveau de qualité attendu sur ce projet.
+
+**`superpowers`** — À activer pour toute feature complexe touchant plus de 3 fichiers.
+Laisse-le décomposer la tâche en sous-agents spécialisés. Ne pas essayer de tout faire en un seul contexte.
+
+**`frontend-design`** — Obligatoire pour tout composant UI, page, dashboard, formulaire.
+Ce projet exige un niveau UI/UX Pro Max. Chaque écran doit être soigné, animé (Framer Motion), et mobile-first.
+
+**`/ui-ux-pro-max`** — Combiné avec `frontend-design` pour les écrans principaux.
+Utilise les 67 styles et 96 palettes disponibles. Ne jamais livrer un composant visuellement générique.
+
+**`/codereview`** — Obligatoire avant chaque commit.
+Passe le diff en review avant de proposer le message de commit. Signale tout ce qui dévie des conventions du projet.
+
+**`/security`** — Obligatoire pour tout code touchant : auth, RLS, API routes, variables d'environnement, cookies, tokens.
+Une faille de sécurité sur ce projet = données clients exposées.
+
+**`bth-document-style`** — Obligatoire pour toute génération ou correction de document officiel BTH Expert (soumissions DOCX/PDF).
+
+---
+
 ## Stack
 
 - Next.js App Router + TypeScript strict (jamais de `any`)
