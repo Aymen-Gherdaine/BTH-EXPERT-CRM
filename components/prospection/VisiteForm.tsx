@@ -13,11 +13,12 @@ export interface VisiteFormData {
 }
 
 const RESULTATS: { value: ResultatVisite; label: string; color: string; bg: string }[] = [
-  { value: "soumission_demandee", label: "Soumission demandée", color: "#059669", bg: "#d1fae5" },
-  { value: "rappel_planifie",     label: "Rappel planifié",     color: "#2563eb", bg: "#dbeafe" },
-  { value: "absent",              label: "Absent",              color: "#d97706", bg: "#fef3c7" },
-  { value: "pas_interesse",       label: "Pas intéressé",       color: "#dc2626", bg: "#fee2e2" },
-  { value: "autre",               label: "Autre",               color: "#6b7280", bg: "#f3f4f6" },
+  { value: "soumission_demandee",    label: "Soumission demandée",      color: "#059669", bg: "#d1fae5" },
+  { value: "visite_expert_demandee", label: "Visite d'expert demandée", color: "#7c3aed", bg: "#ede9fe" },
+  { value: "rappel_planifie",        label: "Rappel planifié",          color: "#2563eb", bg: "#dbeafe" },
+  { value: "absent",                 label: "Absent",                   color: "#d97706", bg: "#fef3c7" },
+  { value: "pas_interesse",          label: "Pas intéressé",            color: "#dc2626", bg: "#fee2e2" },
+  { value: "autre",                  label: "Autre",                    color: "#6b7280", bg: "#f3f4f6" },
 ];
 
 interface VisiteFormProps {

@@ -57,11 +57,16 @@ export default function Header() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
+  const [alertCount, setAlertCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    fetch("/api/prospects/alerts")
+      .then((r) => r.json())
+      .then((json) => setAlertCount(json.count ?? 0))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -94,6 +99,20 @@ export default function Header() {
       </div>
       {/* Spacer desktop — la sidebar prend la gauche */}
       <div className="hidden md:block" />
+
+      {/* Badge relances urgentes — admin + commercial uniquement */}
+      {alertCount > 0 && (
+        <Link href="/prospection" className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-50 border border-red-200 hover:bg-red-100 transition-colors">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+          </span>
+          <span className="text-xs font-semibold text-red-600">
+            {alertCount} relance{alertCount > 1 ? "s" : ""}
+          </span>
+        </Link>
+      )}
+
       {user ? (
         <div className="relative" ref={ref}>
           {/* Trigger */}

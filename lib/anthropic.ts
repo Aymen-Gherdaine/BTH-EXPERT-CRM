@@ -26,6 +26,7 @@ function getTypeEtudeLabel(type: TypeEtude): string {
     "EIE+Dangers": "Étude d'Impact sur l'Environnement (EIE) accompagnée d'une Étude de Dangers",
     "Notice+ProduitsDangereux": "Notice d'Impact environnemental accompagnée d'un Rapport sur les produits dangereux",
     "Audit": "Audit environnemental",
+    "Audit+RapportProduits": "Audit environnemental et Rapport sur les produits dangereux",
     "Autre": "Étude environnementale réglementaire",
   };
   return labels[type];

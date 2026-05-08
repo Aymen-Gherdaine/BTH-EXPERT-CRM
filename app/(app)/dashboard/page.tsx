@@ -24,6 +24,14 @@ const STATUT_COLORS: Record<string, string> = {
   Refusée: "bg-red-100 text-red-600",
 };
 
+interface StatCard {
+  label: string;
+  icon: React.ReactNode;
+  color: string;
+  hint?: string;
+  render: (stats: DashboardStats | null, loading: boolean) => React.ReactNode;
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recents, setRecents] = useState<Soumission[]>([]);
@@ -42,46 +50,85 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  const statCards = [
+  const statCards: StatCard[] = [
     {
       label: "Soumissions ce mois",
-      value: stats?.soumissions_mois ?? 0,
+      hint: "Nombre d'offres créées ce mois-ci",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
       color: "#1a2e1e",
+      render: (s, l) =>
+        l ? <div className="h-7 w-16 bg-gray-100 rounded animate-pulse" /> : (
+          <p className="text-2xl font-bold text-gray-900">{s?.soumissions_mois ?? 0}</p>
+        ),
     },
     {
-      label: "Mandats acceptés (DZD)",
-      value: formatMontant(stats?.total_mandats_acceptes ?? 0),
+      label: "Mandats acceptés",
+      hint: "Nombre de soumissions acceptées et leur montant total HT+TVA",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
       color: "#10b981",
+      render: (s, l) =>
+        l ? (
+          <div className="space-y-1.5">
+            <div className="h-7 w-20 bg-gray-100 rounded animate-pulse" />
+            <div className="h-4 w-32 bg-gray-100 rounded animate-pulse" />
+          </div>
+        ) : (
+          <div>
+            <p className="text-2xl font-bold text-gray-900">
+              {s?.nombre_mandats_acceptes ?? 0}{" "}
+              <span className="text-base font-semibold">mandat{(s?.nombre_mandats_acceptes ?? 0) !== 1 ? "s" : ""}</span>
+            </p>
+            <p className="text-sm font-medium text-gray-500 mt-0.5">
+              {formatMontant(s?.total_mandats_acceptes ?? 0)} DZD
+            </p>
+          </div>
+        ),
     },
     {
       label: "Taux d'acceptation",
-      value: `${stats?.taux_acceptation ?? 0} %`,
+      hint: "Pourcentage de soumissions acceptées sur le total",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
         </svg>
       ),
       color: "#f59e0b",
+      render: (s, l) =>
+        l ? <div className="h-7 w-16 bg-gray-100 rounded animate-pulse" /> : (
+          <p className="text-2xl font-bold text-gray-900">{s?.taux_acceptation ?? 0} %</p>
+        ),
     },
     {
-      label: "CA ce mois (TTC)",
-      value: formatMontant(stats?.montant_total_mois ?? 0),
+      label: "Versements reçus",
+      hint: "Total des acomptes et paiements reçus sur tous les projets acceptés",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
       color: "#8b5cf6",
+      render: (s, l) =>
+        l ? (
+          <div className="space-y-1.5">
+            <div className="h-7 w-28 bg-gray-100 rounded animate-pulse" />
+            <div className="h-4 w-36 bg-gray-100 rounded animate-pulse" />
+          </div>
+        ) : (
+          <div>
+            <p className="text-2xl font-bold text-gray-900">
+              {formatMontant(s?.total_versements_recus ?? 0)}
+            </p>
+            <p className="text-sm font-medium text-gray-500 mt-0.5">DZD · tous projets</p>
+          </div>
+        ),
     },
   ];
 
@@ -103,18 +150,26 @@ export default function DashboardPage() {
             variants={cardVariants}
             className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
           >
-            <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
-              style={{ backgroundColor: `${card.color}18`, color: card.color }}
-            >
-              {card.icon}
+            <div className="flex items-start justify-between mb-4">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: `${card.color}18`, color: card.color }}
+              >
+                {card.icon}
+              </div>
+              {card.hint && (
+                <div className="group relative">
+                  <svg className="w-4 h-4 text-gray-300 cursor-help" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="absolute right-0 top-6 z-10 hidden group-hover:block w-52 bg-gray-800 text-white text-xs rounded-lg px-3 py-2 shadow-lg">
+                    {card.hint}
+                  </div>
+                </div>
+              )}
             </div>
             <p className="text-sm text-gray-500 mb-1">{card.label}</p>
-            {loading ? (
-              <div className="h-7 w-24 bg-gray-100 rounded animate-pulse" />
-            ) : (
-              <p className="text-2xl font-bold text-gray-900">{card.value}</p>
-            )}
+            {card.render(stats, loading)}
           </motion.div>
         ))}
       </div>
@@ -167,9 +222,16 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-4 ml-4">
-                    <span className="text-sm font-medium text-gray-900">
-                      {formatMontant(s.total_ttc)} DZD
-                    </span>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900">
+                        {formatMontant(s.total_ttc)} DZD
+                      </p>
+                      {s.statut === "Acceptée" && (s.versement_recu ?? 0) > 0 && (
+                        <p className="text-xs text-emerald-600 mt-0.5">
+                          Versé : {formatMontant(s.versement_recu)} DZD
+                        </p>
+                      )}
+                    </div>
                     <span
                       className={`text-xs px-2.5 py-1 rounded-full font-medium ${STATUT_COLORS[s.statut]}`}
                     >

@@ -19,14 +19,25 @@ const STATUT_STYLES: Record<StatutSoumission, string> = {
   Refusée:   "bg-red-100 text-red-600",
 };
 
+interface DeleteConfirmState {
+  open: boolean;
+  id: string;
+  label: string;
+}
+
+const DELETE_INITIAL: DeleteConfirmState = { open: false, id: "", label: "" };
+
 export default function ClientsPage() {
   const [clients, setClients]     = useState<ClientWithSoumissions[]>([]);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState("");
   const [page, setPage]           = useState(1);
-  const [expandedId, setExpandedId]     = useState<string | null>(null);
+  const [expandedId, setExpandedId]       = useState<string | null>(null);
   const [soumissionsMap, setSoumissionsMap] = useState<Record<string, Soumission[]>>({});
   const [loadingS, setLoadingS]   = useState<string | null>(null);
+  const [actionMenuId, setActionMenuId]   = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteConfirmState>(DELETE_INITIAL);
+  const [deletingId, setDeletingId]       = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -54,7 +65,20 @@ export default function ClientsPage() {
     setLoadingS(null);
   }
 
-  // Pagination
+  function openDeleteConfirm(client: ClientWithSoumissions) {
+    setActionMenuId(null);
+    setDeleteConfirm({ open: true, id: client.id, label: client.entreprise });
+  }
+
+  async function confirmDelete() {
+    setDeletingId(deleteConfirm.id);
+    await fetch(`/api/clients/${deleteConfirm.id}`, { method: "DELETE" });
+    setClients((prev) => prev.filter((c) => c.id !== deleteConfirm.id));
+    setDeletingId(null);
+    setDeleteConfirm(DELETE_INITIAL);
+    if (expandedId === deleteConfirm.id) setExpandedId(null);
+  }
+
   const totalPages = Math.max(1, Math.ceil(clients.length / PAGE_SIZE));
   const paginated  = clients.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -68,6 +92,16 @@ export default function ClientsPage() {
             {clients.length} client{clients.length !== 1 ? "s" : ""} enregistré{clients.length !== 1 ? "s" : ""}
           </p>
         </div>
+        <a
+          href="/api/clients/export"
+          target="_blank"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 bg-white hover:bg-gray-50 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Exporter .xlsx
+        </a>
       </div>
 
       {/* Recherche */}
@@ -123,9 +157,9 @@ export default function ClientsPage() {
             {/* Lignes */}
             <AnimatePresence>
               {paginated.map((client, i) => {
-                const isExpanded  = expandedId === client.id;
-                const clientSoum  = soumissionsMap[client.id] ?? [];
-                const isFetching  = loadingS === client.id;
+                const isExpanded = expandedId === client.id;
+                const clientSoum = soumissionsMap[client.id] ?? [];
+                const isFetching = loadingS === client.id;
 
                 return (
                   <motion.div key={client.id}
@@ -161,12 +195,38 @@ export default function ClientsPage() {
                       {/* Date */}
                       <span className="text-sm text-gray-500">{formatDateFr(client.created_at)}</span>
 
-                      {/* Chevron */}
-                      <div className="flex justify-center">
-                        <motion.svg animate={{ rotate: isExpanded ? 180 : 0 }} transition={{ duration: 0.2 }}
-                          className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </motion.svg>
+                      {/* Menu ⋮ */}
+                      <div className="relative flex justify-center" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => setActionMenuId(actionMenuId === client.id ? null : client.id)}
+                          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer opacity-0 group-hover:opacity-100"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M12 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
+                          </svg>
+                        </button>
+
+                        <AnimatePresence>
+                          {actionMenuId === client.id && (
+                            <motion.div
+                              initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                              animate={{ opacity: 1, scale: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute right-0 top-8 z-50 w-52 bg-white rounded-xl border border-gray-200 shadow-lg py-1 overflow-hidden"
+                            >
+                              <button
+                                onClick={() => openDeleteConfirm(client)}
+                                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 cursor-pointer transition-colors"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Supprimer le client
+                              </button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </div>
 
@@ -266,6 +326,75 @@ export default function ClientsPage() {
           </>
         )}
       </div>
+
+      {/* Click outside to close action menu */}
+      {actionMenuId && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setActionMenuId(null)}
+        />
+      )}
+
+      {/* Modal confirmation suppression client */}
+      <AnimatePresence>
+        {deleteConfirm.open && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
+              onClick={() => setDeleteConfirm(DELETE_INITIAL)}
+            />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 8 }}
+                transition={{ duration: 0.2 }}
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-md pointer-events-auto"
+              >
+                <div className="px-6 pt-6 pb-4">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 text-base">Supprimer ce client ?</h3>
+                      <p className="text-xs text-gray-400 mt-0.5 truncate max-w-[260px]">{deleteConfirm.label}</p>
+                    </div>
+                  </div>
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl mb-2">
+                    <p className="text-sm text-red-700 font-medium">
+                      ⚠ Toutes les soumissions associées à ce client seront également supprimées définitivement.
+                    </p>
+                  </div>
+                  <p className="text-sm text-gray-500">Cette action est irréversible.</p>
+                </div>
+                <div className="px-6 pb-6 flex gap-3">
+                  <button
+                    onClick={() => setDeleteConfirm(DELETE_INITIAL)}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <motion.button
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={confirmDelete}
+                    disabled={!!deletingId}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    {deletingId ? "Suppression…" : "Supprimer le client"}
+                  </motion.button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

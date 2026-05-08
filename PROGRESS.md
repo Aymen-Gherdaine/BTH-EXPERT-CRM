@@ -1,6 +1,6 @@
 # BTH Hub — Progression
 
-Dernière mise à jour : 3 mai 2026 (session 3)
+Dernière mise à jour : 7 mai 2026 (session 5)
 
 ---
 
@@ -12,40 +12,65 @@ Dernière mise à jour : 3 mai 2026 (session 3)
 - Auth complète : login, invitation email, set-password, middleware
 - Rebranding BTH Hub + couleurs `#1a2e1e`
 - netlify.toml configuré
+- RBAC complet : roles `admin` | `charge_projet` | `commercial`
+- Middleware protège toutes les routes auth + routes admin (`/admin/*`, `/couts-marges`)
+- `lib/supabase-admin.ts` — client service role pour opérations admin
 
 ### Pages & Composants
-- Dashboard (stats vides pour l'instant)
-- Soumissions : liste + nouvelle (formulaire 4 étapes) + [id]
-- Clients, Profil (avatar, nom, password), Paramètres (société, signataires, TVA, délais, signatures)
-- Sidebar + Header avec dropdown user
-- BottomNav mobile fixe (md:hidden), role-aware
-- Module Prospection complet (P-1 → P-3)
-  - RBAC rôles admin / charge_projet / commercial
-  - Tables `prospects` + `visites` avec RLS Supabase
-  - UI Planning (Aujourd'hui / Cette semaine / Non traités) + Tous (groupé par date)
-  - Fiche prospect : historique visites, édition, suppression
+- **Dashboard** — stats réelles Supabase (soumissions, mandats acceptés count+montant, versements, taux)
+- **Soumissions** — liste paginée + filtres + nouvelle (4 étapes) + [id] + modal versement + export XLSX
+- **Clients** — tableau paginé + suppression cascade + export XLSX
+- **Profil** — avatar, nom, password
+- **Paramètres** — société, signataires, TVA, délais, signatures
+- **Sidebar** + **Header** (dropdown user, badge relances)
+- **BottomNav** mobile fixe, role-aware
+- **Prospection** — module complet (P-1 → P-4) :
+  - Planning tableau 4 sections (Aujourd'hui / Cette semaine / Non traités / Sans relance)
+  - Onglet "Tous" avec filtres, tri, pagination 10/page
+  - Fiche prospect : historique visites, édition inline, suppression
   - Formulaire nouveau prospect 2 étapes animé
-  - Composants ProspectCard, PlanningZone, VisiteForm
-- Module Prospection — améliorations session 2 :
-  - Édition + suppression prospect depuis la fiche `/prospection/[id]`
-  - Suppression prospect depuis le tableau "Tous" (menu ⋮)
-  - API DELETE `/api/prospects/[id]` ajoutée
-  - Onglet "Tous" : tableau avec filtres (secteur, résultat, tri) + pagination 10/page
-  - Sidebar/Header sticky (h-screen + overflow-hidden sur layout)
-  - Clients : même style tableau que soumissions + pagination 10/page
-  - Soumissions : pagination 10/page ajoutée
-  - Selects avec flèche SVG custom (`appearance-none` + chevron absolu)
-- Planning : refonte en tableau unifié (4 sections : Aujourd'hui / Cette semaine / Non traités / Sans relance)
-  - Barre couleur urgence par ligne, bannière rouge si non traités
-  - Colonnes : Entreprise + secteur / Contact / Date relance / Action requise / Dernier résultat
+  - Export XLSX prospects
+  - Badge relances urgentes dans le Header (admin + commercial)
+- **Dépenses** — module complet (D-1 → D-4) :
+  - Interface employé : ajout rapide, historique personnel, justificatif photo
+  - Dashboard admin `/admin/depenses` : vue consolidée, filtres, marges par projet, export XLSX
+- **Utilisateurs** `/admin/utilisateurs` :
+  - Tableau utilisateurs : avatar, nom, email, badge rôle coloré, badge statut
+  - Changement de rôle inline sans rechargement + animation checkmark
+  - Désactivation / réactivation (soft delete — `is_active = false`)
+  - Modal invitation (slide-up mobile, centré desktop) — 3 cartes rôle sélectionnables
+  - Sécurité : impossible de modifier son propre rôle ou désactiver son propre compte
 
 ### API Routes
-- `/api/generate` — génération IA Anthropic
-- `/api/export/docx` et `/api/export/pdf`
-- `/api/soumissions`, `/api/clients`, `/api/dashboard`
+| Route | Description |
+|-------|-------------|
+| `GET/POST /api/prospects` | Prospects actifs avec visites |
+| `GET/PATCH/DELETE /api/prospects/[id]` | Fiche prospect |
+| `GET /api/prospects/export` | Export XLSX |
+| `GET /api/prospects/alerts` | Count relances urgentes |
+| `GET/POST /api/visites` | Visites |
+| `PATCH/DELETE /api/visites/[id]` | Visite |
+| `GET/POST /api/clients` | Clients |
+| `GET/PATCH/DELETE /api/clients/[id]` | Client |
+| `GET /api/clients/export` | Export XLSX |
+| `GET/POST /api/soumissions` | Soumissions |
+| `GET/PATCH/DELETE /api/soumissions/[id]` | Soumission |
+| `GET /api/soumissions/export` | Export XLSX |
+| `GET /api/dashboard` | Stats dashboard |
+| `GET/POST /api/depenses` | Dépenses |
+| `PATCH/DELETE /api/depenses/[id]` | Dépense |
+| `GET /api/depenses/export` | Export XLSX admin |
+| `GET /api/depenses/stats` | Stats marges admin |
+| `GET /api/admin/users` | Liste utilisateurs (admin) |
+| `POST /api/admin/users/invite` | Inviter utilisateur (admin) |
+| `PATCH /api/admin/users/[id]` | Modifier rôle/statut (admin) |
+| `DELETE /api/admin/users/[id]` | Désactiver utilisateur (admin) |
+| `POST /api/generate` | Génération IA Anthropic |
+| `POST /api/export/docx` | Export DOCX |
+| `POST /api/export/pdf` | Export PDF Cloudmersive |
 
 ### Génération documents
-- `templates/template-standard.docx` créé avec 35+ variables
+- `templates/template-standard.docx` — 35+ variables docxtemplater
 - `lib/generate-document.ts` — docxtemplater + `nombreEnLettres()`
 - `lib/convert-to-pdf.ts` — Cloudmersive
 
@@ -67,190 +92,68 @@ Convertir le PDF AT PHARMA en Word → recréer `template-standard.docx` manuell
 
 ---
 
-## 📋 MODULE PROSPECTION — Plan de développement
+## ⚠️ MIGRATIONS SUPABASE EN ATTENTE
 
-> Contexte : Le commercial de BTH Expert gère ses prospects dans un cahier papier.
-> Objectif : Remplacer le cahier par une base de données structurée avec alertes de relance.
-> Valeur long terme : base sectorielle complète d'entreprises à Oran — avantage concurrentiel
-> majeur lors de nouvelles réglementations environnementales algériennes.
+Ces SQL doivent être exécutés dans Supabase avant utilisation des fonctionnalités correspondantes :
 
-### ⚠️ Ordre des tâches non négociable : P-1 → P-2 → P-3 → P-4
+```sql
+-- Module Utilisateurs (session 5)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true;
 
----
+-- Session 4 — Module Soumissions
+ALTER TABLE soumissions ADD COLUMN IF NOT EXISTS versement_recu NUMERIC(15,2) DEFAULT 0;
 
-### Tâche P-1 — Système de rôles RBAC ✅ TERMINÉ
+-- Session 4 — Contraintes CHECK (adapter selon valeurs existantes)
+-- type_etude : ajouter 'Audit+RapportProduits'
+-- resultat_visite : ajouter 'visite_expert_demandee'
+```
 
-**Pourquoi en premier :** navigation conditionnelle + sécurité des routes dépendent du rôle.
+## ⚠️ VARIABLES D'ENVIRONNEMENT EN ATTENTE
 
-Actions :
-- Créer type enum `user_role` dans Supabase : `admin` | `charge_projet` | `commercial`
-- Ajouter colonne `role user_role DEFAULT 'admin'` dans table `profiles`
-- Mettre à jour `middleware.ts` pour lire le rôle et rediriger correctement
-- Conditionner navigation du header selon rôle connecté
-- Protéger les API routes avec vérification côté serveur
+```
+# .env.local — obligatoire pour les invitations utilisateurs
+SUPABASE_SERVICE_ROLE_KEY=<clé service role Supabase>
 
-Commit : `feat: add RBAC role system (admin/charge_projet/commercial)`
-
----
-
-### Tâche P-2 — Tables Supabase + API routes ✅ TERMINÉ
-
-**Pourquoi en second :** l'UI P-3 a besoin de vraies données. Mocks = travail en double.
-
-Actions :
-- Créer table `prospects` (schéma dans CLAUDE.md)
-- Créer table `visites` avec FK CASCADE vers prospects (schéma dans CLAUDE.md)
-- Policies RLS : commercial voit ses propres entrées, admin voit tout
-- Générer types TypeScript depuis Supabase
-- Créer `GET/POST /api/prospects` et `GET/POST /api/visites`
-
-Commit : `feat: add prospects and visites tables with RLS and API routes`
-
----
-
-### Tâche P-3 — Interface Prospection mobile-first + Framer Motion ✅ TERMINÉ
-
-**Standard : UI/UX Pro Max. Mobile-first absolu. Framer Motion systématique.**
-
-Écrans :
-- `/prospection` — Dashboard planning 3 zones :
-  - 🔴 **En retard** : `date_prochaine_action < today`
-  - 🔵 **Aujourd'hui** : `date_prochaine_action = today`
-  - ⚪ **Cette semaine** : `date_prochaine_action` entre demain et +7j
-- `/prospection/nouveau` — Formulaire saisie rapide 2 étapes (entreprise → visite)
-- `/prospection/[id]` — Fiche prospect + historique complet des visites
-
-Composants :
-- `ProspectCard` — carte animée Framer Motion
-- `VisiteForm` — touch-friendly (boutons min 44px), résultat = 4 gros boutons
-- `PlanningZone` — section colorée + liste de cartes animées
-
-Commit : `feat: add Prospection module with mobile-first UI and Framer Motion`
-
----
-
-### Tâche P-4 — Export Excel + Badge alertes ⬜ À faire
-
-Actions :
-- `GET /api/prospects/export` → fichier .xlsx via SheetJS
-  Colonnes : Entreprise, Secteur, Contact, Téléphone, Adresse, Dernière visite, Prochain contact, Statut
-- Bouton "Exporter" dans `/prospection`
-- Badge rouge dans header = count relances en retard + aujourd'hui
-- Badge visible : rôles `commercial` et `admin` uniquement
-
-Commit : `feat: add prospects Excel export and relance badge`
-
----
-
-## 📋 MODULE DÉPENSES — Plan de développement
-
-> Contexte : Outil de suivi des coûts opérationnels, pas un système de remboursement.
-> Objectif : Suivre les dépenses par employé et par projet pour calculer les vraies marges bénéficiaires.
-
-### ⚠️ Ordre des tâches non négociable : D-1 → D-2 → D-3 → D-4
-
----
-
-### Tâche D-1 — Table Supabase + Storage + RLS ✅ TERMINÉ
-
-Actions :
-- Créer table `depenses` :
-  - `id uuid PRIMARY KEY DEFAULT gen_random_uuid()`
-  - `employe_id uuid REFERENCES profiles(id)` — toujours défini côté serveur via `auth.uid()`, jamais depuis le body
-  - `categorie text` — `'mission'` | `'vehicule'` | `'repas'` | `'materiel'` | `'communication'` | `'autre'`
-  - `montant numeric NOT NULL`
-  - `description text`
-  - `date_depense date NOT NULL DEFAULT CURRENT_DATE`
-  - `justificatif_url text` (nullable — photo reçu optionnelle)
-  - `projet_lie uuid REFERENCES soumissions(id)` (nullable — lie la dépense à un projet pour le calcul de marge)
-  - `created_at timestamptz DEFAULT now()`
-- Policies RLS (5 obligatoires) :
-  - Employé SELECT : `employe_id = auth.uid()`
-  - Employé INSERT : `WITH CHECK employe_id = auth.uid()`
-  - Employé UPDATE : `employe_id = auth.uid()` (ses propres lignes uniquement)
-  - Employé DELETE : `employe_id = auth.uid()` (ses propres lignes uniquement)
-  - Admin ALL : `EXISTS (SELECT 1 FROM profiles WHERE id = auth.uid() AND role = 'admin')`
-- Bucket Storage `justificatifs` — privé, non public
-  - Chemin fichiers : `justificatifs/{user_id}/{depense_id}.jpg`
-  - RLS Storage : l'employé accède uniquement à son propre dossier via `(storage.foldername(name))[1] = auth.uid()::text`
-  - URLs signées uniquement (expiry 1h) — jamais d'URL publiques permanentes
-
-Commit : `feat: add depenses table + justificatifs bucket + RLS policies`
-
----
-
-### Tâche D-2 — API routes ✅ TERMINÉ
-
-Actions :
-- `GET/POST /api/depenses` — `employe_id` toujours écrasé par `auth.uid()` côté serveur
-- `PATCH/DELETE /api/depenses/[id]` — vérification propriété côté serveur avant toute mutation
-- `GET /api/depenses/export` — admin uniquement, export Excel via SheetJS
-- `GET /api/depenses/stats` — admin uniquement, retourne :
-  - Totaux par employé, par catégorie, par mois
-  - Marge par projet : CA soumission − dépenses liées = marge réelle
-
-Commit : `feat: add depenses API routes with server-side security`
-
----
-
-### Tâche D-3 — Interface employé (mobile-first + Framer Motion) ✅ TERMINÉ
-
-**Standard : UI/UX Pro Max. Mobile-first absolu. Framer Motion systématique.**
-
-Page `/depenses` — tableau de bord personnel :
-- Cartes résumé : total du mois, répartition par catégorie
-- Formulaire ajout rapide (2 champs minimum : montant + catégorie, reste optionnel)
-- Capture photo optionnelle pour justificatif
-- Historique dépenses personnelles avec édition/suppression sur ses propres entrées
-- Si `projet_lie` renseigné, afficher le nom du projet lié
-
-Commit : `feat: add employee depenses interface mobile-first`
-
----
-
-### Tâche D-4 — Dashboard admin ✅ TERMINÉ
-
-Page `/admin/depenses` :
-- Vue consolidée : tous les employés, coûts totaux société
-- Filtres : par employé, par catégorie, par période, par projet lié
-- Carte marge par projet : CA soumission − dépenses liées = marge réelle
-- Graphique tendance coûts mensuels (animé Framer Motion)
-- Bouton export Excel
-
-Commit : `feat: add admin depenses dashboard with margin analysis`
+# Netlify — à configurer avant déploiement
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+ANTHROPIC_API_KEY=
+CLOUDMERSIVE_API_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+```
 
 ---
 
 ## 📋 RESTE À FAIRE — Priorité globale
 
 ### Haute (prochaines sessions)
-1. ✅ P-1 : Système de rôles RBAC
-2. ✅ P-2 : Tables prospects + visites + API routes
-3. ✅ P-3 : Interface Prospection mobile-first
-4. ⬜ **P-4 : Export Excel + badge alertes header**
-   - `GET /api/prospects/export` → .xlsx via SheetJS (Entreprise, Secteur, Contact, Tel, Adresse, Dernière visite, Prochain contact, Statut)
-   - Bouton "Exporter" dans `/prospection`
-   - Badge rouge header = count relances en retard + aujourd'hui (rôles commercial + admin)
-5. ✅ **D-1 : Table `depenses` + bucket `justificatifs` + RLS policies**
-6. ✅ **D-2 : API routes dépenses avec sécurité serveur**
-7. ✅ **D-3 : Interface employé dépenses mobile-first**
-8. ✅ **D-4 : Dashboard admin dépenses avec analyse des marges**
-9. ⬜ **Dashboard — vraies stats Supabase** (nb soumissions, CA total, taux acceptation, prospects actifs)
-10. ⬜ **Brancher paramètres sur les exports** (fetcher table `parametres` dans routes API export DOCX/PDF)
-11. ⬜ **Refaire `template-standard.docx`** à partir du modèle AT PHARMA Phase II
+1. ⬜ **Brancher paramètres sur les exports** — fetcher table `parametres` dans `/api/export/docx` et `/api/export/pdf` (signataires, TVA, délais actuellement codés en dur)
+2. ⬜ **Refaire `template-standard.docx`** — recréer manuellement à partir du modèle AT PHARMA Phase II converti en Word
+3. ⬜ **Page relecture IA** — permettre d'éditer le texte généré avant d'exporter le DOCX
 
 ### Moyenne
-12. ⬜ Migrer vers Render + LibreOffice headless (remplace Cloudmersive — meilleure fidélité PDF)
-13. ⬜ Sanitizer texte IA avant injection template (caractères spéciaux, guillemets)
-14. ⬜ UX soumissions : filtres par statut/date, modifier, dupliquer, supprimer
-15. ⬜ Page édition contenu IA avant téléchargement (relecture avant export)
-16. ⬜ Template détaillé type Sonatrach (en attente exemple client)
-17. ⬜ Prospects : statut `converti` → lien automatique vers soumission créée
+4. ⬜ **Sanitizer texte IA** — nettoyer guillemets tordus, caractères spéciaux algériens avant injection dans docxtemplater
+5. ⬜ **Prospect converti → soumission** — statut `converti` crée automatiquement une soumission pré-remplie avec les infos du prospect
+6. ⬜ **Migrer vers LibreOffice headless** — Render + LibreOffice remplace Cloudmersive pour meilleure fidélité PDF
+7. ⬜ **Template Sonatrach** — en attente d'exemple client
 
 ### Déploiement
-18. ⬜ Variables Netlify : `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `ANTHROPIC_API_KEY`, `CLOUDMERSIVE_API_KEY`
-19. ⬜ Supabase Redirect URLs : ajouter `https://bth-hub.netlify.app/auth/callback`
-20. ⬜ Déploiement Netlify production
+8. ⬜ Supabase Redirect URLs : ajouter `https://bth-hub.netlify.app/auth/callback`
+9. ⬜ Déploiement Netlify production
+
+---
+
+## Supabase — Tables existantes
+
+- `clients` : id, titre, nom_contact, poste, entreprise, adresse, ville, created_at
+- `soumissions` : id, numero_offre, date_offre, client_id, titre_projet, secteur_activite, description_projet, type_etude, delai_jours, total_ht, tva, total_ttc, versement_recu, statut, contexte_genere, created_at
+- `lignes_budget` : id, soumission_id, numero, designation, quantite, prix_unitaire, ordre
+- `parametres` : id=1 (unique), nom_societe, adresse, signataire1_nom/titre, signataire2_nom/titre, signature_responsable_url, signature_autorise_url, tva_pct, delai_jours, validite_jours, modalites_paiement
+- `profiles` : id, email, full_name, avatar_url, role (`admin`|`charge_projet`|`commercial`), is_active (⚠️ migration requise)
+- `prospects` : id, entreprise, secteur_activite, nom_contact, poste_contact, telephone, email, adresse, notes_generales, statut_global, created_by, created_at, updated_at
+- `visites` : id, prospect_id (FK→prospects CASCADE), date_visite, resultat, notes_visite, date_prochaine_action, action_requise, commercial_id, created_at
+- `depenses` : id, employe_id, categorie, montant, description, date_depense, justificatif_url, projet_lie, created_at
+- Buckets Storage : `avatars`, `signatures`, `justificatifs`
 
 ---
 
@@ -283,19 +186,6 @@ Structure observée dans `ODS_AT_PHARMAPhase_II.pdf` :
 
 ---
 
-## Supabase — Tables existantes
-
-- `clients` : id, titre, nom_contact, poste, entreprise, adresse, ville, created_at
-- `soumissions` : id, numero_offre, date_offre, client_id, titre_projet, secteur_activite, description_projet, type_etude, delai_jours, total_ht, tva, total_ttc, statut, contexte_genere, created_at
-- `lignes_budget` : id, soumission_id, numero, designation, quantite, prix_unitaire, ordre
-- `parametres` : id=1 (unique), nom_societe, adresse, signataire1_nom/titre, signataire2_nom/titre, signature_responsable_url, signature_autorise_url, tva_pct, delai_jours, validite_jours, modalites_paiement
-- `profiles` : id, email, full_name, avatar_url, role (`admin`|`charge_projet`|`commercial`)
-- `prospects` : id, entreprise, secteur_activite, nom_contact, poste_contact, telephone, email, adresse, notes_generales, statut_global, created_by, created_at, updated_at
-- `visites` : id, prospect_id (FK→prospects CASCADE), date_visite, resultat, notes_visite, date_prochaine_action, action_requise, commercial_id, created_at
-- Buckets Storage : `avatars`, `signatures`
-
----
-
 ## Fichiers sensibles — NE PAS MODIFIER
 
-`templates/template-standard.docx` · `lib/anthropic.ts` · `lib/supabase-browser.ts` · `lib/supabase-server.ts` · `middleware.ts` · `.env.local`
+`templates/template-standard.docx` · `lib/anthropic.ts` · `lib/supabase-browser.ts` · `lib/supabase-server.ts` · `.env.local`
