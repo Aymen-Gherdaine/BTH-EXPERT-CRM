@@ -6,6 +6,7 @@ export type TypeEtude =
   | "EIE+Dangers"
   | "Notice+ProduitsDangereux"
   | "Audit"
+  | "Audit+RapportProduits"
   | "Autre";
 
 export type StatutSoumission =
@@ -49,6 +50,7 @@ export interface Soumission {
   total_ht: number;
   tva: number;
   total_ttc: number;
+  versement_recu: number;
   statut: StatutSoumission;
   contexte_genere: string;
   created_at: string;
@@ -85,15 +87,17 @@ export interface FormDataComplete {
 
 export interface DashboardStats {
   soumissions_mois: number;
+  nombre_mandats_acceptes: number;
   total_mandats_acceptes: number;
   taux_acceptation: number;
-  montant_total_mois: number;
+  total_versements_recus: number;
 }
 
 export type StatutProspect = 'actif' | 'sans_suite' | 'converti';
 export type ResultatVisite =
   | 'soumission_demandee'
   | 'rappel_planifie'
+  | 'visite_expert_demandee'
   | 'pas_interesse'
   | 'absent'
   | 'autre';
@@ -134,6 +138,16 @@ export type CategorieDepense =
   | 'materiel'
   | 'communication'
   | 'autre';
+
+export interface UserProfile {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  role: UserRole;
+  avatar_url: string | null;
+  is_active: boolean | null;
+  created_at: string;
+}
 
 export interface Depense {
   id: string;

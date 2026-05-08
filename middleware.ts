@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 
-const PROTECTED_PREFIX = "/dashboard";
-const PUBLIC_ROUTES = ["/login", "/auth/callback", "/auth/set-password"];
+const PUBLIC_ROUTES  = ["/login", "/auth/callback", "/auth/set-password"];
+const ADMIN_PREFIXES = ["/admin/", "/couts-marges"];
 
 export async function middleware(request: NextRequest) {
   const { supabase, response } = createMiddlewareClient(request);
@@ -23,6 +23,22 @@ export async function middleware(request: NextRequest) {
     const dashboardUrl = request.nextUrl.clone();
     dashboardUrl.pathname = "/dashboard";
     return NextResponse.redirect(dashboardUrl);
+  }
+
+  // Admin-only route protection (defense-in-depth — layout also checks)
+  const isAdminRoute = ADMIN_PREFIXES.some((p) => pathname.startsWith(p));
+  if (session && isAdminRoute) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .single<{ role: string }>();
+
+    if (profile?.role !== "admin") {
+      const redirect = request.nextUrl.clone();
+      redirect.pathname = "/dashboard";
+      return NextResponse.redirect(redirect);
+    }
   }
 
   return response;

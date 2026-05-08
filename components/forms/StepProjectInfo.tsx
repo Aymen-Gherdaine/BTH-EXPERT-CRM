@@ -27,6 +27,11 @@ const TYPE_ETUDE_OPTIONS: { value: TypeEtude; label: string; desc: string }[] = 
     desc: "Établissements existants en activité",
   },
   {
+    value: "Audit+RapportProduits",
+    label: "Audit env + Rapport produits dangereux",
+    desc: "Audit environnemental et rapport sur les produits dangereux",
+  },
+  {
     value: "Autre",
     label: "Autre étude réglementaire",
     desc: "Autre type d'étude environnementale",

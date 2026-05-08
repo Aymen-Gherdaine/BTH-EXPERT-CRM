@@ -29,10 +29,10 @@ export async function GET() {
     .toISOString()
     .split("T")[0];
 
-  const [moisRes, totalRes, statsRes] = await Promise.all([
+  const [moisRes, accepteesRes, statsRes, versementsRes] = await Promise.all([
     supabase
       .from("soumissions")
-      .select("id, total_ttc, statut")
+      .select("id")
       .gte("date_offre", startOfMonth),
     supabase
       .from("soumissions")
@@ -41,21 +41,28 @@ export async function GET() {
     supabase
       .from("soumissions")
       .select("statut"),
+    supabase
+      .from("soumissions")
+      .select("versement_recu"),
   ]);
 
   const soumissions_mois = moisRes.data?.length ?? 0;
-  const montant_total_mois = moisRes.data?.reduce((s, r) => s + (r.total_ttc || 0), 0) ?? 0;
-  const total_mandats_acceptes = totalRes.data?.reduce((s, r) => s + (r.total_ttc || 0), 0) ?? 0;
+
+  const nombre_mandats_acceptes = accepteesRes.data?.length ?? 0;
+  const total_mandats_acceptes = accepteesRes.data?.reduce((s, r) => s + (r.total_ttc || 0), 0) ?? 0;
 
   const all = statsRes.data ?? [];
   const total = all.length;
   const acceptees = all.filter((r) => r.statut === "Acceptée").length;
   const taux_acceptation = total > 0 ? Math.round((acceptees / total) * 100) : 0;
 
+  const total_versements_recus = versementsRes.data?.reduce((s, r) => s + (r.versement_recu || 0), 0) ?? 0;
+
   return NextResponse.json({
     soumissions_mois,
-    montant_total_mois,
+    nombre_mandats_acceptes,
     total_mandats_acceptes,
     taux_acceptation,
+    total_versements_recus,
   });
 }
