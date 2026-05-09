@@ -16,10 +16,53 @@ interface Props {
   saving: boolean;
   onBack: () => void;
   onSave: () => void;
+  soumissionId?: string;
+  clientId?: string;
 }
 
-const ACCENT = "#3C7C95";
-const GREEN = "#1a2e1e";
+// Accent colors — 3-tier visual hierarchy matching BTH document
+const DARK_BLUE = "#192D38";   // Client / offer metadata
+const MID_BLUE = "#3C7C95";    // Primary AI content (context, objectives)
+const LIGHT_BLUE = "#72AFC7";  // Secondary AI content (livrables, hypotheses, etc.)
+const BTH_GREEN = "#1a2e1e";   // CTA / budget accents
+
+// Which entity a section belongs to for auto-save
+const SECTION_ENTITY = {
+  destinataire: "client",
+  objet: "soumission",
+  contexte: "ai",
+  objectifs: "ai",
+  livrables: "ai",
+  hypotheses: "ai",
+  echeancier: "ai",
+  perimetre: "ai",
+} as const;
+
+type SectionId = keyof typeof SECTION_ENTITY;
+
+function buildAIContent(preview: EditablePreview): SoumissionAIContent {
+  const hyps = preview.hypothese_specifique
+    .split("\n\n")
+    .map((h) => h.trim())
+    .filter(Boolean);
+  return {
+    contexte_paragraphe_1: preview.contexte_paragraphe_1,
+    contexte_paragraphe_2: preview.contexte_paragraphe_2,
+    objectif_1: preview.objectif_1,
+    objectif_2: preview.objectif_2,
+    objectif_3: preview.objectif_3,
+    objectif_4: preview.objectif_4,
+    livrable_1: preview.livrable_1,
+    livrable_2: preview.livrable_2,
+    livrable_3: preview.livrable_3,
+    hypothese_1: hyps[0] ?? "",
+    hypothese_2: hyps[1] ?? "",
+    hypothese_3: hyps[2] ?? "",
+    description_echeancier: preview.description_echeancier,
+    inclusions_specifiques: preview.inclusions_specifiques,
+    exclusions_specifiques: preview.exclusions_specifiques,
+  };
+}
 
 function initEditablePreview(
   step1: FormDataStep1,
@@ -68,6 +111,8 @@ export default function StepPreview({
   saving,
   onBack,
   onSave,
+  soumissionId,
+  clientId,
 }: Props) {
   const [numeroOffre] = useState(() => generateNumeroOffre());
   const [editablePreview, setEditablePreview] = useState<EditablePreview>(() =>
@@ -76,6 +121,7 @@ export default function StepPreview({
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [pendingSection, setPendingSection] = useState<string | null>(null);
   const [savedSections, setSavedSections] = useState<Set<string>>(new Set());
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
 
   const total_ht = step3.lignes.reduce(
@@ -85,25 +131,21 @@ export default function StepPreview({
   const tva = total_ht * 0.19;
   const total_ttc = total_ht + tva;
 
+  const civiliteLong =
+    editablePreview.titre === "M."
+      ? "Monsieur"
+      : editablePreview.titre === "Mme"
+      ? "Madame"
+      : editablePreview.titre;
+
+  // ── Section edit management ──────────────────────────────────────
+
   function requestEdit(sectionId: string) {
     if (activeSection && activeSection !== sectionId) {
       setPendingSection(sectionId);
     } else {
       setActiveSection(sectionId);
     }
-  }
-
-  function handleSave(sectionId: string, updates: Record<string, string>) {
-    setEditablePreview((prev) => ({ ...prev, ...updates }));
-    setActiveSection(null);
-    setSavedSections((prev) => new Set([...prev, sectionId]));
-    setTimeout(() => {
-      setSavedSections((prev) => {
-        const next = new Set(prev);
-        next.delete(sectionId);
-        return next;
-      });
-    }, 600);
   }
 
   function handleCancel() {
@@ -119,11 +161,88 @@ export default function StepPreview({
     setPendingSection(null);
   }
 
+  // ── Auto-save (silent) ───────────────────────────────────────────
+
+  async function autoSave(sectionId: SectionId, newPreview: EditablePreview) {
+    const entity = SECTION_ENTITY[sectionId];
+
+    if (entity === "client" && clientId) {
+      const res = await fetch(`/api/clients/${clientId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titre: newPreview.titre,
+          nom_contact: newPreview.nom_contact,
+          poste: newPreview.poste_contact,
+          entreprise: newPreview.entreprise,
+          adresse: newPreview.adresse,
+          ville: newPreview.ville,
+        }),
+      });
+      if (!res.ok) throw new Error("client patch failed");
+    }
+
+    if (entity === "soumission" && soumissionId) {
+      const res = await fetch(`/api/soumissions/${soumissionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          titre_projet: newPreview.titre_projet,
+          numero_offre: newPreview.numero_offre,
+          date_offre: newPreview.date_offre,
+        }),
+      });
+      if (!res.ok) throw new Error("soumission patch failed");
+    }
+
+    if (entity === "ai" && soumissionId) {
+      const res = await fetch(`/api/soumissions/${soumissionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contexte_genere: JSON.stringify(buildAIContent(newPreview)),
+        }),
+      });
+      if (!res.ok) throw new Error("ai patch failed");
+    }
+  }
+
+  async function handleSave(sectionId: string, updates: Record<string, string>) {
+    const newPreview = { ...editablePreview, ...updates };
+    setEditablePreview(newPreview);
+    setActiveSection(null);
+
+    // Flash checkmark
+    setSavedSections((prev) => new Set([...prev, sectionId]));
+    setTimeout(() => {
+      setSavedSections((prev) => {
+        const next = new Set(prev);
+        next.delete(sectionId);
+        return next;
+      });
+    }, 600);
+
+    // Silent auto-save if IDs are available
+    const knownSection = sectionId as SectionId;
+    if (SECTION_ENTITY[knownSection] && (soumissionId || clientId)) {
+      setSaveError(null);
+      try {
+        await autoSave(knownSection, newPreview);
+      } catch {
+        setSaveError(
+          "Sauvegarde échouée, vos modifications sont conservées localement"
+        );
+        setTimeout(() => setSaveError(null), 6000);
+      }
+    }
+  }
+
+  // ── Export ───────────────────────────────────────────────────────
+
   async function handleExport(format: "docx" | "pdf") {
     setExporting(format);
     try {
       const today = new Date().toISOString().split("T")[0];
-      // Convert editablePreview back to the format expected by export routes
       const contexteData = {
         section_1: [
           editablePreview.contexte_paragraphe_1,
@@ -144,10 +263,10 @@ export default function StepPreview({
 
       const payload = {
         soumission: {
-          id: "preview",
+          id: soumissionId ?? "preview",
           numero_offre: editablePreview.numero_offre,
           date_offre: today,
-          client_id: "",
+          client_id: clientId ?? "",
           titre_projet: editablePreview.titre_projet,
           secteur_activite: step2.secteur_activite,
           description_projet: step2.description_projet,
@@ -158,11 +277,11 @@ export default function StepPreview({
           total_ttc,
           versement_recu: 0,
           statut: "Brouillon" as const,
-          contexte_genere: JSON.stringify(aiContent),
+          contexte_genere: JSON.stringify(buildAIContent(editablePreview)),
           created_at: today,
         },
         client: {
-          id: "preview",
+          id: clientId ?? "preview",
           titre: editablePreview.titre as TitreContact,
           nom_contact: editablePreview.nom_contact,
           poste: editablePreview.poste_contact,
@@ -180,8 +299,7 @@ export default function StepPreview({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
-      if (!res.ok) throw new Error("Erreur export");
+      if (!res.ok) throw new Error("export failed");
 
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
@@ -197,35 +315,21 @@ export default function StepPreview({
     }
   }
 
-  const civiliteLong =
-    editablePreview.titre === "M."
-      ? "Monsieur"
-      : editablePreview.titre === "Mme"
-      ? "Madame"
-      : editablePreview.titre;
+  // ── Render ───────────────────────────────────────────────────────
 
   return (
     <div className="p-4 md:p-8">
+
       {/* Top bar */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Prévisualisation</h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            Cliquez sur{" "}
-            <svg
-              className="inline w-3.5 h-3.5 text-gray-400 mb-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-              />
-            </svg>{" "}
-            pour modifier chaque section
+          <p className="text-sm text-gray-500 mt-0.5 flex items-center gap-1">
+            <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
+            Survolez une section pour la modifier
           </p>
         </div>
         <div className="flex gap-2">
@@ -252,7 +356,7 @@ export default function StepPreview({
             onClick={() => handleExport("pdf")}
             disabled={!!exporting}
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-all cursor-pointer disabled:opacity-50 hover:opacity-90 min-h-[44px]"
-            style={{ backgroundColor: GREEN, borderColor: GREEN }}
+            style={{ backgroundColor: BTH_GREEN }}
           >
             {exporting === "pdf" ? (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -269,13 +373,13 @@ export default function StepPreview({
         </div>
       </div>
 
-      {/* Editable sections */}
+      {/* ── 8 Editable Sections ──────────────────────────────────── */}
       <div className="space-y-3">
 
-        {/* Destinataire */}
+        {/* BLOCK 1 — Destinataire */}
         <EditableSection
           title="Destinataire"
-          accentColor={GREEN}
+          accentColor={DARK_BLUE}
           isEditing={activeSection === "destinataire"}
           showSaved={savedSections.has("destinataire")}
           onEditRequest={() => requestEdit("destinataire")}
@@ -302,34 +406,38 @@ export default function StepPreview({
           }
         />
 
-        {/* Offre & Objet */}
+        {/* BLOCK 2 — Référence offre */}
         <EditableSection
-          title="Offre & Objet"
-          accentColor={GREEN}
+          title="Référence offre"
+          accentColor={DARK_BLUE}
           isEditing={activeSection === "objet"}
           showSaved={savedSections.has("objet")}
           onEditRequest={() => requestEdit("objet")}
           onSave={(u) => handleSave("objet", u)}
           onCancel={handleCancel}
           fields={[
-            { key: "numero_offre", label: "Numéro d'offre", value: editablePreview.numero_offre },
+            { key: "numero_offre", label: "N° offre", value: editablePreview.numero_offre },
             { key: "date_offre", label: "Date", value: editablePreview.date_offre },
             { key: "titre_projet", label: "Titre du projet", value: editablePreview.titre_projet },
           ]}
           renderContent={
             <div className="pl-5 pr-4 pb-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div>
-                <p className="text-xs text-gray-400 mb-1">OBJET :</p>
-                <p className="text-sm font-semibold" style={{ color: GREEN }}>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1">
+                  Objet
+                </p>
+                <p className="text-sm font-semibold" style={{ color: BTH_GREEN }}>
                   Offre de services professionnels
                 </p>
-                <p className="text-sm font-medium text-gray-700 mt-0.5">
+                <p className="text-sm text-gray-700 mt-0.5 leading-snug">
                   {editablePreview.titre_projet}
                 </p>
               </div>
-              <div className="shrink-0 text-right">
-                <p className="text-xs text-gray-400">Offre N° :</p>
-                <p className="font-bold text-sm" style={{ color: GREEN }}>
+              <div className="shrink-0 sm:text-right">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-1">
+                  N° Offre
+                </p>
+                <p className="font-bold text-sm" style={{ color: BTH_GREEN }}>
                   {editablePreview.numero_offre}
                 </p>
                 <p className="text-xs text-gray-400 mt-1">{editablePreview.date_offre}</p>
@@ -338,22 +446,19 @@ export default function StepPreview({
           }
         />
 
-        {/* Intro paragraph (static) */}
-        <div className="bg-[#F4F6F7] rounded-xl px-5 py-4">
-          <p className="text-sm text-gray-700">
-            {civiliteLong} {editablePreview.nom_contact.split(" ")[0]},
-          </p>
-          <p className="text-sm text-gray-700 mt-2">
-            Sarl BTH EXPERT a le plaisir de vous transmettre son offre de
-            services professionnels relative au projet{" "}
-            {editablePreview.titre_projet.toLowerCase()}.
+        {/* Static intro */}
+        <div className="bg-[#F4F6F7] rounded-xl px-5 py-4 text-sm text-gray-700 leading-relaxed">
+          <p>{civiliteLong} {editablePreview.nom_contact.split(" ")[0]},</p>
+          <p className="mt-2">
+            Sarl BTH EXPERT a le plaisir de vous transmettre son offre de services
+            professionnels relative au projet {editablePreview.titre_projet.toLowerCase()}.
           </p>
         </div>
 
-        {/* 1. Contexte et objectifs */}
+        {/* BLOCK 3 — Contexte et objectifs */}
         <EditableSection
-          title="1. Contexte et objectifs"
-          accentColor={ACCENT}
+          title="Contexte et objectifs"
+          accentColor={MID_BLUE}
           isEditing={activeSection === "contexte"}
           showSaved={savedSections.has("contexte")}
           onEditRequest={() => requestEdit("contexte")}
@@ -362,13 +467,13 @@ export default function StepPreview({
           fields={[
             {
               key: "contexte_paragraphe_1",
-              label: "Paragraphe 1 — Description factuelle",
+              label: "Paragraphe 1",
               value: editablePreview.contexte_paragraphe_1,
               multiline: true,
             },
             {
               key: "contexte_paragraphe_2",
-              label: "Paragraphe 2 — Enjeux réglementaires",
+              label: "Paragraphe 2",
               value: editablePreview.contexte_paragraphe_2,
               multiline: true,
             },
@@ -378,18 +483,16 @@ export default function StepPreview({
               {[editablePreview.contexte_paragraphe_1, editablePreview.contexte_paragraphe_2]
                 .filter(Boolean)
                 .map((p, i) => (
-                  <p key={i} className="text-sm text-gray-700 leading-relaxed">
-                    {p}
-                  </p>
+                  <p key={i} className="text-sm text-gray-700 leading-relaxed">{p}</p>
                 ))}
             </div>
           }
         />
 
-        {/* 1.1 Objectifs */}
+        {/* BLOCK 4 — Objectifs du projet */}
         <EditableSection
-          title="1.1 Objectifs du projet"
-          accentColor={ACCENT}
+          title="Objectifs du projet"
+          accentColor={MID_BLUE}
           isEditing={activeSection === "objectifs"}
           showSaved={savedSections.has("objectifs")}
           onEditRequest={() => requestEdit("objectifs")}
@@ -403,10 +506,10 @@ export default function StepPreview({
           ]}
           renderContent={
             <div className="pl-5 pr-4 pb-4">
-              <p className="text-sm text-gray-500 mb-2">
+              <p className="text-sm text-gray-500 mb-2.5">
                 Les objectifs du projet et du mandat sont les suivants :
               </p>
-              <ol className="space-y-1.5">
+              <ol className="space-y-2">
                 {[
                   editablePreview.objectif_1,
                   editablePreview.objectif_2,
@@ -416,10 +519,7 @@ export default function StepPreview({
                   .filter(Boolean)
                   .map((obj, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                      <span
-                        className="shrink-0 font-semibold mt-0.5 text-xs"
-                        style={{ color: ACCENT }}
-                      >
+                      <span className="shrink-0 font-semibold text-xs mt-0.5" style={{ color: MID_BLUE }}>
                         {i + 1}.
                       </span>
                       <span className="leading-relaxed">{obj}</span>
@@ -430,19 +530,19 @@ export default function StepPreview({
           }
         />
 
-        {/* 2. Livrables */}
+        {/* BLOCK 5 — Livrables */}
         <EditableSection
-          title="2. Livrables"
-          accentColor={ACCENT}
+          title="Livrables"
+          accentColor={LIGHT_BLUE}
           isEditing={activeSection === "livrables"}
           showSaved={savedSections.has("livrables")}
           onEditRequest={() => requestEdit("livrables")}
           onSave={(u) => handleSave("livrables", u)}
           onCancel={handleCancel}
           fields={[
-            { key: "livrable_1", label: "Livrable 1", value: editablePreview.livrable_1, multiline: true },
-            { key: "livrable_2", label: "Livrable 2", value: editablePreview.livrable_2, multiline: true },
-            { key: "livrable_3", label: "Livrable 3 (optionnel)", value: editablePreview.livrable_3, multiline: true },
+            { key: "livrable_1", label: "Livrable 1", value: editablePreview.livrable_1 },
+            { key: "livrable_2", label: "Livrable 2", value: editablePreview.livrable_2 },
+            { key: "livrable_3", label: "Livrable 3", value: editablePreview.livrable_3 },
           ]}
           renderContent={
             <div className="pl-5 pr-4 pb-4">
@@ -455,10 +555,7 @@ export default function StepPreview({
                   .filter(Boolean)
                   .map((liv, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                      <span
-                        className="shrink-0 font-semibold mt-0.5 text-xs"
-                        style={{ color: ACCENT }}
-                      >
+                      <span className="shrink-0 font-semibold text-xs mt-0.5" style={{ color: LIGHT_BLUE }}>
                         L{i + 1}.
                       </span>
                       <span className="leading-relaxed">{liv}</span>
@@ -469,10 +566,10 @@ export default function StepPreview({
           }
         />
 
-        {/* 3. Hypothèses */}
+        {/* BLOCK 6 — Hypothèses */}
         <EditableSection
-          title="3. Hypothèses de travail"
-          accentColor={ACCENT}
+          title="Hypothèses"
+          accentColor={LIGHT_BLUE}
           isEditing={activeSection === "hypotheses"}
           showSaved={savedSections.has("hypotheses")}
           onEditRequest={() => requestEdit("hypotheses")}
@@ -481,22 +578,19 @@ export default function StepPreview({
           fields={[
             {
               key: "hypothese_specifique",
-              label: "Hypothèses (séparées par une ligne vide)",
+              label: "Hypothèses de travail",
               value: editablePreview.hypothese_specifique,
               multiline: true,
             },
           ]}
           renderContent={
-            <div className="pl-5 pr-4 pb-4 space-y-2">
+            <div className="pl-5 pr-4 pb-4 space-y-2.5">
               {editablePreview.hypothese_specifique
                 .split("\n\n")
                 .filter(Boolean)
                 .map((h, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <span
-                      className="shrink-0 font-semibold text-xs mt-0.5"
-                      style={{ color: ACCENT }}
-                    >
+                    <span className="shrink-0 font-semibold text-xs mt-0.5" style={{ color: LIGHT_BLUE }}>
                       H{i + 1}.
                     </span>
                     <p className="text-sm text-gray-700 leading-relaxed">{h.trim()}</p>
@@ -506,10 +600,45 @@ export default function StepPreview({
           }
         />
 
-        {/* 3.1 Périmètre d'intervention */}
+        {/* BLOCK 7 — Échéancier */}
         <EditableSection
-          title="3.1 Périmètre d'intervention"
-          accentColor={ACCENT}
+          title="Échéancier"
+          accentColor={LIGHT_BLUE}
+          isEditing={activeSection === "echeancier"}
+          showSaved={savedSections.has("echeancier")}
+          onEditRequest={() => requestEdit("echeancier")}
+          onSave={(u) => handleSave("echeancier", u)}
+          onCancel={handleCancel}
+          fields={[
+            {
+              key: "description_echeancier",
+              label: "Description délai",
+              value: editablePreview.description_echeancier,
+              multiline: true,
+            },
+          ]}
+          renderContent={
+            <div className="pl-5 pr-4 pb-4">
+              <p className="text-sm text-gray-700 leading-relaxed">
+                {editablePreview.description_echeancier}
+              </p>
+              <div className="mt-3 inline-flex items-center gap-1.5 bg-[#F4F6F7] rounded-lg px-3 py-1.5">
+                <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="text-xs font-medium text-gray-600">
+                  {step2.delai_jours} jours
+                </span>
+              </div>
+            </div>
+          }
+        />
+
+        {/* BLOCK 8 — Inclusions et exclusions */}
+        <EditableSection
+          title="Inclusions et exclusions"
+          accentColor={LIGHT_BLUE}
           isEditing={activeSection === "perimetre"}
           showSaved={savedSections.has("perimetre")}
           onEditRequest={() => requestEdit("perimetre")}
@@ -518,13 +647,13 @@ export default function StepPreview({
           fields={[
             {
               key: "inclusions_specifiques",
-              label: "Inclusions (une par ligne)",
+              label: "Inclusions",
               value: editablePreview.inclusions_specifiques,
               multiline: true,
             },
             {
               key: "exclusions_specifiques",
-              label: "Exclusions (une par ligne)",
+              label: "Exclusions",
               value: editablePreview.exclusions_specifiques,
               multiline: true,
             },
@@ -541,7 +670,7 @@ export default function StepPreview({
                     .filter(Boolean)
                     .map((item, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                        <span className="text-green-500 shrink-0 mt-0.5 text-xs">✓</span>
+                        <span className="text-green-500 shrink-0 mt-0.5">✓</span>
                         <span className="leading-relaxed">{item.trim()}</span>
                       </li>
                     ))}
@@ -557,7 +686,7 @@ export default function StepPreview({
                     .filter(Boolean)
                     .map((item, i) => (
                       <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                        <span className="text-red-400 shrink-0 mt-0.5 text-xs">✗</span>
+                        <span className="text-red-400 shrink-0 mt-0.5">✗</span>
                         <span className="leading-relaxed">{item.trim()}</span>
                       </li>
                     ))}
@@ -567,55 +696,11 @@ export default function StepPreview({
           }
         />
 
-        {/* 4. Échéancier */}
-        <EditableSection
-          title="4. Échéancier"
-          accentColor={ACCENT}
-          isEditing={activeSection === "echeancier"}
-          showSaved={savedSections.has("echeancier")}
-          onEditRequest={() => requestEdit("echeancier")}
-          onSave={(u) => handleSave("echeancier", u)}
-          onCancel={handleCancel}
-          fields={[
-            {
-              key: "description_echeancier",
-              label: "Description du délai",
-              value: editablePreview.description_echeancier,
-              multiline: true,
-            },
-          ]}
-          renderContent={
-            <div className="pl-5 pr-4 pb-4">
-              <p className="text-sm text-gray-700 leading-relaxed">
-                {editablePreview.description_echeancier}
-              </p>
-              <div className="mt-3 inline-flex items-center gap-1.5 bg-[#F4F6F7] rounded-lg px-3 py-1.5">
-                <svg
-                  className="w-3.5 h-3.5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                <span className="text-xs font-medium text-gray-600">
-                  {step2.delai_jours} jours
-                </span>
-              </div>
-            </div>
-          }
-        />
-
-        {/* 5. Budget (non-editable) */}
+        {/* Budget (non-editable) */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex items-center pl-5 pr-3 pt-3 pb-2">
+          <div className="pl-5 pr-3 pt-3 pb-2">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
-              5. Budget
+              Budget
             </span>
           </div>
           <div className="pl-5 pr-4 pb-4">
@@ -623,18 +708,10 @@ export default function StepPreview({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="bg-[#F4F6F7]">
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 w-8 rounded-tl-lg">
-                      N°
-                    </th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">
-                      Désignation
-                    </th>
-                    <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 w-12">
-                      Q
-                    </th>
-                    <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 w-36 rounded-tr-lg">
-                      Prix (DZD)
-                    </th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 w-8">N°</th>
+                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Désignation</th>
+                    <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 w-12">Q</th>
+                    <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 w-36">Prix (DZD)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -657,18 +734,14 @@ export default function StepPreview({
                     </td>
                   </tr>
                   <tr className="border-t border-gray-100">
-                    <td colSpan={3} className="px-3 py-2 text-right text-gray-600 text-xs">
-                      TVA 19%
-                    </td>
-                    <td className="px-3 py-2 text-right text-gray-700">
-                      {formatMontant(tva)}
-                    </td>
+                    <td colSpan={3} className="px-3 py-2 text-right text-gray-600 text-xs">TVA 19%</td>
+                    <td className="px-3 py-2 text-right text-gray-700">{formatMontant(tva)}</td>
                   </tr>
-                  <tr className="border-t border-gray-200" style={{ backgroundColor: `${GREEN}0d` }}>
+                  <tr className="border-t border-gray-200" style={{ backgroundColor: `${BTH_GREEN}0d` }}>
                     <td colSpan={3} className="px-3 py-2 text-right font-bold text-gray-900 text-sm">
                       Total TTC
                     </td>
-                    <td className="px-3 py-2 text-right font-bold text-lg" style={{ color: GREEN }}>
+                    <td className="px-3 py-2 text-right font-bold text-lg" style={{ color: BTH_GREEN }}>
                       {formatMontant(total_ttc)}
                     </td>
                   </tr>
@@ -682,16 +755,12 @@ export default function StepPreview({
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 grid grid-cols-2 gap-6">
           <div>
             <p className="text-xs text-gray-400 mb-2">Responsable de l'offre :</p>
-            <p className="font-semibold text-sm" style={{ color: GREEN }}>
-              Hakim Belghouini
-            </p>
+            <p className="font-semibold text-sm" style={{ color: BTH_GREEN }}>Hakim Belghouini</p>
             <p className="text-xs text-gray-400">Expert Co-gérant</p>
           </div>
           <div>
             <p className="text-xs text-gray-400 mb-2">Autorisé par :</p>
-            <p className="font-semibold text-sm" style={{ color: GREEN }}>
-              Amine Lahmer
-            </p>
+            <p className="font-semibold text-sm" style={{ color: BTH_GREEN }}>Amine Lahmer</p>
             <p className="text-xs text-gray-400">Expert Gérant</p>
           </div>
         </div>
@@ -709,13 +778,12 @@ export default function StepPreview({
           </svg>
           Retour
         </button>
-
         <button
           type="button"
           onClick={onSave}
           disabled={saving}
           className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90 disabled:opacity-60 min-h-[44px]"
-          style={{ backgroundColor: GREEN }}
+          style={{ backgroundColor: BTH_GREEN }}
         >
           {saving ? (
             <>
@@ -736,7 +804,9 @@ export default function StepPreview({
         </button>
       </div>
 
-      {/* Confirmation modal — switch section with unsaved changes */}
+      {/* ── Modals & Toasts ──────────────────────────────────────── */}
+
+      {/* Confirmation — switch section with unsaved changes */}
       <AnimatePresence>
         {pendingSection && (
           <>
@@ -755,20 +825,11 @@ export default function StepPreview({
                 transition={{ duration: 0.18 }}
                 className="bg-white rounded-2xl shadow-xl w-full max-w-sm pointer-events-auto p-6"
               >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
-                    <svg
-                      className="w-5 h-5 text-orange-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                      />
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                     </svg>
                   </div>
                   <div>
@@ -780,13 +841,13 @@ export default function StepPreview({
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-2 mt-4">
+                <div className="flex gap-2">
                   <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={confirmSwitch}
                     className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer min-h-[44px]"
-                    style={{ backgroundColor: GREEN }}
+                    style={{ backgroundColor: BTH_GREEN }}
                   >
                     Oui, continuer
                   </motion.button>
@@ -800,6 +861,25 @@ export default function StepPreview({
               </motion.div>
             </div>
           </>
+        )}
+      </AnimatePresence>
+
+      {/* Save error toast */}
+      <AnimatePresence>
+        {saveError && (
+          <motion.div
+            initial={{ opacity: 0, y: 16, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: 16, x: "-50%" }}
+            transition={{ duration: 0.2 }}
+            className="fixed bottom-6 left-1/2 z-50 bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 max-w-sm"
+          >
+            <svg className="w-4 h-4 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {saveError}
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
