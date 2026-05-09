@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createAdminClient } from "@/lib/supabase-admin";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -41,12 +42,44 @@ export async function GET() {
   const user = await requireAdmin(supabase);
   if (!user) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
 
-  const { data, error } = await supabase
+  // Fetch profiles — only columns that definitely exist
+  const { data: profiles, error } = await supabase
     .from("profiles")
-    .select("id, full_name, email, role, avatar_url, is_active, created_at")
+    .select("id, full_name, role, avatar_url, created_at")
     .order("created_at", { ascending: false });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ data });
+  // Fetch emails + metadata from auth.users via service role
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch {
+    // If no service role key, return profiles without email
+    return NextResponse.json({
+      data: (profiles ?? []).map((p) => ({ ...p, email: null, is_active: true })),
+    });
+  }
+
+  const { data: authData } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+  const authMap = new Map(
+    (authData?.users ?? []).map((u) => [u.id, { email: u.email ?? null }])
+  );
+
+  // Try to also get is_active from profiles (works once migration has been run)
+  const { data: profilesWithActive } = await supabase
+    .from("profiles")
+    .select("id, is_active");
+
+  const activeMap = new Map(
+    (profilesWithActive ?? []).map((p: { id: string; is_active: boolean | null }) => [p.id, p.is_active])
+  );
+
+  const merged = (profiles ?? []).map((p) => ({
+    ...p,
+    email: authMap.get(p.id)?.email ?? null,
+    is_active: activeMap.has(p.id) ? activeMap.get(p.id) : true,
+  }));
+
+  return NextResponse.json({ data: merged });
 }

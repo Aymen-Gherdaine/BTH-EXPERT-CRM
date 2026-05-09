@@ -69,16 +69,14 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Aucune modification fournie" }, { status: 400 });
   }
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("profiles")
     .update(updateData)
-    .eq("id", targetId)
-    .select("id, full_name, email, role, avatar_url, is_active, created_at")
-    .single();
+    .eq("id", targetId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ data });
+  return NextResponse.json({ success: true });
 }
 
 export async function DELETE(_req: NextRequest, { params }: Params) {
