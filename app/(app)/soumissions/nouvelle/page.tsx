@@ -8,6 +8,7 @@ import StepProjectInfo from "@/components/forms/StepProjectInfo";
 import StepBudget from "@/components/forms/StepBudget";
 import StepPreview from "@/components/forms/StepPreview";
 import { FormDataStep1, FormDataStep2, FormDataStep3 } from "@/types";
+import type { SoumissionAIContent } from "@/lib/anthropic";
 
 const STEPS = ["Informations client", "Projet", "Budget", "Prévisualisation"];
 
@@ -60,7 +61,7 @@ export default function NouvelleSoumissionPage() {
   const [step1, setStep1] = useState<FormDataStep1>(defaultStep1);
   const [step2, setStep2] = useState<FormDataStep2>(defaultStep2);
   const [step3, setStep3] = useState<FormDataStep3>(defaultStep3);
-  const [contexte, setContexte] = useState<{ section_1: string; section_1_1: string } | null>(null);
+  const [contexte, setContexte] = useState<SoumissionAIContent | null>(null);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -234,7 +235,7 @@ export default function NouvelleSoumissionPage() {
                 step1={step1}
                 step2={step2}
                 step3={step3}
-                contexte={contexte}
+                aiContent={contexte}
                 saving={saving}
                 onBack={handleBackFromPreview}
                 onSave={handleSave}

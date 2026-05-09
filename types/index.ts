@@ -160,3 +160,31 @@ export interface Depense {
   projet_lie: string | null;
   created_at: string;
 }
+
+export type EditablePreview = {
+  // Client info
+  titre: string;
+  nom_contact: string;
+  poste_contact: string;
+  entreprise: string;
+  adresse: string;
+  ville: string;
+  // Offer info
+  numero_offre: string;
+  date_offre: string;
+  titre_projet: string;
+  // AI sections
+  contexte_paragraphe_1: string;
+  contexte_paragraphe_2: string;
+  objectif_1: string;
+  objectif_2: string;
+  objectif_3: string;
+  objectif_4: string;
+  livrable_1: string;
+  livrable_2: string;
+  livrable_3: string;
+  hypothese_specifique: string;
+  description_echeancier: string;
+  inclusions_specifiques: string;
+  exclusions_specifiques: string;
+};
