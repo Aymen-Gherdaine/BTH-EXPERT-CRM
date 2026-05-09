@@ -78,7 +78,6 @@ export async function POST(req: NextRequest) {
     .from("profiles")
     .upsert({
       id: newUserId,
-      email: email.toLowerCase().trim(),
       full_name: full_name.trim(),
       role,
       is_active: true,
