@@ -58,10 +58,7 @@ export async function POST(req: NextRequest) {
   try {
     adminClient = createAdminClient();
   } catch (err) {
-    return NextResponse.json(
-      { error: (err as Error).message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 
   const { data: inviteData, error: inviteError } = await adminClient.auth.admin.inviteUserByEmail(email, {
@@ -74,20 +71,44 @@ export async function POST(req: NextRequest) {
 
   const newUserId = inviteData.user.id;
 
-  const { data: profile, error: profileError } = await adminClient
-    .from("profiles")
-    .upsert({
-      id: newUserId,
-      full_name: full_name.trim(),
-      role,
-      is_active: true,
-    })
-    .select("id, full_name, email, role, avatar_url, is_active, created_at")
-    .single();
+  // Upsert profile — only columns that exist in the table
+  // Note: is_active requires migration: ALTER TABLE profiles ADD COLUMN IF NOT EXISTS is_active boolean DEFAULT true;
+  const upsertData: Record<string, unknown> = {
+    id: newUserId,
+    full_name: full_name.trim(),
+    role,
+  };
 
-  if (profileError) {
-    return NextResponse.json({ error: profileError.message }, { status: 500 });
+  // Include is_active only if column exists (attempt, ignore error if not)
+  const { error: upsertError } = await adminClient
+    .from("profiles")
+    .upsert({ ...upsertData, is_active: true });
+
+  if (upsertError && !upsertError.message.includes("is_active")) {
+    // Only fail on non-is_active errors; if is_active column missing, retry without it
+    return NextResponse.json({ error: upsertError.message }, { status: 500 });
   }
 
-  return NextResponse.json({ data: profile }, { status: 201 });
+  if (upsertError?.message.includes("is_active")) {
+    // Retry without is_active
+    const { error: retryError } = await adminClient
+      .from("profiles")
+      .upsert(upsertData);
+    if (retryError) {
+      return NextResponse.json({ error: retryError.message }, { status: 500 });
+    }
+  }
+
+  // Return the new user profile with email injected from request body
+  return NextResponse.json({
+    data: {
+      id: newUserId,
+      full_name: full_name.trim(),
+      email: email.toLowerCase().trim(),
+      role,
+      avatar_url: null,
+      is_active: true,
+      created_at: new Date().toISOString(),
+    },
+  }, { status: 201 });
 }
