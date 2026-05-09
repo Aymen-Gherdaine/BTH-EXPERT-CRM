@@ -3,16 +3,24 @@ import { generateDocument } from "@/lib/generate-document";
 import { convertToPdf } from "@/lib/convert-to-pdf";
 import { buildDocumentData } from "@/lib/export-helpers";
 import { supabase } from "@/lib/supabase";
-import { Client, LigneBudget, Soumission } from "@/types";
+import { Client, EditablePreview, LigneBudget, Soumission } from "@/types";
 
 export async function POST(req: NextRequest) {
   try {
-    const { soumission, client, lignes, contexteData }: {
+    const body = await req.json();
+    const {
+      soumission,
+      client,
+      lignes,
+      contexteData,
+      editablePreview,
+    }: {
       soumission: Soumission;
-      client: Client;
+      client?: Client;
       lignes: LigneBudget[];
-      contexteData: { section_1: string; section_1_1: string };
-    } = await req.json();
+      contexteData?: { section_1: string; section_1_1: string };
+      editablePreview?: EditablePreview;
+    } = body;
 
     const { data: parametres } = await supabase
       .from("parametres")
@@ -20,7 +28,14 @@ export async function POST(req: NextRequest) {
       .eq("id", 1)
       .single();
 
-    const data = buildDocumentData(soumission, client, lignes, contexteData, parametres ?? {});
+    const data = buildDocumentData(
+      soumission,
+      client ?? ({} as Client),
+      lignes,
+      contexteData,
+      parametres ?? {},
+      editablePreview
+    );
     const docxBuffer = generateDocument(data, true);
     const pdfBuffer = await convertToPdf(docxBuffer);
 
