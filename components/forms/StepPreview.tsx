@@ -20,13 +20,11 @@ interface Props {
   clientId?: string;
 }
 
-// Accent colors — 3-tier visual hierarchy matching BTH document
-const DARK_BLUE = "#192D38";   // Client / offer metadata
-const MID_BLUE = "#3C7C95";    // Primary AI content (context, objectives)
-const LIGHT_BLUE = "#72AFC7";  // Secondary AI content (livrables, hypotheses, etc.)
-const BTH_GREEN = "#1a2e1e";   // CTA / budget accents
+const DARK_BLUE = "#192D38";
+const MID_BLUE = "#3C7C95";
+const LIGHT_BLUE = "#72AFC7";
+const BTH_GREEN = "#1a2e1e";
 
-// Which entity a section belongs to for auto-save
 const SECTION_ENTITY = {
   destinataire: "client",
   objet: "soumission",
@@ -39,6 +37,10 @@ const SECTION_ENTITY = {
 } as const;
 
 type SectionId = keyof typeof SECTION_ENTITY;
+
+const AI_SECTIONS: SectionId[] = [
+  "contexte", "objectifs", "livrables", "hypotheses", "echeancier", "perimetre",
+];
 
 function buildAIContent(preview: EditablePreview): SoumissionAIContent {
   const hyps = preview.hypothese_specifique
@@ -103,6 +105,20 @@ function initEditablePreview(
   };
 }
 
+// Flash animation for a given accent color
+function flashVariants(color: string) {
+  return {
+    idle: { boxShadow: `0 0 0 0px transparent` },
+    flash: {
+      boxShadow: [
+        `0 0 0 0px transparent`,
+        `0 0 0 3px ${color}`,
+        `0 0 0 0px transparent`,
+      ],
+    },
+  };
+}
+
 export default function StepPreview({
   step1,
   step2,
@@ -121,8 +137,11 @@ export default function StepPreview({
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [pendingSection, setPendingSection] = useState<string | null>(null);
   const [savedSections, setSavedSections] = useState<Set<string>>(new Set());
+  const [flashingSections, setFlashingSections] = useState<Set<string>>(new Set());
   const [saveError, setSaveError] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
+  const [showRegenerateModal, setShowRegenerateModal] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
 
   const total_ht = step3.lignes.reduce(
     (s, l) => s + l.quantite * l.prix_unitaire,
@@ -138,7 +157,7 @@ export default function StepPreview({
       ? "Madame"
       : editablePreview.titre;
 
-  // ── Section edit management ──────────────────────────────────────
+  // ── Section editing ─────────────────────────────────────────────
 
   function requestEdit(sectionId: string) {
     if (activeSection && activeSection !== sectionId) {
@@ -212,7 +231,7 @@ export default function StepPreview({
     setEditablePreview(newPreview);
     setActiveSection(null);
 
-    // Flash checkmark
+    // Checkmark flash
     setSavedSections((prev) => new Set([...prev, sectionId]));
     setTimeout(() => {
       setSavedSections((prev) => {
@@ -222,7 +241,7 @@ export default function StepPreview({
       });
     }, 600);
 
-    // Silent auto-save if IDs are available
+    // Silent auto-save when IDs are available
     const knownSection = sectionId as SectionId;
     if (SECTION_ENTITY[knownSection] && (soumissionId || clientId)) {
       setSaveError(null);
@@ -237,31 +256,17 @@ export default function StepPreview({
     }
   }
 
-  // ── Export ───────────────────────────────────────────────────────
+  // ── PART 5 — Export uses editablePreview for ALL fields ──────────
 
   async function handleExport(format: "docx" | "pdf") {
     setExporting(format);
     try {
       const today = new Date().toISOString().split("T")[0];
-      const contexteData = {
-        section_1: [
-          editablePreview.contexte_paragraphe_1,
-          editablePreview.contexte_paragraphe_2,
-        ]
-          .filter(Boolean)
-          .join("\n"),
-        section_1_1: [
-          editablePreview.objectif_1,
-          editablePreview.objectif_2,
-          editablePreview.objectif_3,
-          editablePreview.objectif_4,
-        ]
-          .filter(Boolean)
-          .map((o) => `- ${o}`)
-          .join("\n"),
-      };
 
+      // editablePreview is passed directly — the API uses it for all editable fields.
+      // soumission retains computed/non-editable fields (totals, type_etude, delai_jours).
       const payload = {
+        editablePreview,
         soumission: {
           id: soumissionId ?? "preview",
           numero_offre: editablePreview.numero_offre,
@@ -280,18 +285,7 @@ export default function StepPreview({
           contexte_genere: JSON.stringify(buildAIContent(editablePreview)),
           created_at: today,
         },
-        client: {
-          id: clientId ?? "preview",
-          titre: editablePreview.titre as TitreContact,
-          nom_contact: editablePreview.nom_contact,
-          poste: editablePreview.poste_contact,
-          entreprise: editablePreview.entreprise,
-          adresse: editablePreview.adresse,
-          ville: editablePreview.ville,
-          created_at: today,
-        },
         lignes: step3.lignes,
-        contexteData,
       };
 
       const res = await fetch(`/api/export/${format}`, {
@@ -315,6 +309,95 @@ export default function StepPreview({
     }
   }
 
+  // ── PART 6 — Regenerate AI sections ─────────────────────────────
+
+  async function handleRegenerate() {
+    setRegenerating(true);
+    try {
+      // Reconstruct step1 from editablePreview (user may have edited client info)
+      const step1Regen: FormDataStep1 = {
+        titre: editablePreview.titre as TitreContact,
+        nom_contact: editablePreview.nom_contact,
+        poste: editablePreview.poste_contact,
+        entreprise: editablePreview.entreprise,
+        adresse: editablePreview.adresse,
+        ville: editablePreview.ville,
+      };
+
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ step1: step1Regen, step2 }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+
+      const newAI: SoumissionAIContent = json.data;
+
+      // Update ONLY AI fields — keep client info and offer info untouched
+      setEditablePreview((prev) => ({
+        ...prev,
+        contexte_paragraphe_1: newAI.contexte_paragraphe_1,
+        contexte_paragraphe_2: newAI.contexte_paragraphe_2,
+        objectif_1: newAI.objectif_1,
+        objectif_2: newAI.objectif_2,
+        objectif_3: newAI.objectif_3,
+        objectif_4: newAI.objectif_4,
+        livrable_1: newAI.livrable_1,
+        livrable_2: newAI.livrable_2,
+        livrable_3: newAI.livrable_3 ?? "",
+        hypothese_specifique: [newAI.hypothese_1, newAI.hypothese_2, newAI.hypothese_3]
+          .filter(Boolean)
+          .join("\n\n"),
+        description_echeancier: newAI.description_echeancier,
+        inclusions_specifiques: newAI.inclusions_specifiques,
+        exclusions_specifiques: newAI.exclusions_specifiques,
+      }));
+
+      // Flash all AI sections to signal update
+      setFlashingSections(new Set(AI_SECTIONS));
+      setTimeout(() => setFlashingSections(new Set()), 1800);
+
+      setShowRegenerateModal(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setRegenerating(false);
+    }
+  }
+
+  // Helper — motion wrapper with flash for a given section and color
+  function FlashWrapper({
+    sectionId,
+    color,
+    children,
+  }: {
+    sectionId: SectionId;
+    color: string;
+    children: React.ReactNode;
+  }) {
+    const isFlashing = flashingSections.has(sectionId);
+    return (
+      <motion.div
+        className="rounded-xl"
+        animate={
+          isFlashing
+            ? {
+                boxShadow: [
+                  `0 0 0 0px transparent`,
+                  `0 0 0 3px ${color}`,
+                  `0 0 0 0px transparent`,
+                ],
+              }
+            : { boxShadow: `0 0 0 0px transparent` }
+        }
+        transition={{ duration: 1.4, ease: "easeOut", times: [0, 0.25, 1] }}
+      >
+        {children}
+      </motion.div>
+    );
+  }
+
   // ── Render ───────────────────────────────────────────────────────
 
   return (
@@ -324,7 +407,7 @@ export default function StepPreview({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">Prévisualisation</h2>
-          <p className="text-sm text-gray-500 mt-0.5 flex items-center gap-1">
+          <p className="text-sm text-gray-500 mt-0.5 flex items-center gap-1.5">
             <svg className="w-3.5 h-3.5 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -373,7 +456,6 @@ export default function StepPreview({
         </div>
       </div>
 
-      {/* ── 8 Editable Sections ──────────────────────────────────── */}
       <div className="space-y-3">
 
         {/* BLOCK 1 — Destinataire */}
@@ -456,245 +538,276 @@ export default function StepPreview({
         </div>
 
         {/* BLOCK 3 — Contexte et objectifs */}
-        <EditableSection
-          title="Contexte et objectifs"
-          accentColor={MID_BLUE}
-          isEditing={activeSection === "contexte"}
-          showSaved={savedSections.has("contexte")}
-          onEditRequest={() => requestEdit("contexte")}
-          onSave={(u) => handleSave("contexte", u)}
-          onCancel={handleCancel}
-          fields={[
-            {
-              key: "contexte_paragraphe_1",
-              label: "Paragraphe 1",
-              value: editablePreview.contexte_paragraphe_1,
-              multiline: true,
-            },
-            {
-              key: "contexte_paragraphe_2",
-              label: "Paragraphe 2",
-              value: editablePreview.contexte_paragraphe_2,
-              multiline: true,
-            },
-          ]}
-          renderContent={
-            <div className="pl-5 pr-4 pb-4 space-y-3">
-              {[editablePreview.contexte_paragraphe_1, editablePreview.contexte_paragraphe_2]
-                .filter(Boolean)
-                .map((p, i) => (
-                  <p key={i} className="text-sm text-gray-700 leading-relaxed">{p}</p>
-                ))}
-            </div>
-          }
-        />
+        <FlashWrapper sectionId="contexte" color={MID_BLUE}>
+          <EditableSection
+            title="Contexte et objectifs"
+            accentColor={MID_BLUE}
+            isEditing={activeSection === "contexte"}
+            showSaved={savedSections.has("contexte")}
+            onEditRequest={() => requestEdit("contexte")}
+            onSave={(u) => handleSave("contexte", u)}
+            onCancel={handleCancel}
+            fields={[
+              {
+                key: "contexte_paragraphe_1",
+                label: "Paragraphe 1",
+                value: editablePreview.contexte_paragraphe_1,
+                multiline: true,
+              },
+              {
+                key: "contexte_paragraphe_2",
+                label: "Paragraphe 2",
+                value: editablePreview.contexte_paragraphe_2,
+                multiline: true,
+              },
+            ]}
+            renderContent={
+              <div className="pl-5 pr-4 pb-4 space-y-3">
+                {[editablePreview.contexte_paragraphe_1, editablePreview.contexte_paragraphe_2]
+                  .filter(Boolean)
+                  .map((p, i) => (
+                    <p key={i} className="text-sm text-gray-700 leading-relaxed">{p}</p>
+                  ))}
+              </div>
+            }
+          />
+        </FlashWrapper>
 
         {/* BLOCK 4 — Objectifs du projet */}
-        <EditableSection
-          title="Objectifs du projet"
-          accentColor={MID_BLUE}
-          isEditing={activeSection === "objectifs"}
-          showSaved={savedSections.has("objectifs")}
-          onEditRequest={() => requestEdit("objectifs")}
-          onSave={(u) => handleSave("objectifs", u)}
-          onCancel={handleCancel}
-          fields={[
-            { key: "objectif_1", label: "Objectif 1", value: editablePreview.objectif_1, multiline: true },
-            { key: "objectif_2", label: "Objectif 2", value: editablePreview.objectif_2, multiline: true },
-            { key: "objectif_3", label: "Objectif 3", value: editablePreview.objectif_3, multiline: true },
-            { key: "objectif_4", label: "Objectif 4", value: editablePreview.objectif_4, multiline: true },
-          ]}
-          renderContent={
-            <div className="pl-5 pr-4 pb-4">
-              <p className="text-sm text-gray-500 mb-2.5">
-                Les objectifs du projet et du mandat sont les suivants :
-              </p>
-              <ol className="space-y-2">
-                {[
-                  editablePreview.objectif_1,
-                  editablePreview.objectif_2,
-                  editablePreview.objectif_3,
-                  editablePreview.objectif_4,
-                ]
-                  .filter(Boolean)
-                  .map((obj, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                      <span className="shrink-0 font-semibold text-xs mt-0.5" style={{ color: MID_BLUE }}>
-                        {i + 1}.
-                      </span>
-                      <span className="leading-relaxed">{obj}</span>
-                    </li>
-                  ))}
-              </ol>
-            </div>
-          }
-        />
+        <FlashWrapper sectionId="objectifs" color={MID_BLUE}>
+          <EditableSection
+            title="Objectifs du projet"
+            accentColor={MID_BLUE}
+            isEditing={activeSection === "objectifs"}
+            showSaved={savedSections.has("objectifs")}
+            onEditRequest={() => requestEdit("objectifs")}
+            onSave={(u) => handleSave("objectifs", u)}
+            onCancel={handleCancel}
+            fields={[
+              { key: "objectif_1", label: "Objectif 1", value: editablePreview.objectif_1, multiline: true },
+              { key: "objectif_2", label: "Objectif 2", value: editablePreview.objectif_2, multiline: true },
+              { key: "objectif_3", label: "Objectif 3", value: editablePreview.objectif_3, multiline: true },
+              { key: "objectif_4", label: "Objectif 4", value: editablePreview.objectif_4, multiline: true },
+            ]}
+            renderContent={
+              <div className="pl-5 pr-4 pb-4">
+                <p className="text-sm text-gray-500 mb-2.5">
+                  Les objectifs du projet et du mandat sont les suivants :
+                </p>
+                <ol className="space-y-2">
+                  {[
+                    editablePreview.objectif_1,
+                    editablePreview.objectif_2,
+                    editablePreview.objectif_3,
+                    editablePreview.objectif_4,
+                  ]
+                    .filter(Boolean)
+                    .map((obj, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                        <span className="shrink-0 font-semibold text-xs mt-0.5" style={{ color: MID_BLUE }}>
+                          {i + 1}.
+                        </span>
+                        <span className="leading-relaxed">{obj}</span>
+                      </li>
+                    ))}
+                </ol>
+              </div>
+            }
+          />
+        </FlashWrapper>
 
         {/* BLOCK 5 — Livrables */}
-        <EditableSection
-          title="Livrables"
-          accentColor={LIGHT_BLUE}
-          isEditing={activeSection === "livrables"}
-          showSaved={savedSections.has("livrables")}
-          onEditRequest={() => requestEdit("livrables")}
-          onSave={(u) => handleSave("livrables", u)}
-          onCancel={handleCancel}
-          fields={[
-            { key: "livrable_1", label: "Livrable 1", value: editablePreview.livrable_1 },
-            { key: "livrable_2", label: "Livrable 2", value: editablePreview.livrable_2 },
-            { key: "livrable_3", label: "Livrable 3", value: editablePreview.livrable_3 },
-          ]}
-          renderContent={
-            <div className="pl-5 pr-4 pb-4">
-              <ol className="space-y-2">
-                {[
-                  editablePreview.livrable_1,
-                  editablePreview.livrable_2,
-                  editablePreview.livrable_3,
-                ]
-                  .filter(Boolean)
-                  .map((liv, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                      <span className="shrink-0 font-semibold text-xs mt-0.5" style={{ color: LIGHT_BLUE }}>
-                        L{i + 1}.
-                      </span>
-                      <span className="leading-relaxed">{liv}</span>
-                    </li>
-                  ))}
-              </ol>
-            </div>
-          }
-        />
+        <FlashWrapper sectionId="livrables" color={LIGHT_BLUE}>
+          <EditableSection
+            title="Livrables"
+            accentColor={LIGHT_BLUE}
+            isEditing={activeSection === "livrables"}
+            showSaved={savedSections.has("livrables")}
+            onEditRequest={() => requestEdit("livrables")}
+            onSave={(u) => handleSave("livrables", u)}
+            onCancel={handleCancel}
+            fields={[
+              { key: "livrable_1", label: "Livrable 1", value: editablePreview.livrable_1 },
+              { key: "livrable_2", label: "Livrable 2", value: editablePreview.livrable_2 },
+              { key: "livrable_3", label: "Livrable 3", value: editablePreview.livrable_3 },
+            ]}
+            renderContent={
+              <div className="pl-5 pr-4 pb-4">
+                <ol className="space-y-2">
+                  {[editablePreview.livrable_1, editablePreview.livrable_2, editablePreview.livrable_3]
+                    .filter(Boolean)
+                    .map((liv, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                        <span className="shrink-0 font-semibold text-xs mt-0.5" style={{ color: LIGHT_BLUE }}>
+                          L{i + 1}.
+                        </span>
+                        <span className="leading-relaxed">{liv}</span>
+                      </li>
+                    ))}
+                </ol>
+              </div>
+            }
+          />
+        </FlashWrapper>
 
         {/* BLOCK 6 — Hypothèses */}
-        <EditableSection
-          title="Hypothèses"
-          accentColor={LIGHT_BLUE}
-          isEditing={activeSection === "hypotheses"}
-          showSaved={savedSections.has("hypotheses")}
-          onEditRequest={() => requestEdit("hypotheses")}
-          onSave={(u) => handleSave("hypotheses", u)}
-          onCancel={handleCancel}
-          fields={[
-            {
-              key: "hypothese_specifique",
-              label: "Hypothèses de travail",
-              value: editablePreview.hypothese_specifique,
-              multiline: true,
-            },
-          ]}
-          renderContent={
-            <div className="pl-5 pr-4 pb-4 space-y-2.5">
-              {editablePreview.hypothese_specifique
-                .split("\n\n")
-                .filter(Boolean)
-                .map((h, i) => (
-                  <div key={i} className="flex items-start gap-2">
-                    <span className="shrink-0 font-semibold text-xs mt-0.5" style={{ color: LIGHT_BLUE }}>
-                      H{i + 1}.
-                    </span>
-                    <p className="text-sm text-gray-700 leading-relaxed">{h.trim()}</p>
-                  </div>
-                ))}
-            </div>
-          }
-        />
+        <FlashWrapper sectionId="hypotheses" color={LIGHT_BLUE}>
+          <EditableSection
+            title="Hypothèses"
+            accentColor={LIGHT_BLUE}
+            isEditing={activeSection === "hypotheses"}
+            showSaved={savedSections.has("hypotheses")}
+            onEditRequest={() => requestEdit("hypotheses")}
+            onSave={(u) => handleSave("hypotheses", u)}
+            onCancel={handleCancel}
+            fields={[
+              {
+                key: "hypothese_specifique",
+                label: "Hypothèses de travail",
+                value: editablePreview.hypothese_specifique,
+                multiline: true,
+              },
+            ]}
+            renderContent={
+              <div className="pl-5 pr-4 pb-4 space-y-2.5">
+                {editablePreview.hypothese_specifique
+                  .split("\n\n")
+                  .filter(Boolean)
+                  .map((h, i) => (
+                    <div key={i} className="flex items-start gap-2">
+                      <span className="shrink-0 font-semibold text-xs mt-0.5" style={{ color: LIGHT_BLUE }}>
+                        H{i + 1}.
+                      </span>
+                      <p className="text-sm text-gray-700 leading-relaxed">{h.trim()}</p>
+                    </div>
+                  ))}
+              </div>
+            }
+          />
+        </FlashWrapper>
 
         {/* BLOCK 7 — Échéancier */}
-        <EditableSection
-          title="Échéancier"
-          accentColor={LIGHT_BLUE}
-          isEditing={activeSection === "echeancier"}
-          showSaved={savedSections.has("echeancier")}
-          onEditRequest={() => requestEdit("echeancier")}
-          onSave={(u) => handleSave("echeancier", u)}
-          onCancel={handleCancel}
-          fields={[
-            {
-              key: "description_echeancier",
-              label: "Description délai",
-              value: editablePreview.description_echeancier,
-              multiline: true,
-            },
-          ]}
-          renderContent={
-            <div className="pl-5 pr-4 pb-4">
-              <p className="text-sm text-gray-700 leading-relaxed">
-                {editablePreview.description_echeancier}
-              </p>
-              <div className="mt-3 inline-flex items-center gap-1.5 bg-[#F4F6F7] rounded-lg px-3 py-1.5">
-                <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span className="text-xs font-medium text-gray-600">
-                  {step2.delai_jours} jours
-                </span>
+        <FlashWrapper sectionId="echeancier" color={LIGHT_BLUE}>
+          <EditableSection
+            title="Échéancier"
+            accentColor={LIGHT_BLUE}
+            isEditing={activeSection === "echeancier"}
+            showSaved={savedSections.has("echeancier")}
+            onEditRequest={() => requestEdit("echeancier")}
+            onSave={(u) => handleSave("echeancier", u)}
+            onCancel={handleCancel}
+            fields={[
+              {
+                key: "description_echeancier",
+                label: "Description délai",
+                value: editablePreview.description_echeancier,
+                multiline: true,
+              },
+            ]}
+            renderContent={
+              <div className="pl-5 pr-4 pb-4">
+                <p className="text-sm text-gray-700 leading-relaxed">
+                  {editablePreview.description_echeancier}
+                </p>
+                <div className="mt-3 inline-flex items-center gap-1.5 bg-[#F4F6F7] rounded-lg px-3 py-1.5">
+                  <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-xs font-medium text-gray-600">
+                    {step2.delai_jours} jours
+                  </span>
+                </div>
               </div>
-            </div>
-          }
-        />
+            }
+          />
+        </FlashWrapper>
 
         {/* BLOCK 8 — Inclusions et exclusions */}
-        <EditableSection
-          title="Inclusions et exclusions"
-          accentColor={LIGHT_BLUE}
-          isEditing={activeSection === "perimetre"}
-          showSaved={savedSections.has("perimetre")}
-          onEditRequest={() => requestEdit("perimetre")}
-          onSave={(u) => handleSave("perimetre", u)}
-          onCancel={handleCancel}
-          fields={[
-            {
-              key: "inclusions_specifiques",
-              label: "Inclusions",
-              value: editablePreview.inclusions_specifiques,
-              multiline: true,
-            },
-            {
-              key: "exclusions_specifiques",
-              label: "Exclusions",
-              value: editablePreview.exclusions_specifiques,
-              multiline: true,
-            },
-          ]}
-          renderContent={
-            <div className="pl-5 pr-4 pb-4 space-y-4">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-green-700 mb-1.5">
-                  Inclus dans l'offre
-                </p>
-                <ul className="space-y-1">
-                  {editablePreview.inclusions_specifiques
-                    .split("\n")
-                    .filter(Boolean)
-                    .map((item, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                        <span className="text-green-500 shrink-0 mt-0.5">✓</span>
-                        <span className="leading-relaxed">{item.trim()}</span>
-                      </li>
-                    ))}
-                </ul>
+        <FlashWrapper sectionId="perimetre" color={LIGHT_BLUE}>
+          <EditableSection
+            title="Inclusions et exclusions"
+            accentColor={LIGHT_BLUE}
+            isEditing={activeSection === "perimetre"}
+            showSaved={savedSections.has("perimetre")}
+            onEditRequest={() => requestEdit("perimetre")}
+            onSave={(u) => handleSave("perimetre", u)}
+            onCancel={handleCancel}
+            fields={[
+              {
+                key: "inclusions_specifiques",
+                label: "Inclusions",
+                value: editablePreview.inclusions_specifiques,
+                multiline: true,
+              },
+              {
+                key: "exclusions_specifiques",
+                label: "Exclusions",
+                value: editablePreview.exclusions_specifiques,
+                multiline: true,
+              },
+            ]}
+            renderContent={
+              <div className="pl-5 pr-4 pb-4 space-y-4">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-green-700 mb-1.5">
+                    Inclus dans l'offre
+                  </p>
+                  <ul className="space-y-1">
+                    {editablePreview.inclusions_specifiques
+                      .split("\n")
+                      .filter(Boolean)
+                      .map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                          <span className="text-green-500 shrink-0 mt-0.5">✓</span>
+                          <span className="leading-relaxed">{item.trim()}</span>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-red-600 mb-1.5">
+                    Non inclus / Exclusions
+                  </p>
+                  <ul className="space-y-1">
+                    {editablePreview.exclusions_specifiques
+                      .split("\n")
+                      .filter(Boolean)
+                      .map((item, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                          <span className="text-red-400 shrink-0 mt-0.5">✗</span>
+                          <span className="leading-relaxed">{item.trim()}</span>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
               </div>
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-red-600 mb-1.5">
-                  Non inclus / Exclusions
-                </p>
-                <ul className="space-y-1">
-                  {editablePreview.exclusions_specifiques
-                    .split("\n")
-                    .filter(Boolean)
-                    .map((item, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                        <span className="text-red-400 shrink-0 mt-0.5">✗</span>
-                        <span className="leading-relaxed">{item.trim()}</span>
-                      </li>
-                    ))}
-                </ul>
-              </div>
-            </div>
-          }
-        />
+            }
+          />
+        </FlashWrapper>
+
+        {/* PART 6 — Régénérer les sections IA */}
+        <div className="flex justify-center py-1">
+          <button
+            type="button"
+            onClick={() => setShowRegenerateModal(true)}
+            disabled={regenerating}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 border border-dashed border-gray-300 hover:border-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-50 min-h-[44px]"
+          >
+            {regenerating ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            )}
+            {regenerating ? "Régénération en cours…" : "Régénérer les sections IA"}
+          </button>
+        </div>
 
         {/* Budget (non-editable) */}
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -726,9 +839,7 @@ export default function StepPreview({
                     </tr>
                   ))}
                   <tr className="border-t border-gray-200 bg-[#F4F6F7]">
-                    <td colSpan={3} className="px-3 py-2 text-right font-medium text-gray-700 text-xs">
-                      Total HT
-                    </td>
+                    <td colSpan={3} className="px-3 py-2 text-right font-medium text-gray-700 text-xs">Total HT</td>
                     <td className="px-3 py-2 text-right font-medium text-gray-900">
                       {formatMontant(total_ht)}
                     </td>
@@ -738,9 +849,7 @@ export default function StepPreview({
                     <td className="px-3 py-2 text-right text-gray-700">{formatMontant(tva)}</td>
                   </tr>
                   <tr className="border-t border-gray-200" style={{ backgroundColor: `${BTH_GREEN}0d` }}>
-                    <td colSpan={3} className="px-3 py-2 text-right font-bold text-gray-900 text-sm">
-                      Total TTC
-                    </td>
+                    <td colSpan={3} className="px-3 py-2 text-right font-bold text-gray-900 text-sm">Total TTC</td>
                     <td className="px-3 py-2 text-right font-bold text-lg" style={{ color: BTH_GREEN }}>
                       {formatMontant(total_ttc)}
                     </td>
@@ -806,7 +915,7 @@ export default function StepPreview({
 
       {/* ── Modals & Toasts ──────────────────────────────────────── */}
 
-      {/* Confirmation — switch section with unsaved changes */}
+      {/* Section switch confirmation */}
       <AnimatePresence>
         {pendingSection && (
           <>
@@ -833,12 +942,8 @@ export default function StepPreview({
                     </svg>
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">
-                      Modifications non sauvegardées
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      Annuler les modifications en cours ?
-                    </p>
+                    <p className="font-semibold text-gray-900 text-sm">Modifications non sauvegardées</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Annuler les modifications en cours ?</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -856,6 +961,86 @@ export default function StepPreview({
                     className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer min-h-[44px]"
                   >
                     Rester ici
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* PART 6 — Regenerate AI modal (slides up mobile, centered desktop) */}
+      <AnimatePresence>
+        {showRegenerateModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"
+              onClick={() => !regenerating && setShowRegenerateModal(false)}
+            />
+            <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 40 }}
+                transition={{ type: "spring", damping: 28, stiffness: 320 }}
+                className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl pointer-events-auto p-6 pb-8 sm:pb-6"
+              >
+                {/* Icon */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ backgroundColor: `${MID_BLUE}15` }}>
+                    <svg className="w-5 h-5" style={{ color: MID_BLUE }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900">Régénérer les sections IA</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Nouvelle génération avec Claude</p>
+                  </div>
+                </div>
+
+                {/* Message */}
+                <p className="text-sm text-gray-600 leading-relaxed mb-5">
+                  La régénération remplacera uniquement les sections IA
+                  (contexte, objectifs, livrables, hypothèses, échéancier,
+                  inclusions/exclusions).{" "}
+                  <span className="font-medium text-gray-900">
+                    Les informations client et offre seront conservées.
+                  </span>
+                </p>
+
+                {/* Actions */}
+                <div className="flex gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={handleRegenerate}
+                    disabled={regenerating}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer disabled:opacity-60 min-h-[44px]"
+                    style={{ backgroundColor: BTH_GREEN }}
+                  >
+                    {regenerating ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Génération…
+                      </>
+                    ) : (
+                      "Régénérer"
+                    )}
+                  </motion.button>
+                  <button
+                    onClick={() => setShowRegenerateModal(false)}
+                    disabled={regenerating}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-50 min-h-[44px]"
+                  >
+                    Annuler
                   </button>
                 </div>
               </motion.div>
