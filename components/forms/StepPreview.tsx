@@ -139,9 +139,12 @@ export default function StepPreview({
   const [savedSections, setSavedSections] = useState<Set<string>>(new Set());
   const [flashingSections, setFlashingSections] = useState<Set<string>>(new Set());
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [unsavedSections, setUnsavedSections] = useState<Set<string>>(new Set());
   const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
   const [showRegenerateModal, setShowRegenerateModal] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+
+  const hasUnsaved = unsavedSections.size > 0;
 
   const total_ht = step3.lignes.reduce(
     (s, l) => s + l.quantite * l.prix_unitaire,
@@ -231,6 +234,9 @@ export default function StepPreview({
     setEditablePreview(newPreview);
     setActiveSection(null);
 
+    // Mark as unsaved immediately — cleared only after successful Supabase PATCH
+    setUnsavedSections((prev) => new Set([...prev, sectionId]));
+
     // Checkmark flash
     setSavedSections((prev) => new Set([...prev, sectionId]));
     setTimeout(() => {
@@ -247,6 +253,12 @@ export default function StepPreview({
       setSaveError(null);
       try {
         await autoSave(knownSection, newPreview);
+        // Success — remove from unsaved set
+        setUnsavedSections((prev) => {
+          const next = new Set(prev);
+          next.delete(sectionId);
+          return next;
+        });
       } catch {
         setSaveError(
           "Sauvegarde échouée, vos modifications sont conservées localement"
@@ -414,6 +426,20 @@ export default function StepPreview({
             </svg>
             Survolez une section pour la modifier
           </p>
+          <AnimatePresence>
+            {hasUnsaved && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-1.5 text-xs text-orange-500 mt-1"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />
+                Modifications non sauvegardées
+              </motion.p>
+            )}
+          </AnimatePresence>
         </div>
         <div className="flex gap-2">
           <button
