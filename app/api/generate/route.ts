@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateContexte } from "@/lib/anthropic";
+import { generateSoumissionContent, SoumissionAIContent } from "@/lib/anthropic";
 import { FormDataStep1, FormDataStep2 } from "@/types";
 
 export async function POST(req: NextRequest) {
@@ -11,10 +11,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Données manquantes" }, { status: 400 });
     }
 
-    const result = await generateContexte(step1, step2);
-    const parsed = JSON.parse(result);
+    const data: SoumissionAIContent = await generateSoumissionContent(step1, step2);
 
-    return NextResponse.json({ success: true, data: parsed });
+    return NextResponse.json({ success: true, data });
   } catch (error) {
     console.error("Erreur génération IA:", error);
     return NextResponse.json(
