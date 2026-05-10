@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FormDataStep1, FormDataStep2, FormDataStep3, EditablePreview } from "@/types";
+import { FormDataStep1, FormDataStep2, FormDataStep3, EditablePreview, LigneBudget } from "@/types";
 import type { SoumissionAIContent } from "@/lib/anthropic";
 import type { TitreContact } from "@/types";
 import { formatMontant, generateNumeroOffre } from "@/lib/utils";
@@ -28,12 +28,14 @@ const BTH_GREEN = "#1a2e1e";
 const SECTION_ENTITY = {
   destinataire: "client",
   objet: "soumission",
+  intro: "local",      // preview-only, no DB column
   contexte: "ai",
   objectifs: "ai",
   livrables: "ai",
   hypotheses: "ai",
   echeancier: "ai",
   perimetre: "ai",
+  budget: "budget",   // PUT /api/soumissions/[id]/lignes + PATCH totals
 } as const;
 
 type SectionId = keyof typeof SECTION_ENTITY;
@@ -70,13 +72,18 @@ function initEditablePreview(
   step1: FormDataStep1,
   step2: FormDataStep2,
   ai: SoumissionAIContent,
-  numeroOffre: string
+  numeroOffre: string,
+  lignes: LigneBudget[]
 ): EditablePreview {
   const today = new Date().toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
     year: "numeric",
   });
+  const titreLong =
+    step1.titre === "M." ? "Monsieur" :
+    step1.titre === "Mme" ? "Madame" :
+    step1.titre;
   return {
     titre: step1.titre,
     nom_contact: step1.nom_contact,
@@ -87,6 +94,7 @@ function initEditablePreview(
     numero_offre: numeroOffre,
     date_offre: today,
     titre_projet: step2.titre_projet,
+    intro_paragraphe: `${titreLong} ${step1.nom_contact},\n\nSarl BTH EXPERT a le plaisir de vous transmettre son offre de services professionnels relative au projet ${step2.titre_projet.toLowerCase()}.`,
     contexte_paragraphe_1: ai.contexte_paragraphe_1,
     contexte_paragraphe_2: ai.contexte_paragraphe_2,
     objectif_1: ai.objectif_1,
@@ -102,20 +110,7 @@ function initEditablePreview(
     description_echeancier: ai.description_echeancier,
     inclusions_specifiques: ai.inclusions_specifiques,
     exclusions_specifiques: ai.exclusions_specifiques,
-  };
-}
-
-// Flash animation for a given accent color
-function flashVariants(color: string) {
-  return {
-    idle: { boxShadow: `0 0 0 0px transparent` },
-    flash: {
-      boxShadow: [
-        `0 0 0 0px transparent`,
-        `0 0 0 3px ${color}`,
-        `0 0 0 0px transparent`,
-      ],
-    },
+    lignes_budget: lignes.map((l) => ({ ...l })),
   };
 }
 
@@ -132,26 +127,64 @@ export default function StepPreview({
 }: Props) {
   const [numeroOffre] = useState(() => generateNumeroOffre());
   const [editablePreview, setEditablePreview] = useState<EditablePreview>(() =>
-    initEditablePreview(step1, step2, aiContent, numeroOffre)
+    initEditablePreview(step1, step2, aiContent, numeroOffre, step3.lignes)
   );
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [pendingSection, setPendingSection] = useState<string | null>(null);
   const [savedSections, setSavedSections] = useState<Set<string>>(new Set());
   const [flashingSections, setFlashingSections] = useState<Set<string>>(new Set());
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [unsavedSections, setUnsavedSections] = useState<Set<string>>(new Set());
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
   const [showRegenerateModal, setShowRegenerateModal] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
 
+  // FIX 1 — leave guard
+  const [isDirty, setIsDirty] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const pendingLeaveRef = useRef<(() => void) | null>(null);
+
+  // FIX 5 — budget draft state + ref for scroll
+  const [draftLignes, setDraftLignes] = useState<LigneBudget[]>([]);
+  const budgetSectionRef = useRef<HTMLDivElement>(null);
+
   const hasUnsaved = unsavedSections.size > 0;
 
-  const total_ht = step3.lignes.reduce(
+  // Totals computed from editablePreview.lignes_budget (source of truth after FIX 5)
+  const total_ht = editablePreview.lignes_budget.reduce(
     (s, l) => s + l.quantite * l.prix_unitaire,
     0
   );
   const tva = total_ht * 0.19;
   const total_ttc = total_ht + tva;
+
+  // Draft totals for budget edit mode live recalculation
+  const draftTotal_ht = draftLignes.reduce((s, l) => s + l.quantite * l.prix_unitaire, 0);
+  const draftTva = draftTotal_ht * 0.19;
+  const draftTotal_ttc = draftTotal_ht + draftTva;
+
+  // FIX 1 — intercept browser/tab close when dirty
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  // FIX 5 — init draft lignes and scroll when budget enters edit mode
+  useEffect(() => {
+    if (activeSection === "budget") {
+      setDraftLignes(editablePreview.lignes_budget.map((l) => ({ ...l })));
+      setTimeout(() => {
+        budgetSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSection]);
 
   const civiliteLong =
     editablePreview.titre === "M."
@@ -183,10 +216,28 @@ export default function StepPreview({
     setPendingSection(null);
   }
 
+  // FIX 1 — leave modal logic
+  function requestLeave(action: () => void) {
+    if (isDirty) {
+      pendingLeaveRef.current = action;
+      setShowLeaveModal(true);
+    } else {
+      action();
+    }
+  }
+
+  function confirmLeave() {
+    setShowLeaveModal(false);
+    pendingLeaveRef.current?.();
+    pendingLeaveRef.current = null;
+  }
+
   // ── Auto-save (silent) ───────────────────────────────────────────
 
   async function autoSave(sectionId: SectionId, newPreview: EditablePreview) {
     const entity = SECTION_ENTITY[sectionId];
+
+    if (entity === "local") return; // no DB column — local preview only
 
     if (entity === "client" && clientId) {
       const res = await fetch(`/api/clients/${clientId}`, {
@@ -227,14 +278,34 @@ export default function StepPreview({
       });
       if (!res.ok) throw new Error("ai patch failed");
     }
+
+    if (entity === "budget" && soumissionId) {
+      const ht = newPreview.lignes_budget.reduce(
+        (s, l) => s + l.quantite * l.prix_unitaire,
+        0
+      );
+      const tvaAmt = ht * 0.19;
+      const [r1, r2] = await Promise.all([
+        fetch(`/api/soumissions/${soumissionId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ total_ht: ht, tva: tvaAmt, total_ttc: ht + tvaAmt }),
+        }),
+        fetch(`/api/soumissions/${soumissionId}/lignes`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lignes: newPreview.lignes_budget }),
+        }),
+      ]);
+      if (!r1.ok || !r2.ok) throw new Error("budget save failed");
+    }
   }
 
   async function handleSave(sectionId: string, updates: Record<string, string>) {
     const newPreview = { ...editablePreview, ...updates };
     setEditablePreview(newPreview);
     setActiveSection(null);
-
-    // Mark as unsaved immediately — cleared only after successful Supabase PATCH
+    setIsDirty(true); // FIX 1
     setUnsavedSections((prev) => new Set([...prev, sectionId]));
 
     // Checkmark flash
@@ -253,7 +324,6 @@ export default function StepPreview({
       setSaveError(null);
       try {
         await autoSave(knownSection, newPreview);
-        // Success — remove from unsaved set
         setUnsavedSections((prev) => {
           const next = new Set(prev);
           next.delete(sectionId);
@@ -268,15 +338,51 @@ export default function StepPreview({
     }
   }
 
-  // ── PART 5 — Export uses editablePreview for ALL fields ──────────
+  // FIX 5 — dedicated budget save (handles LigneBudget[], not Record<string,string>)
+  async function handleBudgetSave(lignes: LigneBudget[]) {
+    const validLignes = lignes
+      .filter((l) => l.designation.trim())
+      .map((l, i) => ({ ...l, numero: i + 1, ordre: i + 1 }));
+
+    const newPreview = { ...editablePreview, lignes_budget: validLignes };
+    setEditablePreview(newPreview);
+    setActiveSection(null);
+    setIsDirty(true);
+    setUnsavedSections((prev) => new Set([...prev, "budget"]));
+
+    setSavedSections((prev) => new Set([...prev, "budget"]));
+    setTimeout(() => {
+      setSavedSections((prev) => {
+        const next = new Set(prev);
+        next.delete("budget");
+        return next;
+      });
+    }, 600);
+
+    if (soumissionId) {
+      setSaveError(null);
+      try {
+        await autoSave("budget", newPreview);
+        setUnsavedSections((prev) => {
+          const next = new Set(prev);
+          next.delete("budget");
+          return next;
+        });
+      } catch {
+        setSaveError(
+          "Sauvegarde échouée, vos modifications sont conservées localement"
+        );
+        setTimeout(() => setSaveError(null), 6000);
+      }
+    }
+  }
+
+  // ── Export uses editablePreview for ALL fields ───────────────────
 
   async function handleExport(format: "docx" | "pdf") {
     setExporting(format);
     try {
       const today = new Date().toISOString().split("T")[0];
-
-      // editablePreview is passed directly — the API uses it for all editable fields.
-      // soumission retains computed/non-editable fields (totals, type_etude, delai_jours).
       const payload = {
         editablePreview,
         soumission: {
@@ -297,7 +403,7 @@ export default function StepPreview({
           contexte_genere: JSON.stringify(buildAIContent(editablePreview)),
           created_at: today,
         },
-        lignes: step3.lignes,
+        lignes: editablePreview.lignes_budget,
       };
 
       const res = await fetch(`/api/export/${format}`, {
@@ -321,12 +427,11 @@ export default function StepPreview({
     }
   }
 
-  // ── PART 6 — Regenerate AI sections ─────────────────────────────
+  // ── Regenerate AI sections ───────────────────────────────────────
 
   async function handleRegenerate() {
     setRegenerating(true);
     try {
-      // Reconstruct step1 from editablePreview (user may have edited client info)
       const step1Regen: FormDataStep1 = {
         titre: editablePreview.titre as TitreContact,
         nom_contact: editablePreview.nom_contact,
@@ -346,7 +451,6 @@ export default function StepPreview({
 
       const newAI: SoumissionAIContent = json.data;
 
-      // Update ONLY AI fields — keep client info and offer info untouched
       setEditablePreview((prev) => ({
         ...prev,
         contexte_paragraphe_1: newAI.contexte_paragraphe_1,
@@ -365,8 +469,8 @@ export default function StepPreview({
         inclusions_specifiques: newAI.inclusions_specifiques,
         exclusions_specifiques: newAI.exclusions_specifiques,
       }));
+      setIsDirty(true);
 
-      // Flash all AI sections to signal update
       setFlashingSections(new Set(AI_SECTIONS));
       setTimeout(() => setFlashingSections(new Set()), 1800);
 
@@ -378,7 +482,7 @@ export default function StepPreview({
     }
   }
 
-  // Helper — motion wrapper with flash for a given section and color
+  // Flash wrapper for AI section regeneration animation
   function FlashWrapper({
     sectionId,
     color,
@@ -426,6 +530,7 @@ export default function StepPreview({
             </svg>
             Survolez une section pour la modifier
           </p>
+          {/* FIX 1 — unsaved changes indicator */}
           <AnimatePresence>
             {hasUnsaved && (
               <motion.p
@@ -554,16 +659,34 @@ export default function StepPreview({
           }
         />
 
-        {/* Static intro */}
-        <div className="bg-[#F4F6F7] rounded-xl px-5 py-4 text-sm text-gray-700 leading-relaxed">
-          <p>{civiliteLong} {editablePreview.nom_contact.split(" ")[0]},</p>
-          <p className="mt-2">
-            Sarl BTH EXPERT a le plaisir de vous transmettre son offre de services
-            professionnels relative au projet {editablePreview.titre_projet.toLowerCase()}.
-          </p>
-        </div>
+        {/* BLOCK 3 — FIX 4: Intro paragraph (editable) */}
+        <EditableSection
+          title="Paragraphe d'introduction"
+          accentColor={DARK_BLUE}
+          isEditing={activeSection === "intro"}
+          showSaved={savedSections.has("intro")}
+          onEditRequest={() => requestEdit("intro")}
+          onSave={(u) => handleSave("intro", u)}
+          onCancel={handleCancel}
+          fields={[
+            {
+              key: "intro_paragraphe",
+              label: "Texte d'introduction",
+              value: editablePreview.intro_paragraphe,
+              multiline: true,
+            },
+          ]}
+          renderContent={
+            <div className="pl-5 pr-4 pb-4 bg-[#F4F6F7] rounded-b-xl text-sm text-gray-700 leading-relaxed">
+              {editablePreview.intro_paragraphe.split("\n\n").map((para, i) => (
+                <p key={i} className={i > 0 ? "mt-2" : "pt-4"}>{para}</p>
+              ))}
+              <div className="pb-0.5" />
+            </div>
+          }
+        />
 
-        {/* BLOCK 3 — Contexte et objectifs */}
+        {/* BLOCK 4 — Contexte */}
         <FlashWrapper sectionId="contexte" color={MID_BLUE}>
           <EditableSection
             title="Contexte et objectifs"
@@ -599,7 +722,7 @@ export default function StepPreview({
           />
         </FlashWrapper>
 
-        {/* BLOCK 4 — Objectifs du projet */}
+        {/* BLOCK 5 — Objectifs */}
         <FlashWrapper sectionId="objectifs" color={MID_BLUE}>
           <EditableSection
             title="Objectifs du projet"
@@ -642,7 +765,7 @@ export default function StepPreview({
           />
         </FlashWrapper>
 
-        {/* BLOCK 5 — Livrables */}
+        {/* BLOCK 6 — Livrables */}
         <FlashWrapper sectionId="livrables" color={LIGHT_BLUE}>
           <EditableSection
             title="Livrables"
@@ -676,7 +799,7 @@ export default function StepPreview({
           />
         </FlashWrapper>
 
-        {/* BLOCK 6 — Hypothèses */}
+        {/* BLOCK 7 — Hypothèses */}
         <FlashWrapper sectionId="hypotheses" color={LIGHT_BLUE}>
           <EditableSection
             title="Hypothèses"
@@ -712,7 +835,7 @@ export default function StepPreview({
           />
         </FlashWrapper>
 
-        {/* BLOCK 7 — Échéancier */}
+        {/* BLOCK 8 — Échéancier */}
         <FlashWrapper sectionId="echeancier" color={LIGHT_BLUE}>
           <EditableSection
             title="Échéancier"
@@ -749,7 +872,7 @@ export default function StepPreview({
           />
         </FlashWrapper>
 
-        {/* BLOCK 8 — Inclusions et exclusions */}
+        {/* BLOCK 9 — Inclusions et exclusions */}
         <FlashWrapper sectionId="perimetre" color={LIGHT_BLUE}>
           <EditableSection
             title="Inclusions et exclusions"
@@ -812,7 +935,7 @@ export default function StepPreview({
           />
         </FlashWrapper>
 
-        {/* PART 6 — Régénérer les sections IA */}
+        {/* Regenerate AI button */}
         <div className="flex justify-center py-1">
           <button
             type="button"
@@ -835,55 +958,294 @@ export default function StepPreview({
           </button>
         </div>
 
-        {/* Budget (non-editable) */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="pl-5 pr-3 pt-3 pb-2">
+        {/* BLOCK 10 — FIX 5: Budget (editable) */}
+        <div
+          ref={budgetSectionRef}
+          className={`group relative bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden ${
+            activeSection === "budget" ? "scroll-mt-20" : ""
+          }`}
+        >
+          {/* Accent bar */}
+          <div
+            className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
+            style={{ backgroundColor: BTH_GREEN }}
+          />
+
+          {/* Header */}
+          <div className="flex items-center justify-between pl-5 pr-3 pt-3 pb-2">
             <span className="text-[11px] font-semibold uppercase tracking-widest text-gray-400">
               Budget
             </span>
+            <AnimatePresence mode="wait">
+              {activeSection !== "budget" && (
+                <motion.button
+                  key="pencil-budget"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.12 }}
+                  type="button"
+                  onClick={() => requestEdit("budget")}
+                  aria-label="Éditer le budget"
+                  className="min-w-[44px] min-h-[44px] md:min-w-[28px] md:min-h-[28px] w-11 h-11 md:w-7 md:h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-gray-100 cursor-pointer opacity-100 md:opacity-0 md:group-hover:opacity-100 md:transition-opacity md:duration-150"
+                >
+                  <AnimatePresence mode="wait">
+                    {savedSections.has("budget") ? (
+                      <motion.svg
+                        key="check-budget"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="w-4 h-4 text-green-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </motion.svg>
+                    ) : (
+                      <motion.svg
+                        key="pencil-budget-icon"
+                        initial={{ scale: 0, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0, opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="w-3.5 h-3.5 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </motion.svg>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
+              )}
+            </AnimatePresence>
           </div>
-          <div className="pl-5 pr-4 pb-4">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-[#F4F6F7]">
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 w-8">N°</th>
-                    <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Désignation</th>
-                    <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 w-12">Q</th>
-                    <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 w-36">Prix (DZD)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {step3.lignes.map((l) => (
-                    <tr key={l.numero} className="border-t border-gray-100">
-                      <td className="px-3 py-2 text-center text-gray-500">{l.numero}</td>
-                      <td className="px-3 py-2 text-gray-700">{l.designation}</td>
-                      <td className="px-3 py-2 text-center text-gray-500">{l.quantite}</td>
-                      <td className="px-3 py-2 text-right text-gray-700">
-                        {formatMontant(l.prix_unitaire)}
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="border-t border-gray-200 bg-[#F4F6F7]">
-                    <td colSpan={3} className="px-3 py-2 text-right font-medium text-gray-700 text-xs">Total HT</td>
-                    <td className="px-3 py-2 text-right font-medium text-gray-900">
-                      {formatMontant(total_ht)}
-                    </td>
-                  </tr>
-                  <tr className="border-t border-gray-100">
-                    <td colSpan={3} className="px-3 py-2 text-right text-gray-600 text-xs">TVA 19%</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{formatMontant(tva)}</td>
-                  </tr>
-                  <tr className="border-t border-gray-200" style={{ backgroundColor: `${BTH_GREEN}0d` }}>
-                    <td colSpan={3} className="px-3 py-2 text-right font-bold text-gray-900 text-sm">Total TTC</td>
-                    <td className="px-3 py-2 text-right font-bold text-lg" style={{ color: BTH_GREEN }}>
-                      {formatMontant(total_ttc)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+
+          {/* Content */}
+          <AnimatePresence mode="wait" initial={false}>
+            {activeSection === "budget" ? (
+              // EDIT MODE
+              <motion.div
+                key="budget-edit"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.22, ease: "easeOut" }}
+                className="overflow-hidden"
+              >
+                <div className="pl-5 pr-4 pb-3">
+                  {/* Column headers — hidden on xs, visible sm+ */}
+                  <div className="hidden sm:grid sm:grid-cols-[32px_1fr_60px_130px_36px] gap-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-1">
+                    <span className="text-center">N°</span>
+                    <span>Désignation</span>
+                    <span className="text-center">Qté</span>
+                    <span className="text-right">Prix unitaire</span>
+                    <span />
+                  </div>
+
+                  {/* Scrollable on very small screens */}
+                  <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                    <div className="min-w-[420px] space-y-2">
+                      {draftLignes.map((l, i) => (
+                        <div
+                          key={i}
+                          className="grid grid-cols-[32px_1fr_60px_130px_36px] gap-2 items-center"
+                        >
+                          <span className="text-xs text-gray-400 text-center py-2.5 shrink-0">
+                            {i + 1}
+                          </span>
+                          <input
+                            value={l.designation}
+                            placeholder="Désignation"
+                            onChange={(e) =>
+                              setDraftLignes((prev) =>
+                                prev.map((ligne, idx) =>
+                                  idx === i ? { ...ligne, designation: e.target.value } : ligne
+                                )
+                              )
+                            }
+                            className="w-full px-2.5 py-2 rounded-lg text-sm border outline-none transition-shadow"
+                            style={{ borderColor: BTH_GREEN }}
+                            onFocus={(e) => { e.target.style.boxShadow = "0 0 0 3px rgba(26,46,30,0.12)"; }}
+                            onBlur={(e) => { e.target.style.boxShadow = "none"; }}
+                          />
+                          <input
+                            type="number"
+                            value={l.quantite}
+                            min={1}
+                            onChange={(e) =>
+                              setDraftLignes((prev) =>
+                                prev.map((ligne, idx) =>
+                                  idx === i ? { ...ligne, quantite: Math.max(1, Number(e.target.value)) } : ligne
+                                )
+                              )
+                            }
+                            className="w-full px-2 py-2 rounded-lg text-sm border text-center outline-none transition-shadow"
+                            style={{ borderColor: BTH_GREEN }}
+                            onFocus={(e) => { e.target.style.boxShadow = "0 0 0 3px rgba(26,46,30,0.12)"; }}
+                            onBlur={(e) => { e.target.style.boxShadow = "none"; }}
+                          />
+                          <input
+                            type="number"
+                            value={l.prix_unitaire}
+                            min={0}
+                            onChange={(e) =>
+                              setDraftLignes((prev) =>
+                                prev.map((ligne, idx) =>
+                                  idx === i ? { ...ligne, prix_unitaire: Math.max(0, Number(e.target.value)) } : ligne
+                                )
+                              )
+                            }
+                            className="w-full px-2.5 py-2 rounded-lg text-sm border text-right outline-none transition-shadow"
+                            style={{ borderColor: BTH_GREEN }}
+                            onFocus={(e) => { e.target.style.boxShadow = "0 0 0 3px rgba(26,46,30,0.12)"; }}
+                            onBlur={(e) => { e.target.style.boxShadow = "none"; }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setDraftLignes((prev) =>
+                                prev
+                                  .filter((_, idx) => idx !== i)
+                                  .map((ligne, idx) => ({ ...ligne, numero: idx + 1, ordre: idx + 1 }))
+                              )
+                            }
+                            className="w-9 h-9 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Add ligne button */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setDraftLignes((prev) => [
+                        ...prev,
+                        {
+                          numero: prev.length + 1,
+                          designation: "",
+                          quantite: 1,
+                          prix_unitaire: 0,
+                          ordre: prev.length + 1,
+                        },
+                      ])
+                    }
+                    className="w-full mt-3 py-2.5 border border-dashed border-gray-300 rounded-lg text-sm text-gray-400 hover:border-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Ajouter une ligne
+                  </button>
+
+                  {/* Live totals */}
+                  <div className="mt-4 border-t border-gray-100 pt-3 space-y-1.5">
+                    <div className="flex justify-between text-xs text-gray-600">
+                      <span className="font-medium">Total HT</span>
+                      <span className="font-medium">{formatMontant(draftTotal_ht)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-gray-500">
+                      <span>TVA 19%</span>
+                      <span>{formatMontant(draftTva)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-bold border-t border-gray-200 pt-1.5">
+                      <span style={{ color: BTH_GREEN }}>Total TTC</span>
+                      <span style={{ color: BTH_GREEN }}>{formatMontant(draftTotal_ttc)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Save / Cancel */}
+                <div className="pl-5 pr-4 pb-4 flex gap-2">
+                  <motion.button
+                    type="button"
+                    onClick={() => handleBudgetSave(draftLignes)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.97 }}
+                    className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-semibold text-white cursor-pointer min-h-[44px]"
+                    style={{ backgroundColor: BTH_GREEN }}
+                  >
+                    <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                    </svg>
+                    Sauvegarder
+                  </motion.button>
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer min-h-[44px]"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </motion.div>
+            ) : (
+              // READ MODE
+              <motion.div
+                key="budget-read"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+              >
+                <div className="pl-5 pr-4 pb-4">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-[#F4F6F7]">
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 w-8">N°</th>
+                          <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Désignation</th>
+                          <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 w-12">Q</th>
+                          <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 w-36">Prix (DZD)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {editablePreview.lignes_budget.map((l) => (
+                          <tr key={l.numero} className="border-t border-gray-100">
+                            <td className="px-3 py-2 text-center text-gray-500">{l.numero}</td>
+                            <td className="px-3 py-2 text-gray-700">{l.designation}</td>
+                            <td className="px-3 py-2 text-center text-gray-500">{l.quantite}</td>
+                            <td className="px-3 py-2 text-right text-gray-700">
+                              {formatMontant(l.prix_unitaire)}
+                            </td>
+                          </tr>
+                        ))}
+                        <tr className="border-t border-gray-200 bg-[#F4F6F7]">
+                          <td colSpan={3} className="px-3 py-2 text-right font-medium text-gray-700 text-xs">Total HT</td>
+                          <td className="px-3 py-2 text-right font-medium text-gray-900">
+                            {formatMontant(total_ht)}
+                          </td>
+                        </tr>
+                        <tr className="border-t border-gray-100">
+                          <td colSpan={3} className="px-3 py-2 text-right text-gray-600 text-xs">TVA 19%</td>
+                          <td className="px-3 py-2 text-right text-gray-700">{formatMontant(tva)}</td>
+                        </tr>
+                        <tr className="border-t border-gray-200" style={{ backgroundColor: `${BTH_GREEN}0d` }}>
+                          <td colSpan={3} className="px-3 py-2 text-right font-bold text-gray-900 text-sm">Total TTC</td>
+                          <td className="px-3 py-2 text-right font-bold text-lg" style={{ color: BTH_GREEN }}>
+                            {formatMontant(total_ttc)}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Signataires (static) */}
@@ -903,9 +1265,10 @@ export default function StepPreview({
 
       {/* Navigation */}
       <div className="flex justify-between mt-6">
+        {/* FIX 1 — intercept "Retour" when dirty */}
         <button
           type="button"
-          onClick={onBack}
+          onClick={() => requestLeave(onBack)}
           className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all cursor-pointer min-h-[44px]"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -995,7 +1358,61 @@ export default function StepPreview({
         )}
       </AnimatePresence>
 
-      {/* PART 6 — Regenerate AI modal (slides up mobile, centered desktop) */}
+      {/* FIX 1 — Leave guard modal */}
+      <AnimatePresence>
+        {showLeaveModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px]"
+              onClick={() => setShowLeaveModal(false)}
+            />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 6 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 6 }}
+                transition={{ duration: 0.18 }}
+                className="bg-white rounded-2xl shadow-xl w-full max-w-sm pointer-events-auto p-6"
+              >
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-9 h-9 rounded-xl bg-red-50 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Quitter sans sauvegarder ?</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Vos modifications seront perdues si vous quittez cette page sans sauvegarder.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowLeaveModal(false)}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer min-h-[44px]"
+                    style={{ backgroundColor: BTH_GREEN }}
+                  >
+                    Rester sur la page
+                  </button>
+                  <button
+                    onClick={confirmLeave}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 transition-colors cursor-pointer min-h-[44px]"
+                  >
+                    Quitter quand même
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Regenerate AI modal */}
       <AnimatePresence>
         {showRegenerateModal && (
           <>
@@ -1014,7 +1431,6 @@ export default function StepPreview({
                 transition={{ type: "spring", damping: 28, stiffness: 320 }}
                 className="bg-white w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl shadow-2xl pointer-events-auto p-6 pb-8 sm:pb-6"
               >
-                {/* Icon */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                     style={{ backgroundColor: `${MID_BLUE}15` }}>
@@ -1028,8 +1444,6 @@ export default function StepPreview({
                     <p className="text-xs text-gray-400 mt-0.5">Nouvelle génération avec Claude</p>
                   </div>
                 </div>
-
-                {/* Message */}
                 <p className="text-sm text-gray-600 leading-relaxed mb-5">
                   La régénération remplacera uniquement les sections IA
                   (contexte, objectifs, livrables, hypothèses, échéancier,
@@ -1038,8 +1452,6 @@ export default function StepPreview({
                     Les informations client et offre seront conservées.
                   </span>
                 </p>
-
-                {/* Actions */}
                 <div className="flex gap-2">
                   <motion.button
                     whileHover={{ scale: 1.02 }}

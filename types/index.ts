@@ -173,6 +173,8 @@ export type EditablePreview = {
   numero_offre: string;
   date_offre: string;
   titre_projet: string;
+  // Intro paragraph (editable, preview-only — template constructs its own)
+  intro_paragraphe: string;
   // AI sections
   contexte_paragraphe_1: string;
   contexte_paragraphe_2: string;
@@ -187,4 +189,6 @@ export type EditablePreview = {
   description_echeancier: string;
   inclusions_specifiques: string;
   exclusions_specifiques: string;
+  // Budget lines (editable, replaces step3.lignes as source of truth)
+  lignes_budget: LigneBudget[];
 };
