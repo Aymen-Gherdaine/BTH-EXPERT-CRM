@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { FormDataStep1, FormDataStep2, FormDataStep3, EditablePreview, LigneBudget } from "@/types";
 import type { SoumissionAIContent } from "@/lib/anthropic";
@@ -125,6 +126,7 @@ export default function StepPreview({
   soumissionId,
   clientId,
 }: Props) {
+  const router = useRouter();
   const [numeroOffre] = useState(() => generateNumeroOffre());
   const [editablePreview, setEditablePreview] = useState<EditablePreview>(() =>
     initEditablePreview(step1, step2, aiContent, numeroOffre, step3.lignes)
@@ -142,6 +144,7 @@ export default function StepPreview({
   // FIX 1 — leave guard
   const [isDirty, setIsDirty] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const pendingLeaveRef = useRef<(() => void) | null>(null);
 
   // FIX 5 — budget draft state + ref for scroll
@@ -174,6 +177,39 @@ export default function StepPreview({
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
+
+  // FIX 2 — intercept sidebar / internal anchor clicks when dirty
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest("a");
+      if (!target) return;
+      if (target.download || target.target === "_blank") return;
+      const href = target.getAttribute("href");
+      if (!href || href.startsWith("#")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      requestLeave(() => router.push(href));
+    };
+
+    document.addEventListener("click", handleAnchorClick, true);
+    return () => document.removeEventListener("click", handleAnchorClick, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDirty, router]);
+
+  // FIX 3 — intercept browser back/forward when dirty
+  useEffect(() => {
+    if (!isDirty) return;
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+      requestLeave(() => router.back());
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDirty, router]);
 
   // FIX 5 — init draft lignes and scroll when budget enters edit mode
   useEffect(() => {
@@ -230,6 +266,59 @@ export default function StepPreview({
     setShowLeaveModal(false);
     pendingLeaveRef.current?.();
     pendingLeaveRef.current = null;
+  }
+
+  async function handleSaveAsDraft() {
+    setSavingDraft(true);
+    try {
+      if (soumissionId) {
+        const res = await fetch(`/api/soumissions/${soumissionId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            statut: "brouillon",
+            titre_projet: editablePreview.titre_projet,
+            numero_offre: editablePreview.numero_offre,
+            contexte_genere: JSON.stringify(buildAIContent(editablePreview)),
+            total_ht,
+            tva,
+            total_ttc,
+          }),
+        });
+        if (!res.ok) throw new Error("patch failed");
+      } else {
+        const today = new Date().toISOString().split("T")[0];
+        const res = await fetch("/api/soumissions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            statut: "brouillon",
+            client_id: clientId ?? "",
+            titre_projet: editablePreview.titre_projet,
+            numero_offre: editablePreview.numero_offre,
+            date_offre: today,
+            secteur_activite: step2.secteur_activite,
+            description_projet: step2.description_projet,
+            type_etude: step2.type_etude,
+            delai_jours: step2.delai_jours,
+            total_ht,
+            tva,
+            total_ttc,
+            contexte_genere: JSON.stringify(buildAIContent(editablePreview)),
+          }),
+        });
+        if (!res.ok) throw new Error("post failed");
+      }
+      setIsDirty(false);
+      setShowLeaveModal(false);
+      pendingLeaveRef.current?.();
+      pendingLeaveRef.current = null;
+    } catch {
+      setSaveError("Erreur lors de la sauvegarde");
+      setTimeout(() => setSaveError(null), 6000);
+    } finally {
+      setSavingDraft(false);
+    }
   }
 
   // ── Auto-save (silent) ───────────────────────────────────────────
@@ -1278,7 +1367,7 @@ export default function StepPreview({
         </button>
         <button
           type="button"
-          onClick={onSave}
+          onClick={() => { setIsDirty(false); onSave(); }}
           disabled={saving}
           className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90 disabled:opacity-60 min-h-[44px]"
           style={{ backgroundColor: BTH_GREEN }}
@@ -1391,19 +1480,37 @@ export default function StepPreview({
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
                   <button
                     onClick={() => setShowLeaveModal(false)}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer min-h-[44px]"
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer min-h-[44px]"
                     style={{ backgroundColor: BTH_GREEN }}
                   >
                     Rester sur la page
                   </button>
                   <button
-                    onClick={confirmLeave}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 transition-colors cursor-pointer min-h-[44px]"
+                    onClick={handleSaveAsDraft}
+                    disabled={savingDraft}
+                    className="w-full py-2.5 rounded-xl text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors cursor-pointer disabled:opacity-60 min-h-[44px] flex items-center justify-center gap-2"
                   >
-                    Quitter quand même
+                    {savingDraft ? (
+                      <>
+                        <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Sauvegarde…
+                      </>
+                    ) : (
+                      "Enregistrer comme brouillon"
+                    )}
+                  </button>
+                  <button
+                    onClick={confirmLeave}
+                    disabled={savingDraft}
+                    className="w-full py-1.5 rounded-xl text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-50 min-h-[36px]"
+                  >
+                    Quitter sans sauvegarder
                   </button>
                 </div>
               </motion.div>
