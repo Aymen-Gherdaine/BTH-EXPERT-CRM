@@ -190,21 +190,6 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
         </div>
       </div>
 
-      {/* Note IA */}
-      <div className="mt-6 p-4 bg-[#1a2e1e]/5 rounded-xl border border-[#1a2e1e]/20">
-        <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-[#1a2e1e] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
-          <div>
-            <p className="text-sm font-medium text-[#1a2e1e]">Génération IA</p>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Les sections "Contexte et objectifs" et "Objectifs du projet" seront générées automatiquement par Claude AI en style formel algérien.
-            </p>
-          </div>
-        </div>
-      </div>
-
       <div className="flex justify-between mt-8">
         <button
           type="button"
@@ -233,7 +218,7 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
             </>
           ) : (
             <>
-              Générer avec l'IA
+              Générer la soumission
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
