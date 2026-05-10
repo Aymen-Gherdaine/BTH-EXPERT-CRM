@@ -36,6 +36,8 @@ export default function EditableSection({
   renderContent,
 }: Props) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  // FIX 2 — ref for scroll-into-view on edit
+  const sectionRef = useRef<HTMLDivElement>(null);
 
   // Init drafts from current field values when entering edit mode
   useEffect(() => {
@@ -45,6 +47,10 @@ export default function EditableSection({
         init[f.key] = f.value;
       });
       setDrafts(init);
+      // FIX 2 — scroll section into view with 80px top margin (scroll-mt-20)
+      setTimeout(() => {
+        sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing]);
@@ -71,7 +77,13 @@ export default function EditableSection({
   );
 
   return (
-    <div className="group relative bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm">
+    // FIX 2 — scroll-mt-20 adds 80px top gap when scrolled into view (accounts for sticky header)
+    <div
+      ref={sectionRef}
+      className={`group relative bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm ${
+        isEditing ? "scroll-mt-20" : ""
+      }`}
+    >
       {/* Accent bar */}
       <div
         className="absolute left-0 top-0 bottom-0 w-[3px] rounded-l-xl"
@@ -249,6 +261,7 @@ export default function EditableSection({
   );
 }
 
+// FIX 3 — auto-resize: height = scrollHeight + 24px, overflow:hidden prevents inner scrollbar
 function AutoResizeTextarea({
   value,
   onChange,
@@ -261,7 +274,7 @@ function AutoResizeTextarea({
   useEffect(() => {
     if (ref.current) {
       ref.current.style.height = "auto";
-      ref.current.style.height = `${ref.current.scrollHeight}px`;
+      ref.current.style.height = `${ref.current.scrollHeight + 24}px`;
     }
   }, [value]);
 
@@ -271,7 +284,7 @@ function AutoResizeTextarea({
       value={value}
       rows={3}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full px-3 py-2.5 rounded-lg text-sm text-gray-900 border outline-none resize-none transition-shadow"
+      className="w-full px-3 py-2.5 rounded-lg text-sm text-gray-900 border outline-none resize-none transition-shadow overflow-hidden"
       style={{ borderColor: "#1a2e1e", minHeight: "80px" }}
       onFocus={(e) => {
         e.target.style.boxShadow = "0 0 0 3px rgba(26,46,30,0.12)";

@@ -105,17 +105,30 @@ function buildFromEditablePreview(
     delai_jours: soumission.delai_jours,
     validite_jours: parametres.validite_jours ?? 30,
     tva_pct: parametres.tva_pct ?? 19,
-    // Budget — from lignes
-    lignes_budget: lignes.map((l) => ({
+    // Budget — from editablePreview (user may have edited lines in preview)
+    // Falls back to the passed lignes param if preview has no lines (legacy callers)
+    lignes_budget: (preview.lignes_budget?.length ? preview.lignes_budget : lignes).map((l) => ({
       numero: l.numero,
       designation: l.designation,
       quantite: l.quantite,
       prix_unitaire: l.prix_unitaire,
     })),
-    // Totaux — from soumission
-    total_ht: soumission.total_ht,
-    tva: soumission.tva,
-    total_ttc: soumission.total_ttc,
+    // Totaux — recomputed from preview lignes so edits are reflected in export
+    total_ht: (() => {
+      const src = preview.lignes_budget?.length ? preview.lignes_budget : lignes;
+      return src.reduce((s, l) => s + l.quantite * l.prix_unitaire, 0);
+    })(),
+    tva: (() => {
+      const src = preview.lignes_budget?.length ? preview.lignes_budget : lignes;
+      const ht = src.reduce((s, l) => s + l.quantite * l.prix_unitaire, 0);
+      return ht * ((parametres.tva_pct ?? 19) / 100);
+    })(),
+    total_ttc: (() => {
+      const src = preview.lignes_budget?.length ? preview.lignes_budget : lignes;
+      const ht = src.reduce((s, l) => s + l.quantite * l.prix_unitaire, 0);
+      const tvaAmt = ht * ((parametres.tva_pct ?? 19) / 100);
+      return ht + tvaAmt;
+    })(),
     // Signataires — from parametres
     signataire_1_nom: parametres.signataire1_nom ?? "",
     signataire_1_titre: parametres.signataire1_titre ?? "",
