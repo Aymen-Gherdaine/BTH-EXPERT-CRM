@@ -1,6 +1,6 @@
 # BTH Hub — Progression
 
-Dernière mise à jour : 7 mai 2026 (session 5)
+Dernière mise à jour : 10 mai 2026 (session 6)
 
 ---
 
@@ -65,14 +65,61 @@ Dernière mise à jour : 7 mai 2026 (session 5)
 | `POST /api/admin/users/invite` | Inviter utilisateur (admin) |
 | `PATCH /api/admin/users/[id]` | Modifier rôle/statut (admin) |
 | `DELETE /api/admin/users/[id]` | Désactiver utilisateur (admin) |
-| `POST /api/generate` | Génération IA Anthropic |
-| `POST /api/export/docx` | Export DOCX |
-| `POST /api/export/pdf` | Export PDF Cloudmersive |
+| `POST /api/generate` | Génération IA → `SoumissionAIContent` (15 champs structurés) |
+| `POST /api/export/docx` | Export DOCX — accepte `editablePreview` ou `contexteData` (legacy) |
+| `POST /api/export/pdf` | Export PDF Cloudmersive — idem |
 
 ### Génération documents
 - `templates/template-standard.docx` — 35+ variables docxtemplater
 - `lib/generate-document.ts` — docxtemplater + `nombreEnLettres()`
 - `lib/convert-to-pdf.ts` — Cloudmersive
+
+### Génération IA — Refonte complète (session 6)
+- **`lib/anthropic.ts`** — remplacé intégralement : exporte `generateSoumissionContent()` retournant `SoumissionAIContent` (15 champs plats structurés)
+  - Modèle : `claude-sonnet-4-5`, `max_tokens: 2048`
+  - Prompt système avec vrais exemples AT PHARMA Phase II
+  - Helper `getLivrablesParType(type)` pour livrables spécifiques selon TypeEtude
+- **`SoumissionAIContent`** type : `contexte_paragraphe_1/2`, `objectif_1/2/3/4`, `livrable_1/2/3`, `hypothese_1/2/3`, `description_echeancier`, `inclusions_specifiques`, `exclusions_specifiques`
+- **`/api/generate`** — mis à jour pour retourner `{ success, data: SoumissionAIContent }`
+
+### Prévisualisation interactive (session 6 — Parts 1–7)
+- **`types/index.ts`** — ajout type `EditablePreview` (22 champs : infos client + offre + toutes sections IA)
+- **`components/soumissions/EditableSection.tsx`** — composant réutilisable :
+  - Modes lecture / édition avec `AnimatePresence` + Framer Motion height expand
+  - `AutoResizeTextarea` avec `useRef` + `useEffect`
+  - Icône crayon hover-only desktop (`md:opacity-0 md:group-hover:opacity-100`)
+  - Swap checkmark / crayon animé avec `AnimatePresence mode="wait"`
+  - `renderContent` prop pour rendu lecture personnalisé par bloc
+- **`components/forms/StepPreview.tsx`** — refonte complète (Parts 1–7) :
+  - **Part 1** : état `editablePreview` initialisé depuis toutes les données du formulaire
+  - **Part 2** : 8 blocs `EditableSection` avec couleurs accent (`#192D38`, `#3C7C95`, `#72AFC7`)
+  - **Part 3** : un seul bloc actif à la fois — modale de confirmation si switch en cours d'édition
+  - **Part 4** : auto-save silencieux vers Supabase via API routes auth :
+    - section `client` → `PATCH /api/clients/[id]`
+    - section `soumission` → `PATCH /api/soumissions/[id]`
+    - section `ai` → `PATCH /api/soumissions/[id]` (champ `contexte_genere`)
+    - Toast d'erreur 6 s si échec, état local toujours préservé
+  - **Part 5** : export DOCX/PDF passe `editablePreview` directement (jamais de re-fetch)
+  - **Part 6** : bouton "Régénérer les sections IA" :
+    - Modale slide-up mobile / centré desktop (spring `damping:28, stiffness:320`)
+    - Régénère uniquement sections IA — infos client/offre conservées
+    - Animation flash `boxShadow` keyframe sur les 6 blocs IA après régénération
+  - **Part 7** : indicateur `● Modifications non sauvegardées` (orange) dans le header
+    - Apparaît dès qu'une section est éditée, disparaît après PATCH Supabase réussi
+    - Persiste si auto-save échoue ou si IDs non disponibles (soumission pas encore créée)
+  - `buildAIContent(preview)` : reconstruit `SoumissionAIContent` depuis `EditablePreview`
+  - `initEditablePreview()` : mappe formulaire + réponse IA → état initial
+  - `hypothese_specifique` : champ combiné H1+H2+H3 séparés par `\n\n`
+  - `FlashWrapper` inner component : `motion.div` avec `boxShadow` keyframe array
+
+### Export — Mise à jour (session 6)
+- **`lib/export-helpers.ts`** :
+  - `buildFromEditablePreview()` : mappe `EditablePreview` → `DocumentData`
+    - `date_offre` passée directement (déjà formatée en français depuis l'état)
+    - `hypothese_specifique` splitté en `hypothese_1/3/4` pour le template
+  - `buildDocumentData()` : backward-compatible — si `editablePreview` présent → `buildFromEditablePreview`, sinon → path legacy avec `formatDateFr()`
+- **`/api/export/docx`** et **`/api/export/pdf`** : acceptent `editablePreview?: EditablePreview` depuis le body — page `[id]` continue d'envoyer `contexteData` sans `editablePreview`
+- **`/api/clients/[id]`** : ajout route `PATCH` (update inline client depuis preview)
 
 ---
 
@@ -129,7 +176,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 ### Haute (prochaines sessions)
 1. ⬜ **Brancher paramètres sur les exports** — fetcher table `parametres` dans `/api/export/docx` et `/api/export/pdf` (signataires, TVA, délais actuellement codés en dur)
 2. ⬜ **Refaire `template-standard.docx`** — recréer manuellement à partir du modèle AT PHARMA Phase II converti en Word
-3. ⬜ **Page relecture IA** — permettre d'éditer le texte généré avant d'exporter le DOCX
+3. ✅ **Prévisualisation interactive avec édition inline** — TERMINÉ session 6 (Parts 1–7)
 
 ### Moyenne
 4. ⬜ **Sanitizer texte IA** — nettoyer guillemets tordus, caractères spéciaux algériens avant injection dans docxtemplater
@@ -188,4 +235,13 @@ Structure observée dans `ODS_AT_PHARMAPhase_II.pdf` :
 
 ## Fichiers sensibles — NE PAS MODIFIER
 
-`templates/template-standard.docx` · `lib/anthropic.ts` · `lib/supabase-browser.ts` · `lib/supabase-server.ts` · `.env.local`
+`templates/template-standard.docx` · `lib/anthropic.ts` · `middleware.ts` · `lib/supabase-browser.ts` · `lib/supabase-server.ts` · `.env.local`
+
+---
+
+## Commits session 6 (10 mai 2026)
+
+| Hash | Description |
+|------|-------------|
+| `922636f` | feat: inline editing, export via editablePreview, AI regeneration on preview step (Parts 1–6) |
+| `07e4e37` | feat: add section-by-section inline editing to submission preview with auto-save (Part 7 + build) |
