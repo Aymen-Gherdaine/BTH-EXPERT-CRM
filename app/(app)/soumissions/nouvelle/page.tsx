@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import StepClientInfo from "@/components/forms/StepClientInfo";
@@ -66,15 +66,62 @@ export default function NouvelleSoumissionPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
-  const [leaveWarning, setLeaveWarning] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const pendingActionRef = useRef<(() => void) | null>(null);
 
-  // Avertissement navigateur (onglet fermé, bouton précédent) quand à l'étape preview non sauvegardée
+  // Le formulaire est "sale" dès que l'utilisateur a commencé à remplir des données
+  const isDirty = !saved && (step > 0 || step1.nom_contact.trim() !== "" || step1.entreprise.trim() !== "");
+
+  function requestLeave(action: () => void) {
+    if (!isDirty) { action(); return; }
+    pendingActionRef.current = action;
+    setShowLeaveModal(true);
+  }
+
+  function confirmLeave() {
+    setShowLeaveModal(false);
+    pendingActionRef.current?.();
+    pendingActionRef.current = null;
+  }
+
+  // Interception fermeture onglet / rechargement
   useEffect(() => {
-    if (step !== 3 || saved) return;
-    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [step, saved]);
+  }, [isDirty]);
+
+  // Interception clics sur les liens internes (sidebar, navbar…)
+  useEffect(() => {
+    if (!isDirty) return;
+    const handleAnchorClick = (e: MouseEvent) => {
+      const target = (e.target as HTMLElement).closest("a");
+      if (!target) return;
+      if (target.download || target.target === "_blank") return;
+      const href = target.getAttribute("href");
+      if (!href || href.startsWith("#")) return;
+      e.preventDefault();
+      e.stopPropagation();
+      requestLeave(() => router.push(href));
+    };
+    document.addEventListener("click", handleAnchorClick, true);
+    return () => document.removeEventListener("click", handleAnchorClick, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDirty]);
+
+  // Interception bouton retour/avant du navigateur
+  useEffect(() => {
+    if (!isDirty) return;
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => {
+      window.history.pushState(null, "", window.location.href);
+      requestLeave(() => router.back());
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDirty]);
 
   function goTo(newStep: number) {
     setDirection(newStep > step ? 1 : -1);
@@ -82,11 +129,7 @@ export default function NouvelleSoumissionPage() {
   }
 
   function handleBackFromPreview() {
-    if (!saved) {
-      setLeaveWarning(true);
-    } else {
-      goTo(2);
-    }
+    requestLeave(() => goTo(2));
   }
 
   async function handleStep2Complete(data: FormDataStep2) {
@@ -245,16 +288,16 @@ export default function NouvelleSoumissionPage() {
         </AnimatePresence>
       </div>
 
-      {/* Modal — soumission non enregistrée */}
+      {/* Modal — quitter le formulaire sans sauvegarder */}
       <AnimatePresence>
-        {leaveWarning && (
+        {showLeaveModal && (
           <>
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
-              onClick={() => setLeaveWarning(false)}
+              onClick={() => setShowLeaveModal(false)}
             />
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
               <motion.div
@@ -262,40 +305,34 @@ export default function NouvelleSoumissionPage() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 8 }}
                 transition={{ duration: 0.2 }}
-                className="bg-white rounded-2xl shadow-2xl w-full max-w-md pointer-events-auto"
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-sm pointer-events-auto p-6"
               >
-                <div className="px-6 pt-6 pb-4">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 text-base">Soumission non enregistrée</h3>
-                      <p className="text-xs text-gray-400 mt-0.5">Les données de prévisualisation seront perdues</p>
-                    </div>
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center shrink-0 mt-0.5">
+                    <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
                   </div>
-                  <p className="text-sm text-gray-600">
-                    Si vous revenez en arrière maintenant, la prévisualisation générée ne sera pas sauvegardée.
-                    Cliquez sur <strong>Enregistrer</strong> d'abord pour ne pas perdre votre travail.
-                  </p>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Quitter le formulaire ?</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Vos données non sauvegardées seront perdues.
+                    </p>
+                  </div>
                 </div>
-                <div className="px-6 pb-6 flex gap-3">
-                  <motion.button
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setLeaveWarning(false)}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => setShowLeaveModal(false)}
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer min-h-[44px]"
                     style={{ backgroundColor: "#1a2e1e" }}
                   >
-                    Rester
-                  </motion.button>
+                    Rester sur le formulaire
+                  </button>
                   <button
-                    onClick={() => { setLeaveWarning(false); goTo(2); }}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-medium text-red-600 border border-red-200 hover:bg-red-50 transition-colors"
+                    onClick={confirmLeave}
+                    className="w-full py-1.5 rounded-xl text-xs font-medium text-red-500 hover:text-red-700 hover:bg-red-50 transition-colors cursor-pointer min-h-[36px]"
                   >
-                    Quitter sans enregistrer
+                    Quitter sans sauvegarder
                   </button>
                 </div>
               </motion.div>

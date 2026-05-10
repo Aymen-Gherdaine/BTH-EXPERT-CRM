@@ -287,24 +287,24 @@ export default function StepPreview({
         });
         if (!res.ok) throw new Error("patch failed");
       } else {
-        const today = new Date().toISOString().split("T")[0];
+        const step1ForApi = {
+          titre: editablePreview.titre,
+          nom_contact: editablePreview.nom_contact,
+          poste: editablePreview.poste_contact,
+          entreprise: editablePreview.entreprise,
+          adresse: editablePreview.adresse,
+          ville: editablePreview.ville,
+        };
         const res = await fetch("/api/soumissions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            statut: "brouillon",
-            client_id: clientId ?? "",
-            titre_projet: editablePreview.titre_projet,
-            numero_offre: editablePreview.numero_offre,
-            date_offre: today,
-            secteur_activite: step2.secteur_activite,
-            description_projet: step2.description_projet,
-            type_etude: step2.type_etude,
-            delai_jours: step2.delai_jours,
-            total_ht,
-            tva,
-            total_ttc,
-            contexte_genere: JSON.stringify(buildAIContent(editablePreview)),
+            formData: {
+              step1: step1ForApi,
+              step2,
+              step3: { lignes: editablePreview.lignes_budget },
+            },
+            contexte: buildAIContent(editablePreview),
           }),
         });
         if (!res.ok) throw new Error("post failed");
