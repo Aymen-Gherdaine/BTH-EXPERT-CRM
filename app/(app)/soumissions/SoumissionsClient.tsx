@@ -1302,10 +1302,9 @@ export default function SoumissionsClient({ role }: { role: UserRole }) {
                 <div style={{
                   flex: 1, display: "flex", flexDirection: "column", minHeight: 0,
                   background: "white",
-                  margin: "16px 32px 0",
-                  borderRadius: "16px 16px 0 0",
+                  margin: "16px 32px 20px",
+                  borderRadius: 16,
                   border: "1px solid #ededeb",
-                  borderBottom: "none",
                   overflow: "hidden",
                   boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
                 }}>
