@@ -1,6 +1,6 @@
 # BTH Hub — Progression
 
-Dernière mise à jour : 15 mai 2026 (session 7)
+Dernière mise à jour : 15 mai 2026 (session 8)
 
 ---
 
@@ -18,8 +18,8 @@ Dernière mise à jour : 15 mai 2026 (session 7)
 
 ### Pages & Composants
 - **Dashboard** — stats réelles Supabase + 3 vues distinctes par rôle (voir session 7)
-- **Soumissions** — liste paginée + filtres + nouvelle (4 étapes) + [id] + modal versement + export XLSX
-- **Clients** — tableau paginé + suppression cascade + export XLSX
+- **Soumissions** — liste paginée + filtres + nouvelle (4 étapes) + [id] + modal versement + export XLSX — UI premium redesign (session 8)
+- **Clients** — tableau paginé → cards mobile-first premium redesign + suppression cascade + export XLSX (session 8)
 - **Profil** — avatar, nom, password
 - **Paramètres** — société, signataires, TVA, délais, signatures
 - **Sidebar** — nav desktop + dropdown profil (photo, signout, paramètres) — voir session 7
@@ -295,3 +295,65 @@ Structure observée dans `ODS_AT_PHARMAPhase_II.pdf` :
 |------|-------------|
 | `3b063c7` | fix: fix all preview and editing in the soumission section |
 | `fa3ce00` | feat: redesign layout, dashboard, and role-based views |
+
+## Session 8 — Redesign UI Soumissions + Clients (15 mai 2026)
+
+### Soumissions — `SoumissionsClient.tsx`
+
+#### PremiumTable (vue tableau)
+- Header blanc/gris clair `#fafafa` + dividers fins `#eaecef` entre colonnes (plus de header vert)
+- Lignes : `alignItems: stretch` sur CSS Grid → dividers `1px solid #f0f2f5` pleine hauteur sans layout shift
+- Hover : `boxShadow: "inset 3px 0 0 #1a2e1e"` (accent gauche sans décalage de layout)
+- Actions (dupliquer / supprimer) toujours visibles (`opacity: 1`)
+- Footer 3 colonnes : count soumissions | pagination Page X/Y | Total TTC (admin seulement)
+- Marge 20px en bas + `borderRadius: 16` (coins arrondis sur tous les angles)
+- Tri par colonne avec indicateur directionnel
+
+#### StatusBadge
+- `borderRadius: 5` (pas pill), border colorée par statut, dot 5px
+
+#### Versement (statut "Acceptée")
+- Progress bar verte 2px animée (Framer Motion) + `"{N} versé"` en vert sous le montant
+
+#### Délai
+- `"60"` en fontWeight 700 + `"jours"` en gris 10.5px (plus de chip)
+
+#### CardGrid (vue cards — mobile)
+- `gridTemplateColumns: repeat(auto-fill, minmax(min(300px, 100%), 1fr))` — responsive sans overflow
+- Padding adaptatif `20px ${px}px 28px` (32px desktop / 20px mobile)
+
+#### Pagination (Pager)
+- Toujours visible même sur 1 page (affiche "Page 1/1" avec boutons désactivés)
+- Pinned en bas de l'écran : layout `height: 100%` flex-column, `CardGrid` scrolle en interne, `Pager` `flexShrink: 0` en dehors du scroll
+
+### Clients — `app/(app)/clients/page.tsx`
+
+Réécriture complète : de table Tailwind → cards mobile-first premium
+
+#### ClientCard
+- Avatar 44px cercle coloré (hash sur nom entreprise) — 7 couleurs BTH
+- Nom entreprise (fontWeight 700) + titre + contact + poste
+- Meta chips : icône map-pin + ville, icône calendrier + date client depuis
+- Bouton suppression toujours visible (couleur rouge au hover)
+- Chevron animé (rotation 180° via Framer Motion) pour expand/collapse
+- Transition border + boxShadow sur expand
+
+#### Expanded soumissions
+- Fond `#fafafa`, border-top séparateur
+- Adresse en chip si disponible
+- Liste soumissions : left accent bar colorée par statut + titre + numéro offre + StatusBadge
+- Skeleton 2 barres animées pendant chargement
+
+#### Layout / Pagination
+- Root `height: 100%` flex-column — liste scrolle en interne (`flex: 1, overflowY: auto`)
+- Pagination bar `flexShrink: 0` toujours collée en bas (hors du scroll) : count + `Page X/Y`
+- Background `#faf9f7`
+- Skeleton loading (5 barres animées `@keyframes sk`)
+- Empty state avec icône user
+
+## Commits session 8 (15 mai 2026)
+
+| Hash | Description |
+|------|-------------|
+| `973b274` | feat: redesign soumissions & clients UI with sticky bottom pagination |
+| `44b39a0` | fix: add margin-bottom and full border-radius to soumissions table |
