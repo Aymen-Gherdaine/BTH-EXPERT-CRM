@@ -1,157 +1,248 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { UserRole } from "@/types";
+import type { User } from "@supabase/supabase-js";
 
-type NavItem = {
-  href: string;
-  label: string;
-  roles: UserRole[];
-  icon: React.ReactNode;
+// ─── Icons ───────────────────────────────────────────────────────────────────
+
+function Ic({ d, size = 18, stroke = "currentColor", sw = 1.7 }: {
+  d: string | string[]; size?: number; stroke?: string; sw?: number;
+}) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+      {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
+    </svg>
+  );
+}
+
+const ICONS = {
+  leaf:    ["M2 22 16 8", "M22 2s-5.67 0-11 5c-4.17 4.17-4.83 9.33-3 11 1.83 1.67 7-1.17 11-5 5-5.33 5-11 5-11z"],
+  home:    ["M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "M9 22V12h6v10"],
+  docs:    ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6", "M16 13H8", "M16 17H8"],
+  users:   ["M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2", "M9 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0", "M23 21v-2a4 4 0 0 0-3-3.87", "M16 3.13a4 4 0 0 1 0 7.75"],
+  map:     ["M1 6l7-4 8 4 7-4v16l-7 4-8-4-7 4V6z", "M8 2v18", "M16 6v18"],
+  wallet:  ["M21 4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z", "M1 10h22"],
+  chart:   ["M18 20v-10", "M12 20V4", "M6 20v-6"],
+  admin:   ["M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"],
+  chevron: "M18 15l-6-6-6 6",
 };
 
-const navItems: NavItem[] = [
-  {
-    href: "/dashboard",
-    label: "Tableau de bord",
-    roles: ["admin", "charge_projet"],
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-      </svg>
-    ),
-  },
-  {
-    href: "/soumissions",
-    label: "Soumissions",
-    roles: ["admin", "charge_projet"],
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/clients",
-    label: "Clients",
-    roles: ["admin", "charge_projet", "commercial"],
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/prospection",
-    label: "Prospection",
-    roles: ["admin", "commercial"],
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-      </svg>
-    ),
-  },
-  {
-    href: "/depenses",
-    label: "Dépenses",
-    roles: ["admin", "charge_projet", "commercial"],
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/couts-marges",
-    label: "Coûts & Marges",
-    roles: ["admin"],
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    ),
-  },
-  {
-    href: "/admin/utilisateurs",
-    label: "Utilisateurs",
-    roles: ["admin"],
-    icon: (
-      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-      </svg>
-    ),
-  },
+// ─── Nav config ──────────────────────────────────────────────────────────────
+
+type NavItem = { href: string; label: string; icon: string; roles: UserRole[] };
+
+const NAV: NavItem[] = [
+  { href: "/dashboard",          label: "Tableau de bord",  icon: "home",   roles: ["admin", "charge_projet"] },
+  { href: "/soumissions",        label: "Soumissions",      icon: "docs",   roles: ["admin", "charge_projet"] },
+  { href: "/clients",            label: "Clients",          icon: "users",  roles: ["admin", "charge_projet", "commercial"] },
+  { href: "/prospection",        label: "Prospection",      icon: "map",    roles: ["admin", "commercial"] },
+  { href: "/depenses",           label: "Dépenses",         icon: "wallet", roles: ["admin", "charge_projet", "commercial"] },
+  { href: "/couts-marges",       label: "Coûts & Marges",   icon: "chart",  roles: ["admin"] },
+  { href: "/admin/utilisateurs", label: "Utilisateurs",     icon: "admin",  roles: ["admin"] },
 ];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+const ROLE_LABEL: Record<UserRole, string> = {
+  admin: "Administrateur",
+  charge_projet: "Chargé de projet",
+  commercial: "Commercial",
+};
+
+function getInitials(user: User): string {
+  const name: string = user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? "";
+  return name.trim().split(/\s+/).map((w: string) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
+}
+
+function getDisplayName(user: User): string {
+  return user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split("@")[0] ?? "Utilisateur";
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export default function Sidebar({ role }: { role: UserRole }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [open, setOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
 
-  const visibleItems = navItems.filter((item) => item.roles.includes(role));
+  useEffect(() => {
+    createSupabaseBrowserClient().auth.getUser().then(({ data: { user } }) => setUser(user));
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const h = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [open]);
+
+  async function handleSignOut() {
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
+  const visible = NAV.filter(item => item.roles.includes(role));
+  const initials = user ? getInitials(user) : "";
+  const name = user ? getDisplayName(user) : "";
+  const avatarUrl: string | undefined = user?.user_metadata?.avatar_url;
 
   return (
-    <aside className="hidden md:flex w-64 h-screen bg-white border-r border-gray-100 flex-col flex-shrink-0">
+    <aside style={{
+      width: 228, flexShrink: 0,
+      background: "#fff",
+      borderRight: "1px solid #e5e7eb",
+      height: "100%",
+      fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
+    }} className="hidden md:flex flex-col">
 
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-gray-100">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#1a2e1e" }}>
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 004 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+      <div style={{ padding: "20px 18px 16px", borderBottom: "1px solid #e5e7eb" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 36, height: 36, background: "#1a2e1e", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <Ic d={ICONS.leaf} size={17} stroke="white" sw={1.9} />
           </div>
           <div>
-            <p className="font-bold text-sm text-gray-900">BTH Hub</p>
-            <p className="text-xs text-gray-400">Environnement · Ingénierie</p>
+            <div style={{ fontWeight: 700, fontSize: 15, color: "#111827", letterSpacing: "-0.4px", lineHeight: 1 }}>BTH Hub</div>
+            <div style={{ fontSize: 10.5, color: "#9ca3af", marginTop: 2 }}>BTH Expert</div>
           </div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
-        {visibleItems.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: "10px", display: "flex", flexDirection: "column", gap: 1 }}>
+        {visible.map(({ href, label, icon }) => {
+          const active = pathname === href || pathname.startsWith(href + "/");
           return (
-            <Link key={item.href} href={item.href}>
-              <motion.div
-                whileHover={{ x: 2 }}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
-                  active
-                    ? "text-white"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                )}
-                style={active ? { backgroundColor: "#1a2e1e" } : {}}
-              >
-                {item.icon}
-                {item.label}
+            <Link key={href} href={href} style={{ textDecoration: "none" }}>
+              <motion.div whileTap={{ scale: 0.97 }} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "9px 12px",
+                borderRadius: 8,
+                background: active ? "#edf5ee" : "transparent",
+                color: active ? "#1a2e1e" : "#6b7280",
+                fontWeight: active ? 600 : 500, fontSize: 13.5,
+                transition: "all .12s", cursor: "pointer",
+              }}>
+                <Ic d={ICONS[icon as keyof typeof ICONS]} size={17} sw={active ? 2 : 1.7} />
+                {label}
               </motion.div>
             </Link>
           );
         })}
       </nav>
 
-      {/* Nouvelle soumission — visible uniquement pour admin et charge_projet */}
-      {(role === "admin" || role === "charge_projet") && (
-        <div className="px-3 py-4 border-t border-gray-100">
-          <Link href="/soumissions/nouvelle">
+      {/* User profile with dropdown */}
+      <div style={{ padding: "14px", borderTop: "1px solid #e5e7eb", position: "relative" }} ref={profileRef}>
+        <AnimatePresence>
+          {open && (
             <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-sm font-medium text-white cursor-pointer"
-              style={{ backgroundColor: "#1a2e1e" }}
+              initial={{ opacity: 0, scale: 0.95, y: 6 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 6 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                position: "absolute", left: 10, right: 10, bottom: "calc(100% + 4px)",
+                background: "#fff", borderRadius: 14,
+                border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,.10)",
+                overflow: "hidden", zIndex: 200,
+              }}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Nouvelle soumission
-            </motion.div>
-          </Link>
-        </div>
-      )}
+              {/* User info */}
+              <div style={{ padding: "14px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, overflow: "hidden" }}>
+                  {avatarUrl ? (
+                    <Image src={avatarUrl} alt={name} width={34} height={34} style={{ width: 34, height: 34, objectFit: "cover", borderRadius: "50%" }} />
+                  ) : (
+                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#1a2e1e", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 700 }}>
+                      {initials}
+                    </div>
+                  )}
+                </div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
+                  <div style={{ fontSize: 11, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+                </div>
+              </div>
 
+              {/* Links */}
+              <div style={{ padding: "6px" }}>
+                {[
+                  { href: "/profil", label: "Mon profil" },
+                  { href: "/parametres", label: "Paramètres" },
+                ].map(({ href, label }) => (
+                  <Link key={href} href={href} onClick={() => setOpen(false)} style={{
+                    display: "flex", alignItems: "center", padding: "9px 10px",
+                    borderRadius: 8, textDecoration: "none", color: "#374151",
+                    fontSize: 13, fontWeight: 500,
+                  }}>
+                    {label}
+                  </Link>
+                ))}
+              </div>
+
+              <div style={{ borderTop: "1px solid #f3f4f6", padding: "6px" }}>
+                <button onClick={handleSignOut} style={{
+                  width: "100%", padding: "9px 10px", borderRadius: 8, border: "none",
+                  background: "transparent", color: "#dc2626",
+                  fontSize: 13, fontWeight: 500, cursor: "pointer", textAlign: "left",
+                  fontFamily: "inherit",
+                }}>
+                  Se déconnecter
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {user ? (
+          <button
+            onClick={() => setOpen(v => !v)}
+            style={{
+              width: "100%", background: "transparent", border: "none", cursor: "pointer",
+              padding: 0, display: "flex", alignItems: "center", gap: 10, fontFamily: "inherit",
+            }}
+          >
+            <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, overflow: "hidden" }}>
+              {avatarUrl ? (
+                <Image src={avatarUrl} alt={name} width={34} height={34} style={{ width: 34, height: 34, objectFit: "cover", borderRadius: "50%" }} />
+              ) : (
+                <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#1a2e1e", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 11 }}>
+                  {initials}
+                </div>
+              )}
+            </div>
+            <div style={{ minWidth: 0, flex: 1, textAlign: "left" }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {name}
+              </div>
+              <div style={{ fontSize: 11, color: "#9ca3af" }}>{ROLE_LABEL[role]}</div>
+            </div>
+            <div style={{ color: "#9ca3af", transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform .15s" }}>
+              <Ic d={ICONS.chevron} size={14} sw={2} />
+            </div>
+          </button>
+        ) : (
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#f3f4f6" }} />
+            <div style={{ flex: 1 }}>
+              <div style={{ height: 10, borderRadius: 5, background: "#f3f4f6", marginBottom: 5, width: "70%" }} />
+              <div style={{ height: 8, borderRadius: 4, background: "#f3f4f6", width: "50%" }} />
+            </div>
+          </div>
+        )}
+      </div>
     </aside>
   );
 }
