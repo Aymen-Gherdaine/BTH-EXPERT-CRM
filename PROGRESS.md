@@ -1,6 +1,6 @@
 # BTH Hub — Progression
 
-Dernière mise à jour : 10 mai 2026 (session 6)
+Dernière mise à jour : 15 mai 2026 (session 7)
 
 ---
 
@@ -17,13 +17,14 @@ Dernière mise à jour : 10 mai 2026 (session 6)
 - `lib/supabase-admin.ts` — client service role pour opérations admin
 
 ### Pages & Composants
-- **Dashboard** — stats réelles Supabase (soumissions, mandats acceptés count+montant, versements, taux)
+- **Dashboard** — stats réelles Supabase + 3 vues distinctes par rôle (voir session 7)
 - **Soumissions** — liste paginée + filtres + nouvelle (4 étapes) + [id] + modal versement + export XLSX
 - **Clients** — tableau paginé + suppression cascade + export XLSX
 - **Profil** — avatar, nom, password
 - **Paramètres** — société, signataires, TVA, délais, signatures
-- **Sidebar** + **Header** (dropdown user, badge relances)
-- **BottomNav** mobile fixe, role-aware
+- **Sidebar** — nav desktop + dropdown profil (photo, signout, paramètres) — voir session 7
+- **Header** — mobile uniquement, badge relances — voir session 7
+- **BottomNav** — mobile uniquement, role-aware — voir session 7
 - **Prospection** — module complet (P-1 → P-4) :
   - Planning tableau 4 sections (Aujourd'hui / Cette semaine / Non traités / Sans relance)
   - Onglet "Tous" avec filtres, tri, pagination 10/page
@@ -120,6 +121,48 @@ Dernière mise à jour : 10 mai 2026 (session 6)
   - `buildDocumentData()` : backward-compatible — si `editablePreview` présent → `buildFromEditablePreview`, sinon → path legacy avec `formatDateFr()`
 - **`/api/export/docx`** et **`/api/export/pdf`** : acceptent `editablePreview?: EditablePreview` depuis le body — page `[id]` continue d'envoyer `contexteData` sans `editablePreview`
 - **`/api/clients/[id]`** : ajout route `PATCH` (update inline client depuis preview)
+
+### Session 7 — Refonte layout + Dashboard role-based (15 mai 2026)
+
+#### Layout global — Bugs corrigés
+- **Bug critique résolu** : `style={{ display: "flex" }}` en inline CSS écrasait les classes Tailwind `md:hidden` / `hidden`. Fix : déplacer `flex` dans le `className`, jamais en inline style pour les éléments responsive.
+- **Header** (`components/layout/Header.tsx`) : visible uniquement mobile (`md:hidden flex`). Bug `display:"flex"` retiré du style inline.
+- **BottomNav** (`components/layout/BottomNav.tsx`) : visible uniquement mobile (`md:hidden flex`). Même correction.
+- **Sidebar** (`components/layout/Sidebar.tsx`) : visible uniquement desktop (`hidden md:flex flex-col`). Déjà corrigé.
+
+#### Sidebar — Nouvelles fonctionnalités
+- **Photo de profil** : `user.user_metadata?.avatar_url` → `<Image>` Next.js si présent, initiales en fallback uniquement
+- **Dropdown profil** (clic sur la zone user en bas) : popup animée Framer Motion au-dessus du footer avec :
+  - Info utilisateur (photo + nom + email)
+  - Lien "Mon profil" → `/profil`
+  - Lien "Paramètres" → `/parametres`
+  - Bouton "Se déconnecter" → `supabase.auth.signOut()` + redirect `/login`
+  - Chevron rotatif pour indiquer l'état ouvert/fermé
+  - Fermeture au clic extérieur (ref + `mousedown`)
+
+#### Dashboard — Refonte visuelle complète
+- **Police** : Segoe UI system-ui partout (suppression Google Fonts — Syne, Figtree, DM Sans)
+- **Hero** : banner vert foncé `#1a2e1e` sur tous les viewports (avatar initiales + rôle + nom + greeting). Sans boutons d'action.
+- **Stat cards** : `fontSize: 18, fontWeight: 600` (vs 22/800 avant) — icône 28×28, label 11px uppercase, `boxShadow: "0 1px 3px rgba(0,0,0,.04)"`
+- **Background** : `#f4f5f7` (gris neutre pro vs beige `#f2f1ec`)
+- **Layout desktop** : deux colonnes `1fr 1fr` égales + bilan pleine largeur dessous
+- **Bilan financier** : 3 colonnes avec séparateurs verticaux — identique mobile ET desktop (plus de stack 1-col mobile)
+
+#### Dashboard — 3 vues par rôle
+
+| | Admin | Chargé de projet | Commercial |
+|---|---|---|---|
+| KPI 1 | CA Mandats (DZD) | En brouillon (#) | Prospects actifs (#) |
+| KPI 2 | Mandats acceptés (#) | En attente de réponse (#) | Relances urgentes (#) |
+| KPI 3 | Offres ce mois (#) | Acceptées ce mois (#) | Prospects ce mois (#) |
+| KPI 4 | Versements reçus (DZD) | CA en cours (DZD pipeline) | Convertis (#) |
+| Col gauche | Soumissions récentes | Soumissions récentes | Relances urgentes |
+| Col droite | Relances urgentes | **Offres en attente réponse** | Prospects récents |
+| Dessous | Bilan financier | — | Soumissions récentes (sans montants) |
+
+- **Chargé de projet** : suppression des relances urgentes (hors de son domaine), remplacement par liste des offres "Envoyée" avec délai d'envoi (alerte amber si > 14 jours).
+- **Commercial** : vue 100% prospection. Soumissions récentes visibles en lecture (sans montants financiers).
+- **SoumissionsClient** extrait en composant client séparé (page serveur → client).
 
 ---
 
@@ -245,3 +288,10 @@ Structure observée dans `ODS_AT_PHARMAPhase_II.pdf` :
 |------|-------------|
 | `922636f` | feat: inline editing, export via editablePreview, AI regeneration on preview step (Parts 1–6) |
 | `07e4e37` | feat: add section-by-section inline editing to submission preview with auto-save (Part 7 + build) |
+
+## Commits session 7 (15 mai 2026)
+
+| Hash | Description |
+|------|-------------|
+| `3b063c7` | fix: fix all preview and editing in the soumission section |
+| `fa3ce00` | feat: redesign layout, dashboard, and role-based views |
