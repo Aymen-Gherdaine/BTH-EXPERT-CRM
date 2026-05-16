@@ -1,6 +1,6 @@
 # BTH Hub — Progression
 
-Dernière mise à jour : 15 mai 2026 (session 8)
+Dernière mise à jour : 16 mai 2026 (session 9)
 
 ---
 
@@ -43,32 +43,34 @@ Dernière mise à jour : 15 mai 2026 (session 8)
   - Sécurité : impossible de modifier son propre rôle ou désactiver son propre compte
 
 ### API Routes
-| Route | Description |
-|-------|-------------|
-| `GET/POST /api/prospects` | Prospects actifs avec visites |
-| `GET/PATCH/DELETE /api/prospects/[id]` | Fiche prospect |
-| `GET /api/prospects/export` | Export XLSX |
-| `GET /api/prospects/alerts` | Count relances urgentes |
-| `GET/POST /api/visites` | Visites |
-| `PATCH/DELETE /api/visites/[id]` | Visite |
-| `GET/POST /api/clients` | Clients |
-| `GET/PATCH/DELETE /api/clients/[id]` | Client |
-| `GET /api/clients/export` | Export XLSX |
-| `GET/POST /api/soumissions` | Soumissions |
-| `GET/PATCH/DELETE /api/soumissions/[id]` | Soumission |
-| `GET /api/soumissions/export` | Export XLSX |
-| `GET /api/dashboard` | Stats dashboard |
-| `GET/POST /api/depenses` | Dépenses |
-| `PATCH/DELETE /api/depenses/[id]` | Dépense |
-| `GET /api/depenses/export` | Export XLSX admin |
-| `GET /api/depenses/stats` | Stats marges admin |
-| `GET /api/admin/users` | Liste utilisateurs (admin) |
-| `POST /api/admin/users/invite` | Inviter utilisateur (admin) |
-| `PATCH /api/admin/users/[id]` | Modifier rôle/statut (admin) |
-| `DELETE /api/admin/users/[id]` | Désactiver utilisateur (admin) |
-| `POST /api/generate` | Génération IA → `SoumissionAIContent` (15 champs structurés) |
-| `POST /api/export/docx` | Export DOCX — accepte `editablePreview` ou `contexteData` (legacy) |
-| `POST /api/export/pdf` | Export PDF Cloudmersive — idem |
+| Route | Auth | Description |
+|-------|------|-------------|
+| `GET /api/me` | ✅ | Retourne `{ role, full_name }` du profil connecté |
+| `GET/POST /api/prospects` | ✅ | Prospects actifs avec visites |
+| `GET/PATCH/DELETE /api/prospects/[id]` | ✅ | Fiche prospect |
+| `GET /api/prospects/export` | ✅ | Export XLSX |
+| `GET /api/prospects/alerts` | ✅ | Count relances urgentes |
+| `GET/POST /api/visites` | ✅ | Visites |
+| `PATCH/DELETE /api/visites/[id]` | ✅ | Visite (whitelist champs + validation enum resultat) |
+| `GET/POST /api/clients` | ✅ | Clients (session 9 : limit(20) retirée) |
+| `GET/PATCH/DELETE /api/clients/[id]` | ✅ | Client (whitelist 8 champs — mass assignment corrigé) |
+| `GET /api/clients/export` | ✅ | Export XLSX (session 9 : était non protégé) |
+| `GET/POST /api/soumissions` | ✅ | Soumissions |
+| `GET/PATCH/DELETE /api/soumissions/[id]` | ✅ | Soumission (whitelist statut + versement_recu) |
+| `GET /api/soumissions/export` | ✅ | Export XLSX (session 9 : était non protégé) |
+| `PUT /api/soumissions/[id]/lignes` | ✅ | Remplacement batch lignes budget |
+| `GET /api/dashboard` | ✅ | Stats dashboard |
+| `GET/POST /api/depenses` | ✅ | Dépenses |
+| `PATCH/DELETE /api/depenses/[id]` | ✅ | Dépense |
+| `GET /api/depenses/export` | ✅ | Export XLSX admin |
+| `GET /api/depenses/stats` | ✅ | Stats marges admin |
+| `GET /api/admin/users` | ✅ | Liste utilisateurs (admin) |
+| `POST /api/admin/users/invite` | ✅ | Inviter utilisateur (admin) |
+| `PATCH /api/admin/users/[id]` | ✅ | Modifier rôle/statut (admin) |
+| `DELETE /api/admin/users/[id]` | ✅ | Désactiver utilisateur (admin) |
+| `POST /api/generate` | ✅ | Génération IA → `SoumissionAIContent` (15 champs) — session 9 : était non protégé |
+| `POST /api/export/docx` | ✅ | Export DOCX — session 9 : client anon remplacé par `createServerClient` |
+| `POST /api/export/pdf` | ✅ | Export PDF Cloudmersive — idem |
 
 ### Génération documents
 - `templates/template-standard.docx` — 35+ variables docxtemplater
@@ -357,3 +359,67 @@ Réécriture complète : de table Tailwind → cards mobile-first premium
 |------|-------------|
 | `973b274` | feat: redesign soumissions & clients UI with sticky bottom pagination |
 | `44b39a0` | fix: add margin-bottom and full border-radius to soumissions table |
+
+---
+
+## Session 9 — Architecture & Sécurité (16 mai 2026)
+
+### Migration architecture : Full SSR → Shell SSR + Client Fetch
+
+**Problème :** Un CRM privé n'a pas besoin de SSR pour le contenu. L'architecture full SSR causait une latence perceptible à chaque navigation et des erreurs de hydratation (`useBp()` rendait "desktop" côté serveur, "mobile" côté client).
+
+**Solution :** Le layout reste SSR (rendu instantané de la sidebar/navbar). Les pages deviennent de simples wrappers sans async. Les Client Components chargent leurs propres données via `fetch` + `Promise.all` au mount.
+
+| Fichier | Changement |
+|---------|------------|
+| `app/(app)/dashboard/page.tsx` | async server component → thin wrapper `return <DashboardClient />` |
+| `app/(app)/soumissions/page.tsx` | passait `role` en props → thin wrapper |
+| `DashboardClient.tsx` | Props supprimées → `Promise.all([/api/me, /api/dashboard, /api/soumissions, /api/prospects])` |
+| `SoumissionsClient.tsx` | `role` en props + race condition → `Promise.all([/api/me, /api/soumissions])` |
+| `app/api/me/route.ts` | **Nouveau** → retourne `{ role, full_name }` depuis `profiles` |
+
+**Bug corrigé :** `useBp()` initialisait avec `typeof window === "undefined" ? "desktop" : getBp()`. Fix : toujours initialiser à `"mobile"`, mettre à jour dans `useEffect` après mount.
+
+### Corrections de sécurité
+
+#### 🔴 Critique
+
+| Route | Problème | Correction |
+|-------|----------|------------|
+| `middleware.ts` | `getSession()` trusts JWT local sans validation réseau | → `getUser()` valide avec Supabase Auth |
+| `/api/clients/export` | Aucune auth — liste clients accessible publiquement | → `getUser()` + 401 |
+| `/api/soumissions/export` | Aucune auth — toutes les soumissions accessibles | → `getUser()` + 401 |
+| `/api/export/docx` | Client anon banni + aucun check auth | → `createServerClient + cookies()` + `getUser()` |
+| `/api/export/pdf` | Client anon banni + aucun check auth | → `createServerClient + cookies()` + `getUser()` |
+
+#### 🟡 Élevé
+
+| Route | Problème | Correction |
+|-------|----------|------------|
+| `/api/soumissions/[id]` PATCH | Mass assignment — corps brut passé à Supabase | → Whitelist : `statut` (enum validé) + `versement_recu` (≥0) |
+| `/api/clients/[id]` PATCH | Mass assignment | → Whitelist : 8 champs |
+| `/api/visites/[id]` PATCH | Mass assignment + `resultat` non validé | → Whitelist + `VALID_RESULTATS` |
+| `/api/generate` | Route IA sans auth — consommation facturable non protégée | → `getUser()` + 401 |
+
+#### 🔵 Moyen
+
+| Route | Problème | Correction |
+|-------|----------|------------|
+| `/api/clients` GET | `.limit(20)` cachée — clients 21+ invisibles | → Limite retirée |
+| Toutes routes restantes | Dépendaient uniquement du RLS | → `getUser()` ajouté (défense en profondeur) |
+
+### Modèle de sécurité final — 3 couches
+
+1. **Middleware (Edge)** — `getUser()` — redirige `/login` si non auth ou token invalide
+2. **API Routes** — `getUser()` explicite sur chaque route — 401 si non auth
+3. **RLS Supabase** — filtrage au niveau base de données — commercial voit uniquement ses propres données
+
+## Commits session 9 (16 mai 2026)
+
+| Hash | Description |
+|------|-------------|
+| `e6e2271` | refactor: migrate dashboard/soumissions to Shell SSR + Client fetch pattern |
+| `72de078` | fix(security): patch mass assignment, add auth on /api/generate, fix pagination limit |
+| `9be3d8a` | fix(security): middleware getSession() → getUser() to validate JWT server-side |
+| `05cd33e` | fix(security): add auth to export routes, replace anon client in docx/pdf |
+| `ddbf16c` | fix(security): add getUser() auth check to all remaining API routes |

@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BTH Hub — Architecture & Documentation</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  :root {
+    --green: #1a2e1e;
+    --green-light: #2d4f33;
+    --green-pale: #e8f0e9;
+    --green-mid: #3d6b44;
+    --accent: #5a9e64;
+    --gold: #c9a227;
+    --text: #1a1a1a;
+    --text-muted: #555;
+    --bg: #f5f7f5;
+    --card: #ffffff;
+    --border: #d4e0d5;
+    --tag-blue: #dbeafe;
+    --tag-blue-text: #1e40af;
+    --tag-green: #dcfce7;
+    --tag-green-text: #166534;
+    --tag-orange: #ffedd5;
+    --tag-orange-text: #9a3412;
+    --tag-purple: #f3e8ff;
+    --tag-purple-text: #6b21a8;
+    --tag-red: #fee2e2;
+    --tag-red-text: #991b1b;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  .site-header {
+    background: linear-gradient(135deg, var(--green) 0%, var(--green-light) 60%, var(--green-mid) 100%);
+    color: white;
+    padding: 40px 48px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .site-header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 220px; height: 220px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+  }
+  .site-header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .site-header h1 span { color: #86efac; }
+  .site-header p {
+    font-size: 1.05rem;
+    opacity: 0.85;
+    margin-top: 6px;
+    max-width: 600px;
+  }
+  .header-meta {
+    display: flex;
+    gap: 20px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 0.8rem;
+    font-weight: 500;
+  }
+
+  /* LAYOUT */
+  .container { max-width: 1300px; margin: 0 auto; padding: 0 24px; }
+
+  .nav-tabs {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .nav-tabs .container {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .tab-btn {
+    padding: 14px 22px;
+    border: none;
+    background: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { color: var(--green); background: var(--green-pale); }
+  .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+
+  .section {
+    display: none;
+    padding: 40px 0 60px;
+  }
+  .section.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--green);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card h2 .icon { font-size: 1.2rem; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
+
+  /* TAGS */
+  .tag {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .tag-blue { background: var(--tag-blue); color: var(--tag-blue-text); }
+  .tag-green { background: var(--tag-green); color: var(--tag-green-text); }
+  .tag-orange { background: var(--tag-orange); color: var(--tag-orange-text); }
+  .tag-purple { background: var(--tag-purple); color: var(--tag-purple-text); }
+  .tag-red { background: var(--tag-red); color: var(--tag-red-text); }
+
+  /* TABLES */
+  .table-wrap { overflow-x: auto; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+  th {
+    background: var(--green-pale);
+    color: var(--green);
+    font-weight: 600;
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 2px solid var(--border);
+  }
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:hover td { background: #fafcfa; }
+  code {
+    background: #f0f4f0;
+    border: 1px solid #d0dcd1;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.82rem;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    color: var(--green);
+  }
+
+  /* STEP FLOW */
+  .flow-steps {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .flow-step {
+    flex: 1;
+    min-width: 150px;
+    background: var(--green-pale);
+    border: 1px solid var(--border);
+    border-right: none;
+    padding: 16px 18px;
+    position: relative;
+  }
+  .flow-step:last-child { border-right: 1px solid var(--border); border-radius: 0 10px 10px 0; }
+  .flow-step:first-child { border-radius: 10px 0 0 10px; }
+  .flow-step::after {
+    content: '▶';
+    position: absolute;
+    right: -12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent);
+    font-size: 1rem;
+    z-index: 1;
+    background: var(--bg);
+    padding: 0 2px;
+  }
+  .flow-step:last-child::after { display: none; }
+  .flow-step .step-num {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--green);
+    opacity: 0.3;
+    line-height: 1;
+  }
+  .flow-step .step-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--green);
+    margin: 4px 0 2px;
+  }
+  .flow-step .step-desc {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  /* TREE */
+  .tree { font-family: 'Cascadia Code', monospace; font-size: 0.82rem; line-height: 1.8; }
+  .tree-folder { color: var(--green); font-weight: 600; }
+  .tree-file { color: #444; }
+  .tree-desc { color: var(--text-muted); font-style: italic; }
+
+  /* MODULE CARDS */
+  .module-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+  .module-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-top: 4px solid var(--green);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .module-card.blue { border-top-color: #3b82f6; }
+  .module-card.orange { border-top-color: #f59e0b; }
+  .module-card.purple { border-top-color: #8b5cf6; }
+  .module-card.red { border-top-color: #ef4444; }
+  .module-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 10px; }
+  .module-card ul { list-style: none; }
+  .module-card ul li {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    padding: 3px 0;
+    border-bottom: 1px dashed var(--border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .module-card ul li:last-child { border: none; }
+  .module-card ul li::before { content: '→'; color: var(--accent); font-size: 0.75rem; }
+
+  /* RBAC */
+  .role-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  @media (max-width: 700px) { .role-grid { grid-template-columns: 1fr; } }
+  .role-card {
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid var(--border);
+  }
+  .role-admin { background: #fef3c7; border-color: #fde68a; }
+  .role-cp { background: #dbeafe; border-color: #bfdbfe; }
+  .role-com { background: #f3e8ff; border-color: #e9d5ff; }
+  .role-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+  .role-card .role-badge { font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 8px; display: inline-block; margin-bottom: 10px; }
+  .role-admin .role-badge { background: #d97706; color: white; }
+  .role-cp .role-badge { background: #2563eb; color: white; }
+  .role-com .role-badge { background: #7c3aed; color: white; }
+  .role-card ul { list-style: none; }
+  .role-card ul li { font-size: 0.82rem; padding: 3px 0; color: var(--text-muted); }
+  .role-card ul li::before { content: '✓ '; color: var(--accent); }
+
+  /* API METHOD BADGES */
+  .method { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; font-family: monospace; }
+  .get { background: #dcfce7; color: #166534; }
+  .post { background: #dbeafe; color: #1e40af; }
+  .patch { background: #ffedd5; color: #9a3412; }
+  .delete { background: #fee2e2; color: #991b1b; }
+
+  /* MERMAID */
+  .mermaid-wrap {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    overflow-x: auto;
+    margin-bottom: 20px;
+  }
+  .mermaid { display: flex; justify-content: center; }
+
+  /* DB SCHEMA */
+  .db-table {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .db-table-header {
+    background: var(--green);
+    color: white;
+    padding: 10px 16px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .db-table-body { padding: 0; }
+  .db-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.82rem;
+  }
+  .db-field:last-child { border: none; }
+  .db-field .field-name { font-family: monospace; font-weight: 600; min-width: 160px; }
+  .db-field .field-type { color: #2563eb; font-family: monospace; min-width: 100px; }
+  .db-field .field-note { color: var(--text-muted); font-style: italic; }
+  .pk { color: #d97706; font-size: 0.7rem; font-weight: 700; }
+  .fk { color: #7c3aed; font-size: 0.7rem; font-weight: 700; }
+
+  /* TECH STACK */
+  .tech-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  .tech-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .tech-name { font-weight: 600; font-size: 0.95rem; }
+  .tech-version { font-size: 0.75rem; font-family: monospace; color: var(--accent); }
+  .tech-desc { font-size: 0.78rem; color: var(--text-muted); }
+
+  /* INTERVIEW BOX */
+  .interview-box {
+    background: linear-gradient(135deg, var(--green-pale) 0%, #f0f7f0 100%);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--green);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+  }
+  .interview-box h3 { color: var(--green); font-size: 1rem; margin-bottom: 8px; }
+  .interview-box p { font-size: 0.9rem; line-height: 1.7; color: var(--text); }
+
+  h2.section-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--green);
+    margin-bottom: 24px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--green-pale);
+  }
+</style>
+</head>
+<body>
+
+<div class="site-header">
+  <div class="container">
+    <h1>BTH Hub <span>·</span> Architecture & Documentation</h1>
+    <p>CRM interne BTH Expert — Gestion des soumissions, clients, prospection et dépenses avec génération IA</p>
+    <div class="header-meta">
+      <span class="badge">Next.js 16.2.4 App Router</span>
+      <span class="badge">TypeScript strict</span>
+      <span class="badge">Supabase PostgreSQL</span>
+      <span class="badge">Claude Sonnet 4.5</span>
+      <span class="badge">Tailwind CSS v4</span>
+      <span class="badge">Framer Motion</span>
+    </div>
+  </div>
+</div>
+
+<div class="nav-tabs">
+  <div class="container">
+    <button class="tab-btn active" onclick="showTab('overview')">Vue d'ensemble</button>
+    <button class="tab-btn" onclick="showTab('architecture')">Architecture</button>
+    <button class="tab-btn" onclick="showTab('flux')">Flux Principal</button>
+    <button class="tab-btn" onclick="showTab('api')">Routes API</button>
+    <button class="tab-btn" onclick="showTab('components')">Composants</button>
+    <button class="tab-btn" onclick="showTab('database')">Base de données</button>
+    <button class="tab-btn" onclick="showTab('rbac')">Rôles RBAC</button>
+    <button class="tab-btn" onclick="showTab('stack')">Stack Technique</button>
+    <button class="tab-btn" onclick="showTab('interview')">Guide Entrevue</button>
+    <button class="tab-btn" onclick="showTab('session9')" style="background:#1a2e1e;color:#fff">Session 9 — Sécurité</button>
+  </div>
+</div>
+
+<!-- ============================== VUE D'ENSEMBLE ============================== -->
+<div id="tab-overview" class="section active">
+  <div class="container">
+    <h2 class="section-title">Vue d'ensemble du projet</h2>
+
+    <div class="interview-box">
+      <h3>En une phrase</h3>
+      <p><strong>BTH Hub</strong> est le CRM interne de BTH Expert, un cabinet algérien de conseil en environnement. Il couvre le cycle complet de vente : de la prospection terrain jusqu'à la remise d'un document de soumission professionnel en DOCX/PDF, avec rédaction automatique par IA (Claude Anthropic).</p>
+    </div>
+
+    <div class="module-grid">
+      <div class="module-card">
+        <h3>📋 Soumissions</h3>
+        <ul>
+          <li>Formulaire 4 étapes (wizard)</li>
+          <li>Génération IA du contenu FR</li>
+          <li>Aperçu éditable en temps réel</li>
+          <li>Export DOCX + PDF professionnel</li>
+          <li>Suivi statut (Brouillon → Acceptée)</li>
+          <li>Numéro offre auto (T110520.2026)</li>
+        </ul>
+      </div>
+      <div class="module-card blue">
+        <h3>👥 Clients</h3>
+        <ul>
+          <li>Annuaire entreprises/contacts</li>
+          <li>Recherche par nom ou entreprise</li>
+          <li>Lié aux soumissions (cascade)</li>
+          <li>Export XLSX</li>
+        </ul>
+      </div>
+      <div class="module-card orange">
+        <h3>🔍 Prospection</h3>
+        <ul>
+          <li>Pipeline commercial visuel</li>
+          <li>Log de visites terrain</li>
+          <li>Suivi résultat par visite</li>
+          <li>Alertes relances overdue</li>
+          <li>Statuts: actif / sans_suite / converti</li>
+        </ul>
+      </div>
+      <div class="module-card purple">
+        <h3>💸 Dépenses</h3>
+        <ul>
+          <li>Saisie par employé</li>
+          <li>Lien optionnel à un projet</li>
+          <li>Revue admin centralisée</li>
+          <li>Analyse coûts & marges</li>
+          <li>Export XLSX</li>
+        </ul>
+      </div>
+      <div class="module-card red">
+        <h3>📊 Dashboard</h3>
+        <ul>
+          <li>KPIs du mois en cours</li>
+          <li>Nombre soumissions envoyées</li>
+          <li>Total mandats acceptés</li>
+          <li>Taux d'acceptation</li>
+          <li>Paiements reçus</li>
+        </ul>
+      </div>
+      <div class="module-card">
+        <h3>⚙️ Administration</h3>
+        <ul>
+          <li>Gestion utilisateurs + invitations</li>
+          <li>Assignation des rôles RBAC</li>
+          <li>Paramètres société (signataires, TVA)</li>
+          <li>Upload signatures officielles</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== ARCHITECTURE ============================== -->
+<div id="tab-architecture" class="section">
+  <div class="container">
+    <h2 class="section-title">Architecture du projet</h2>
+
+    <div class="card">
+      <h2><span class="icon">🗂️</span> Structure des dossiers</h2>
+      <div class="tree">
+        <div><span class="tree-folder">BTH-Expert-CRM/</span></div>
+        <div>&nbsp;&nbsp;<span class="tree-folder">app/</span> <span class="tree-desc">— Cœur Next.js App Router</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">(app)/</span> <span class="tree-desc">— Groupe protégé (auth requise)</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">dashboard/</span> <span class="tree-desc">— KPIs et métriques</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">soumissions/</span> <span class="tree-desc">— Liste, nouvelle, [id] édition</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">clients/</span> <span class="tree-desc">— Annuaire clients</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">prospection/</span> <span class="tree-desc">— Pipeline commercial</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">depenses/</span> <span class="tree-desc">— Saisie dépenses</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">admin/</span> <span class="tree-desc">— Utilisateurs, dépenses admin</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">couts-marges/</span> <span class="tree-desc">— Analytiques financières (admin)</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">parametres/</span> <span class="tree-desc">— Configuration société</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">(auth)/</span> <span class="tree-desc">— Groupe public (login, reset)</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">api/</span> <span class="tree-desc">— 25+ route handlers REST</span></div>
+        <div>&nbsp;&nbsp;<span class="tree-folder">components/</span> <span class="tree-desc">— Composants React réutilisables</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">layout/</span> <span class="tree-desc">— Sidebar, Header, BottomNav</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">auth/</span> <span class="tree-desc">— LoginForm, HashTokenRedirect</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">forms/</span> <span class="tree-desc">— StepClientInfo..StepPreview (wizard)</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">soumissions/</span> <span class="tree-desc">— EditableSection</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-folder">prospection/</span> <span class="tree-desc">— ProspectCard, VisiteForm, PlanningZone</span></div>
+        <div>&nbsp;&nbsp;<span class="tree-folder">lib/</span> <span class="tree-desc">— Services et utilitaires</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-file">anthropic.ts</span> <span class="tree-desc">— Intégration Claude AI</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-file">generate-document.ts</span> <span class="tree-desc">— Rendu template DOCX</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-file">convert-to-pdf.ts</span> <span class="tree-desc">— Conversion PDF via Cloudmersive</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-file">export-helpers.ts</span> <span class="tree-desc">— Construction DocumentData</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-file">utils.ts</span> <span class="tree-desc">— formatMontant, calcTotaux, generateNumeroOffre</span></div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;<span class="tree-file">supabase-{browser,server,admin}.ts</span> <span class="tree-desc">— Clients Supabase</span></div>
+        <div>&nbsp;&nbsp;<span class="tree-folder">types/</span> <span class="tree-desc">— Définitions TypeScript partagées</span></div>
+        <div>&nbsp;&nbsp;<span class="tree-folder">templates/</span> <span class="tree-desc">— template-standard.docx (NE PAS MODIFIER)</span></div>
+        <div>&nbsp;&nbsp;<span class="tree-file">middleware.ts</span> <span class="tree-desc">— Protection routes + vérification rôle</span></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h2><span class="icon">🛡️</span> Middleware — Protection des routes</h2>
+        <ul style="font-size:0.87rem;list-style:none;line-height:2">
+          <li><code>/login</code> <code>/auth/*</code> → <span class="tag tag-green">Public</span></li>
+          <li><code>/*</code> → Redirige vers <code>/login</code> si non auth</li>
+          <li style="color:#16a34a;font-size:0.8rem">✓ Session 9 : <code>getSession()</code> → <code>getUser()</code> (validation JWT serveur)</li>
+          <li><code>/admin/*</code> <code>/couts-marges</code> → Vérifie rôle <code>admin</code></li>
+          <li>Non-admin → Redirige vers <code>/dashboard</code></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h2><span class="icon">🔑</span> Clients Supabase — 4 variantes</h2>
+        <ul style="font-size:0.87rem;list-style:none;line-height:2">
+          <li><code>supabase.ts</code> → Client anon (données publiques)</li>
+          <li><code>supabase-browser.ts</code> → Client composants "use client"</li>
+          <li><code>supabase-server.ts</code> → API routes + middleware (cookies)</li>
+          <li><code>supabase-admin.ts</code> → Service role (invitations)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== FLUX PRINCIPAL ============================== -->
+<div id="tab-flux" class="section">
+  <div class="container">
+    <h2 class="section-title">Flux principal — Génération de soumission</h2>
+
+    <div class="flow-steps" style="margin-bottom:28px">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <div class="step-title">Infos Client</div>
+        <div class="step-desc">Titre, nom, poste, entreprise, adresse</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <div class="step-title">Infos Projet</div>
+        <div class="step-desc">Titre, secteur, type étude, délai, description</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <div class="step-title">Budget</div>
+        <div class="step-desc">Lignes: désignation, qté, prix unitaire → totaux auto</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">AI</div>
+        <div class="step-title">Génération IA</div>
+        <div class="step-desc">Claude rédige contexte, objectifs, hypothèses, livrables</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">4</div>
+        <div class="step-title">Aperçu</div>
+        <div class="step-desc">Sections éditables en place, sauvegarde brouillon</div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">📄</div>
+        <div class="step-title">Export</div>
+        <div class="step-desc">DOCX via template + PDF via Cloudmersive</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">⚙️</span> Ce que fait Claude Sonnet 4.5</h2>
+      <p style="font-size:0.88rem;color:var(--text-muted);margin-bottom:14px">Le modèle reçoit les données du formulaire (step1 + step2) et génère en français, avec le style professionnel BTH Expert :</p>
+      <div class="grid-3">
+        <div style="background:var(--green-pale);padding:14px;border-radius:8px">
+          <strong style="font-size:0.85rem;color:var(--green)">Contexte</strong>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">2 paragraphes décrivant le cadre réglementaire et la mission</p>
+        </div>
+        <div style="background:#dbeafe;padding:14px;border-radius:8px">
+          <strong style="font-size:0.85rem;color:#1e40af">Objectifs</strong>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">4 objectifs spécifiques à l'étude environnementale</p>
+        </div>
+        <div style="background:#f3e8ff;padding:14px;border-radius:8px">
+          <strong style="font-size:0.85rem;color:#6b21a8">Hypothèses</strong>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">3 hypothèses et conditions de réalisation</p>
+        </div>
+        <div style="background:#dcfce7;padding:14px;border-radius:8px">
+          <strong style="font-size:0.85rem;color:#166534">Livrables</strong>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">3 livrables concrets (rapports, documents)</p>
+        </div>
+        <div style="background:#ffedd5;padding:14px;border-radius:8px">
+          <strong style="font-size:0.85rem;color:#9a3412">Inclusions/Exclusions</strong>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">Ce qui est inclus et exclu du périmètre</p>
+        </div>
+        <div style="background:#fef3c7;padding:14px;border-radius:8px">
+          <strong style="font-size:0.85rem;color:#92400e">Échéancier</strong>
+          <p style="font-size:0.8rem;color:var(--text-muted);margin-top:4px">Description du planning de réalisation</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">📄</span> Pipeline de génération du document</h2>
+      <div class="mermaid-wrap">
+        <div class="mermaid">
+flowchart LR
+    A[EditablePreview\n+ Soumission\n+ Lignes budget] --> B[buildDocumentData\nexport-helpers.ts]
+    B --> C[generateDocument\ngenerate-document.ts]
+    C --> D{Format ?}
+    D -->|DOCX| E[Buffer DOCX\ndownload direct]
+    D -->|PDF| F[convertToPdf\nCloudmersive API]
+    F --> G[Buffer PDF\ndownload direct]
+    style A fill:#e8f0e9,stroke:#1a2e1e
+    style E fill:#dcfce7,stroke:#166534
+    style G fill:#dbeafe,stroke:#1e40af
+        </div>
+      </div>
+      <p style="font-size:0.82rem;color:var(--text-muted)">Le template <code>templates/template-standard.docx</code> utilise des variables <code>{variable}</code> et des boucles <code>{#lignes_budget}...{/lignes_budget}</code> traitées par docxtemplater + PizZip. Les montants sont formatés en français (espaces insécables, virgule décimale).</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== ROUTES API ============================== -->
+<div id="tab-api" class="section">
+  <div class="container">
+    <h2 class="section-title">Routes API — 25+ endpoints</h2>
+
+    <div class="card">
+      <h2><span class="icon">📋</span> Soumissions</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Méthode</th><th>URL</th><th>Input</th><th>Action</th><th>Output</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/soumissions</code></td><td>Query: statut, client_id</td><td>Liste les soumissions avec détails client</td><td>Array Soumission + Client</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/soumissions</code></td><td>Body: FormData (step1+2+3+preview)</td><td>Upsert client → insert soumission → insert lignes</td><td>{ soumission_id, numero_offre }</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/soumissions/[id]</code></td><td>Path: id</td><td>Récupère soumission + client + lignes</td><td>Soumission complète</td></tr>
+            <tr><td><span class="method patch">PATCH</span></td><td><code>/api/soumissions/[id]</code></td><td>Body: champs à modifier</td><td>Met à jour la soumission</td><td>Soumission mise à jour</td></tr>
+            <tr><td><span class="method delete">DELETE</span></td><td><code>/api/soumissions/[id]</code></td><td>Path: id</td><td>Supprime (cascade lignes_budget)</td><td>204 No Content</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/soumissions/export</code></td><td>—</td><td>Génère XLSX de toutes les soumissions</td><td>File XLSX download</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h2><span class="icon">👥</span> Clients</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>M.</th><th>URL</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><span class="method get">GET</span></td><td><code>/api/clients</code></td><td>Liste + search (q=)</td></tr>
+              <tr><td><span class="method patch">PATCH</span></td><td><code>/api/clients/[id]</code></td><td>Modifier client</td></tr>
+              <tr><td><span class="method delete">DELETE</span></td><td><code>/api/clients/[id]</code></td><td>Supprimer + cascade soumissions</td></tr>
+              <tr><td><span class="method get">GET</span></td><td><code>/api/clients/export</code></td><td>Export XLSX</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="icon">🤖</span> IA & Export</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>M.</th><th>URL</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><span class="method post">POST</span></td><td><code>/api/generate</code></td><td>Claude → contenu soumission FR</td></tr>
+              <tr><td><span class="method post">POST</span></td><td><code>/api/export/docx</code></td><td>buildDocumentData → DOCX buffer</td></tr>
+              <tr><td><span class="method post">POST</span></td><td><code>/api/export/pdf</code></td><td>DOCX → Cloudmersive → PDF buffer</td></tr>
+              <tr><td><span class="method get">GET</span></td><td><code>/api/dashboard</code></td><td>Stats KPI du mois</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">🔍</span> Prospection & Visites</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>M.</th><th>URL</th><th>Input</th><th>Action</th></tr></thead>
+          <tbody>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/prospects</code></td><td>Query: statut_global</td><td>Liste prospects + visites</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/prospects</code></td><td>Body: données prospect</td><td>Créer prospect (created_by = user auth)</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/prospects/[id]</code></td><td>Path: id</td><td>Fiche + historique visites</td></tr>
+            <tr><td><span class="method patch">PATCH</span></td><td><code>/api/prospects/[id]</code></td><td>Body: statut, notes</td><td>Modifier prospect</td></tr>
+            <tr><td><span class="method get">GET</span></td><td><code>/api/prospects/alerts</code></td><td>—</td><td>Compteur relances overdue (badge header)</td></tr>
+            <tr><td><span class="method post">POST</span></td><td><code>/api/visites</code></td><td>Body: prospect_id, date, resultat</td><td>Logger une visite terrain</td></tr>
+            <tr><td><span class="method patch">PATCH</span></td><td><code>/api/visites/[id]</code></td><td>Body: notes, résultat</td><td>Modifier visite</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h2><span class="icon">💸</span> Dépenses</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>M.</th><th>URL</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><span class="method get">GET</span></td><td><code>/api/depenses</code></td><td>Liste (filtre catégorie, projet)</td></tr>
+              <tr><td><span class="method post">POST</span></td><td><code>/api/depenses</code></td><td>Créer dépense (employe_id = auth)</td></tr>
+              <tr><td><span class="method patch">PATCH</span></td><td><code>/api/depenses/[id]</code></td><td>Modifier (owner ou admin)</td></tr>
+              <tr><td><span class="method delete">DELETE</span></td><td><code>/api/depenses/[id]</code></td><td>Supprimer (owner ou admin)</td></tr>
+              <tr><td><span class="method get">GET</span></td><td><code>/api/depenses/stats</code></td><td>CA / charges / marges (admin)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="icon">👤</span> Admin — Utilisateurs</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>M.</th><th>URL</th><th>Action</th></tr></thead>
+            <tbody>
+              <tr><td><span class="method get">GET</span></td><td><code>/api/admin/users</code></td><td>Liste users + profils + emails</td></tr>
+              <tr><td><span class="method post">POST</span></td><td><code>/api/admin/users/invite</code></td><td>Envoyer invitation + créer profil</td></tr>
+              <tr><td><span class="method patch">PATCH</span></td><td><code>/api/admin/users/[id]</code></td><td>Modifier nom, rôle, is_active</td></tr>
+              <tr><td><span class="method delete">DELETE</span></td><td><code>/api/admin/users/[id]</code></td><td>Désactiver (soft delete)</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== COMPOSANTS ============================== -->
+<div id="tab-components" class="section">
+  <div class="container">
+    <h2 class="section-title">Composants React</h2>
+
+    <div class="card">
+      <h2><span class="icon">🏗️</span> Composants Layout (Client Components)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Composant</th><th>Rôle</th><th>Props clés</th><th>Communication</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>Sidebar</code> <span class="tag tag-orange">Client</span></td>
+              <td>Navigation principale filtrée par rôle, animations hover</td>
+              <td><code>role</code>, <code>pathname</code></td>
+              <td>Lit le rôle depuis le layout parent</td>
+            </tr>
+            <tr>
+              <td><code>Header</code> <span class="tag tag-orange">Client</span></td>
+              <td>Barre top — user info, badge alertes, déconnexion</td>
+              <td><code>user</code>, <code>alertsCount</code></td>
+              <td>Fetch <code>/api/prospects/alerts</code> au mount</td>
+            </tr>
+            <tr>
+              <td><code>BottomNav</code> <span class="tag tag-orange">Client</span></td>
+              <td>Navigation mobile (miroir Sidebar, 44px touch targets)</td>
+              <td><code>role</code></td>
+              <td>usePathname() pour l'état actif</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">📝</span> Wizard Soumissions — 4 Steps (tous Client)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Step</th><th>Rôle</th><th>State géré</th><th>Vers qui</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>StepClientInfo</code> <span class="tag tag-orange">Client</span></td>
+              <td>Formulaire données client (titre, nom, entreprise, adresse)</td>
+              <td>FormDataStep1</td>
+              <td>onChange → wizard parent (page.tsx)</td>
+            </tr>
+            <tr>
+              <td><code>StepProjectInfo</code> <span class="tag tag-orange">Client</span></td>
+              <td>Formulaire données projet (titre, secteur, type étude, délai)</td>
+              <td>FormDataStep2</td>
+              <td>onChange → wizard parent (page.tsx)</td>
+            </tr>
+            <tr>
+              <td><code>StepBudget</code> <span class="tag tag-orange">Client</span></td>
+              <td>Gestion lignes budget + calcul totaux temps réel</td>
+              <td>LigneBudget[], totaux</td>
+              <td>onChange → wizard parent; <code>calcTotaux()</code></td>
+            </tr>
+            <tr>
+              <td><code>StepPreview</code> <span class="tag tag-orange">Client</span></td>
+              <td>Aperçu IA éditable — sections texte modifiables</td>
+              <td>EditablePreview</td>
+              <td>Appelle <code>POST /api/generate</code> → <code>POST /api/soumissions</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h2><span class="icon">✏️</span> EditableSection</h2>
+        <p style="font-size:0.87rem;line-height:1.7">Bloc texte avec mode lecture/édition inline. Un clic active un <code>&lt;textarea&gt;</code> auto-resize. Au blur ou Enter → retour lecture. Props: <code>value</code>, <code>onChange</code>, <code>label</code>. <strong>Client Component</strong> car interactif (focus, blur, resize).</p>
+      </div>
+      <div class="card">
+        <h2><span class="icon">🔍</span> Composants Prospection</h2>
+        <ul style="font-size:0.85rem;list-style:none;line-height:2">
+          <li><code>ProspectCard</code> — carte pipeline, statut badge, lien vers fiche</li>
+          <li><code>VisiteForm</code> → POST /api/visites (Client — form submit)</li>
+          <li><code>PlanningZone</code> → PATCH /api/prospects/[id] (Client — interactions)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">🔐</span> Composants Auth</h2>
+      <div class="grid-2">
+        <div>
+          <strong>LoginForm</strong> <span class="tag tag-orange">Client</span>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-top:6px">Email + password → <code>supabase-browser.ts</code> signInWithPassword → redirect dashboard. Gère les erreurs Supabase avec messages FR.</p>
+        </div>
+        <div>
+          <strong>HashTokenRedirect</strong> <span class="tag tag-orange">Client</span>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-top:6px">Extrait le token du fragment URL (<code>#access_token=...</code>) lors du premier login par invitation email. Échange contre une session Supabase.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">💡</span> Server vs Client — règle générale</h2>
+      <div class="grid-2">
+        <div style="background:var(--green-pale);padding:16px;border-radius:8px">
+          <strong style="color:var(--green)">Server Components</strong>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-top:6px">Pages (page.tsx), layouts, composants qui affichent uniquement des données. Accès direct à Supabase server-side, pas de JS envoyé au client.</p>
+        </div>
+        <div style="background:#ffedd5;padding:16px;border-radius:8px">
+          <strong style="color:#9a3412">Client Components "use client"</strong>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-top:6px">Tout ce qui a des <code>useState</code>, <code>useEffect</code>, des event handlers (onClick, onChange), ou des hooks Next.js (usePathname). Tout le wizard soumission, formulaires, navigation.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== DATABASE ============================== -->
+<div id="tab-database" class="section">
+  <div class="container">
+    <h2 class="section-title">Schéma de base de données</h2>
+
+    <div class="grid-2">
+      <div>
+        <div class="db-table">
+          <div class="db-table-header">📋 soumissions</div>
+          <div class="db-table-body">
+            <div class="db-field"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk">PK</span></div>
+            <div class="db-field"><span class="field-name">numero_offre</span><span class="field-type">TEXT</span><span class="field-note">UNIQUE — ex: T110520.2026</span></div>
+            <div class="db-field"><span class="field-name">date_offre</span><span class="field-type">DATE</span><span class="field-note">DEFAULT current_date</span></div>
+            <div class="db-field"><span class="field-name">client_id</span><span class="field-type">UUID</span><span class="fk">FK→clients CASCADE</span></div>
+            <div class="db-field"><span class="field-name">titre_projet</span><span class="field-type">TEXT</span></div>
+            <div class="db-field"><span class="field-name">secteur_activite</span><span class="field-type">TEXT</span></div>
+            <div class="db-field"><span class="field-name">type_etude</span><span class="field-type">TEXT</span><span class="field-note">CHECK ENUM</span></div>
+            <div class="db-field"><span class="field-name">delai_jours</span><span class="field-type">INTEGER</span><span class="field-note">DEFAULT 45</span></div>
+            <div class="db-field"><span class="field-name">total_ht / tva / total_ttc</span><span class="field-type">NUMERIC(14,2)</span></div>
+            <div class="db-field"><span class="field-name">versement_recu</span><span class="field-type">NUMERIC</span><span class="field-note">nullable</span></div>
+            <div class="db-field"><span class="field-name">statut</span><span class="field-type">TEXT</span><span class="field-note">Brouillon|Envoyée|Acceptée|Refusée</span></div>
+            <div class="db-field"><span class="field-name">contexte_genere</span><span class="field-type">TEXT</span><span class="field-note">JSON stringifié (IA output)</span></div>
+          </div>
+        </div>
+
+        <div class="db-table">
+          <div class="db-table-header">💰 lignes_budget</div>
+          <div class="db-table-body">
+            <div class="db-field"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk">PK</span></div>
+            <div class="db-field"><span class="field-name">soumission_id</span><span class="field-type">UUID</span><span class="fk">FK→soumissions CASCADE</span></div>
+            <div class="db-field"><span class="field-name">numero</span><span class="field-type">INTEGER</span></div>
+            <div class="db-field"><span class="field-name">designation</span><span class="field-type">TEXT</span></div>
+            <div class="db-field"><span class="field-name">quantite</span><span class="field-type">INTEGER</span><span class="field-note">DEFAULT 1</span></div>
+            <div class="db-field"><span class="field-name">prix_unitaire</span><span class="field-type">NUMERIC(14,2)</span></div>
+            <div class="db-field"><span class="field-name">ordre</span><span class="field-type">INTEGER</span><span class="field-note">tri dans le document</span></div>
+          </div>
+        </div>
+
+        <div class="db-table">
+          <div class="db-table-header">⚙️ parametres (1 seule ligne)</div>
+          <div class="db-table-body">
+            <div class="db-field"><span class="field-name">id</span><span class="field-type">INTEGER</span><span class="pk">PK=1</span><span class="field-note">CONSTRAINT single_row CHECK(id=1)</span></div>
+            <div class="db-field"><span class="field-name">nom_societe</span><span class="field-type">TEXT</span><span class="field-note">DEFAULT 'BTH Expert'</span></div>
+            <div class="db-field"><span class="field-name">signataire1_nom/titre</span><span class="field-type">TEXT</span></div>
+            <div class="db-field"><span class="field-name">signataire2_nom/titre</span><span class="field-type">TEXT</span></div>
+            <div class="db-field"><span class="field-name">tva_pct</span><span class="field-type">NUMERIC(5,2)</span><span class="field-note">DEFAULT 19</span></div>
+            <div class="db-field"><span class="field-name">delai_jours / validite_jours</span><span class="field-type">INTEGER</span><span class="field-note">45 / 30</span></div>
+            <div class="db-field"><span class="field-name">signature_*_url</span><span class="field-type">TEXT</span><span class="field-note">Supabase Storage URLs</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="db-table">
+          <div class="db-table-header">👥 clients</div>
+          <div class="db-table-body">
+            <div class="db-field"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk">PK</span></div>
+            <div class="db-field"><span class="field-name">titre</span><span class="field-type">TEXT</span><span class="field-note">M. | Mme | Dr. | Pr.</span></div>
+            <div class="db-field"><span class="field-name">nom_contact</span><span class="field-type">TEXT</span></div>
+            <div class="db-field"><span class="field-name">poste</span><span class="field-type">TEXT</span></div>
+            <div class="db-field"><span class="field-name">entreprise</span><span class="field-type">TEXT</span></div>
+            <div class="db-field"><span class="field-name">adresse / ville</span><span class="field-type">TEXT</span></div>
+          </div>
+        </div>
+
+        <div class="db-table">
+          <div class="db-table-header">🔍 prospects</div>
+          <div class="db-table-body">
+            <div class="db-field"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk">PK</span></div>
+            <div class="db-field"><span class="field-name">entreprise / secteur</span><span class="field-type">TEXT</span></div>
+            <div class="db-field"><span class="field-name">nom_contact / poste_contact</span><span class="field-type">TEXT</span></div>
+            <div class="db-field"><span class="field-name">telephone / email</span><span class="field-type">TEXT</span></div>
+            <div class="db-field"><span class="field-name">statut_global</span><span class="field-type">TEXT</span><span class="field-note">actif|sans_suite|converti</span></div>
+            <div class="db-field"><span class="field-name">created_by</span><span class="field-type">UUID</span><span class="fk">FK→auth.users</span></div>
+          </div>
+        </div>
+
+        <div class="db-table">
+          <div class="db-table-header">📅 visites</div>
+          <div class="db-table-body">
+            <div class="db-field"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk">PK</span></div>
+            <div class="db-field"><span class="field-name">prospect_id</span><span class="field-type">UUID</span><span class="fk">FK→prospects CASCADE</span></div>
+            <div class="db-field"><span class="field-name">date_visite</span><span class="field-type">DATE</span></div>
+            <div class="db-field"><span class="field-name">resultat</span><span class="field-type">TEXT</span><span class="field-note">soumission_demandee|rappel_planifie|...</span></div>
+            <div class="db-field"><span class="field-name">date_prochaine_action</span><span class="field-type">DATE</span><span class="field-note">nullable — alerte si passée</span></div>
+            <div class="db-field"><span class="field-name">commercial_id</span><span class="field-type">UUID</span><span class="fk">FK→auth.users</span></div>
+          </div>
+        </div>
+
+        <div class="db-table">
+          <div class="db-table-header">💸 depenses</div>
+          <div class="db-table-body">
+            <div class="db-field"><span class="field-name">id</span><span class="field-type">UUID</span><span class="pk">PK</span></div>
+            <div class="db-field"><span class="field-name">employe_id</span><span class="field-type">UUID</span><span class="fk">FK→auth.users</span></div>
+            <div class="db-field"><span class="field-name">categorie</span><span class="field-type">TEXT</span><span class="field-note">mission|vehicule|repas|materiel|...</span></div>
+            <div class="db-field"><span class="field-name">montant</span><span class="field-type">NUMERIC</span></div>
+            <div class="db-field"><span class="field-name">projet_lie</span><span class="field-type">UUID</span><span class="fk">FK→soumissions nullable</span></div>
+            <div class="db-field"><span class="field-name">justificatif_url</span><span class="field-type">TEXT</span><span class="field-note">nullable</span></div>
+          </div>
+        </div>
+
+        <div class="db-table">
+          <div class="db-table-header">👤 profiles (extension auth.users)</div>
+          <div class="db-table-body">
+            <div class="db-field"><span class="field-name">id</span><span class="field-type">UUID</span><span class="fk">FK→auth.users</span></div>
+            <div class="db-field"><span class="field-name">full_name</span><span class="field-type">TEXT</span></div>
+            <div class="db-field"><span class="field-name">role</span><span class="field-type">TEXT</span><span class="field-note">admin|charge_projet|commercial</span></div>
+            <div class="db-field"><span class="field-name">is_active</span><span class="field-type">BOOLEAN</span><span class="field-note">DEFAULT true (soft delete)</span></div>
+            <div class="db-field"><span class="field-name">avatar_url</span><span class="field-type">TEXT</span><span class="field-note">Supabase Storage</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== RBAC ============================== -->
+<div id="tab-rbac" class="section">
+  <div class="container">
+    <h2 class="section-title">Système de rôles RBAC</h2>
+
+    <div class="role-grid">
+      <div class="role-card role-admin">
+        <h3>🔴 Admin</h3>
+        <div class="role-badge">admin</div>
+        <ul>
+          <li>Accès total à tout</li>
+          <li>Dashboard KPIs</li>
+          <li>Toutes les soumissions</li>
+          <li>Gestion clients</li>
+          <li>Prospection (toutes)</li>
+          <li>Revue dépenses (tous)</li>
+          <li>Coûts & marges</li>
+          <li>Gestion utilisateurs</li>
+          <li>Paramètres société</li>
+        </ul>
+      </div>
+      <div class="role-card role-cp">
+        <h3>🔵 Chargé de Projet</h3>
+        <div class="role-badge">charge_projet</div>
+        <ul>
+          <li>Dashboard KPIs</li>
+          <li>Soumissions (toutes)</li>
+          <li>Clients (toutes)</li>
+          <li>Dépenses (ses propres)</li>
+          <li>Profil</li>
+        </ul>
+      </div>
+      <div class="role-card role-com">
+        <h3>🟣 Commercial</h3>
+        <div class="role-badge">commercial</div>
+        <ul>
+          <li>Prospection uniquement</li>
+          <li>Ses propres prospects</li>
+          <li>Log de visites</li>
+          <li>Ses propres dépenses</li>
+          <li>Profil</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <h2><span class="icon">🛡️</span> Comment le RBAC est appliqué</h2>
+      <div class="grid-3">
+        <div style="background:#fff7ed;padding:16px;border-radius:8px;border:1px solid #fed7aa">
+          <strong style="color:#c2410c">1. Middleware (Edge)</strong>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-top:6px">Intercepte toutes les requêtes. Vérifie la session Supabase + le rôle depuis <code>profiles</code>. Redirige si non autorisé avant même de rendre la page.</p>
+        </div>
+        <div style="background:#eff6ff;padding:16px;border-radius:8px;border:1px solid #bfdbfe">
+          <strong style="color:#1d4ed8">2. Layout (Server)</strong>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-top:6px">Le layout protégé charge le profil et filtre la Sidebar selon le rôle. Double protection pour les routes sensibles.</p>
+        </div>
+        <div style="background:#faf5ff;padding:16px;border-radius:8px;border:1px solid #e9d5ff">
+          <strong style="color:#7c3aed">3. API Routes (Server)</strong>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-top:6px">Chaque route API vérifie <code>createServerClient + cookies()</code> + <code>getUser()</code> explicite. Routes admin vérifient le rôle. RLS Supabase comme dernière ligne de défense. Session 9 : auth ajoutée sur toutes les routes manquantes.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== STACK ============================== -->
+<div id="tab-stack" class="section">
+  <div class="container">
+    <h2 class="section-title">Stack Technique</h2>
+    <div class="tech-grid">
+      <div class="tech-item">
+        <span class="tech-name">Next.js</span>
+        <span class="tech-version">16.2.4</span>
+        <span class="tech-desc">App Router, Server Components, API Routes, Turbopack</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">TypeScript</span>
+        <span class="tech-version">^5 strict</span>
+        <span class="tech-desc">Strict mode, paths @/*, jamais de any</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">Tailwind CSS</span>
+        <span class="tech-version">v4</span>
+        <span class="tech-desc">Mobile-first, touch targets 44px min, PostCSS</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">Framer Motion</span>
+        <span class="tech-version">^12.9.4</span>
+        <span class="tech-desc">Animations systématiques sur tous les composants UI</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">Supabase</span>
+        <span class="tech-version">@supabase/ssr ^0.10</span>
+        <span class="tech-desc">PostgreSQL + Auth + Storage + RLS — région Paris eu-west-3</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">Anthropic Claude</span>
+        <span class="tech-version">SDK ^0.39 · Sonnet 4.5</span>
+        <span class="tech-desc">Génération contenu FR soumissions avec guidelines BTH Expert</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">docxtemplater + PizZip</span>
+        <span class="tech-version">^3.68 + ^3.2</span>
+        <span class="tech-desc">Rendu DOCX depuis template avec variables et boucles</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">Cloudmersive API</span>
+        <span class="tech-version">REST API</span>
+        <span class="tech-desc">Conversion DOCX → PDF côté serveur</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">xlsx</span>
+        <span class="tech-version">^0.18.5</span>
+        <span class="tech-desc">Export XLSX pour soumissions, clients, prospects, dépenses</span>
+      </div>
+      <div class="tech-item">
+        <span class="tech-name">date-fns</span>
+        <span class="tech-version">^4.1.0</span>
+        <span class="tech-desc">Formatage dates en français (formatDateFr)</span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:24px">
+      <h2><span class="icon">🔑</span> Variables d'environnement requises</h2>
+      <div class="grid-2">
+        <ul style="font-size:0.85rem;list-style:none;line-height:2.2">
+          <li><code>NEXT_PUBLIC_SUPABASE_URL</code> — URL projet Supabase</li>
+          <li><code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> — Clé publique</li>
+          <li><code>SUPABASE_SERVICE_ROLE_KEY</code> — Clé admin (invitations)</li>
+        </ul>
+        <ul style="font-size:0.85rem;list-style:none;line-height:2.2">
+          <li><code>ANTHROPIC_API_KEY</code> — Claude API</li>
+          <li><code>CLOUDMERSIVE_API_KEY</code> — Conversion PDF</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== ENTREVUE ============================== -->
+<div id="tab-interview" class="section">
+  <div class="container">
+    <h2 class="section-title">Guide de présentation — Entrevue</h2>
+
+    <div class="interview-box">
+      <h3>Présentation en 30 secondes</h3>
+      <p>"J'ai développé BTH Hub, un CRM interne pour un cabinet de conseil en environnement. L'application couvre tout le cycle de vente : prospection terrain, création de soumissions techniques avec rédaction assistée par IA, et génération de documents professionnels Word/PDF. C'est une application Next.js full-stack avec Supabase comme backend, et Claude d'Anthropic pour la génération de contenu."</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="interview-box">
+        <h3>Question : "Qu'est-ce que tu es le plus fier dans ce projet ?"</h3>
+        <p>Le pipeline de génération de documents. L'utilisateur remplit un formulaire, Claude génère un contenu professionnel en français avec le style BTH Expert, l'utilisateur édite en temps réel, et on exporte un Word ou PDF en un clic via un vrai template DOCX avec docxtemplater. Zéro jsPDF, le rendu est identique à un document Word natif.</p>
+      </div>
+      <div class="interview-box">
+        <h3>Question : "Comment as-tu géré la sécurité ?"</h3>
+        <p>Trois couches : le middleware Edge intercepte toutes les routes et vérifie le rôle avant le rendu. Les API routes créent un client Supabase côté serveur avec les cookies de session — jamais le client anonyme. Et Supabase RLS comme dernière défense au niveau base de données.</p>
+      </div>
+      <div class="interview-box">
+        <h3>Question : "Server Components vs Client Components ?"</h3>
+        <p>Les pages sont Server Components par défaut : elles lisent Supabase directement côté serveur, sans hydratation client. Je passe en "use client" uniquement quand c'est nécessaire : formulaires avec état, animations Framer Motion, hooks usePathname. Le wizard soumission (4 étapes) est entièrement client car il gère un état complexe inter-steps.</p>
+      </div>
+      <div class="interview-box">
+        <h3>Question : "Comment fonctionne l'IA ?"</h3>
+        <p>L'utilisateur remplit les étapes 1 (client) et 2 (projet). À l'étape 3, quand il valide le budget, on appelle POST /api/generate qui envoie les données à Claude Sonnet avec un prompt structuré incluant les guidelines stylistiques BTH Expert. Claude retourne un JSON avec 10+ champs textuels en français. L'utilisateur peut tout éditer avant export.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="icon">🗺️</span> Chiffres clés à retenir</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px">
+        <div style="background:var(--green-pale);padding:16px;border-radius:10px;text-align:center">
+          <div style="font-size:2rem;font-weight:700;color:var(--green)">25+</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">Routes API REST</div>
+        </div>
+        <div style="background:#dbeafe;padding:16px;border-radius:10px;text-align:center">
+          <div style="font-size:2rem;font-weight:700;color:#1e40af">8</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">Tables Supabase</div>
+        </div>
+        <div style="background:#f3e8ff;padding:16px;border-radius:10px;text-align:center">
+          <div style="font-size:2rem;font-weight:700;color:#7c3aed">3</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">Rôles RBAC</div>
+        </div>
+        <div style="background:#dcfce7;padding:16px;border-radius:10px;text-align:center">
+          <div style="font-size:2rem;font-weight:700;color:#166534">4</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">Étapes wizard</div>
+        </div>
+        <div style="background:#ffedd5;padding:16px;border-radius:10px;text-align:center">
+          <div style="font-size:2rem;font-weight:700;color:#9a3412">10+</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">Champs IA générés</div>
+        </div>
+        <div style="background:#fef3c7;padding:16px;border-radius:10px;text-align:center">
+          <div style="font-size:2rem;font-weight:700;color:#92400e">2</div>
+          <div style="font-size:0.8rem;color:var(--text-muted)">Formats export (DOCX/PDF)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================== SESSION 9 — SÉCURITÉ & ARCHITECTURE ============================== -->
+<div id="tab-session9" class="section">
+  <div class="container">
+    <h2 class="section-title">Session 9 — Architecture & Sécurité (16 mai 2026)</h2>
+
+    <!-- Architecture Migration -->
+    <div class="card">
+      <h2><span class="icon">🏗️</span> Migration Architecture — Shell SSR + Client Fetch</h2>
+      <p style="font-size:0.87rem;color:var(--text-muted);margin-bottom:20px">Un CRM privé n'a pas besoin de SSR pour le contenu — il n'y a ni SEO ni utilisateurs anonymes. L'architecture full SSR créait une latence perceptible à chaque changement de section car Next.js re-rendait les pages côté serveur à chaque navigation. Elle provoquait aussi des erreurs d'hydratation (<code>useBp()</code> rendait "desktop" côté serveur, "mobile" côté client).</p>
+      <div class="grid-2">
+        <div style="background:#fff5f5;border:1px solid #fecaca;border-radius:12px;padding:20px">
+          <div style="font-weight:700;color:#dc2626;margin-bottom:14px;font-size:0.95rem">❌ Avant — Full SSR</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="background:#fee2e2;border-radius:8px;padding:10px 14px;font-size:0.82rem"><strong>Middleware</strong> — Vérifie auth (Edge)</div>
+            <div style="font-size:0.75rem;color:#9ca3af;text-align:center">↓ round-trip</div>
+            <div style="background:#fee2e2;border-radius:8px;padding:10px 14px;font-size:0.82rem"><strong>Layout SSR</strong> — Fetch profil + données layout côté serveur</div>
+            <div style="font-size:0.75rem;color:#9ca3af;text-align:center">↓ round-trip</div>
+            <div style="background:#fee2e2;border-radius:8px;padding:10px 14px;font-size:0.82rem"><strong>Page SSR</strong> — Fetch données (soumissions, dashboard…) — re-exécuté à chaque navigation</div>
+            <div style="font-size:0.75rem;color:#9ca3af;text-align:center">↓ round-trip</div>
+            <div style="background:#fee2e2;border-radius:8px;padding:10px 14px;font-size:0.82rem"><strong>Client render</strong> — Hydratation + risque de mismatch SSR/Client</div>
+          </div>
+          <div style="margin-top:12px;font-size:0.79rem;color:#dc2626">⚠ Chaque navigation = nouveau round-trip serveur complet<br>⚠ Hydration mismatch sur <code>useBp()</code> (server="desktop" vs client="mobile")<br>⚠ Latence perceptible entre sections</div>
+        </div>
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:20px">
+          <div style="font-weight:700;color:#16a34a;margin-bottom:14px;font-size:0.95rem">✅ Après — Shell SSR + Client Fetch</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="background:#dcfce7;border-radius:8px;padding:10px 14px;font-size:0.82rem"><strong>Middleware</strong> — Vérifie auth (Edge) — inchangé, <code>getUser()</code></div>
+            <div style="font-size:0.75rem;color:#9ca3af;text-align:center">↓</div>
+            <div style="background:#dcfce7;border-radius:8px;padding:10px 14px;font-size:0.82rem"><strong>Layout Shell SSR</strong> — Rendu instantané (sidebar, navbar) — zéro fetch de données</div>
+            <div style="font-size:0.75rem;color:#9ca3af;text-align:center">↓</div>
+            <div style="background:#dcfce7;border-radius:8px;padding:10px 14px;font-size:0.82rem"><strong>Page — thin wrapper</strong> → <code>return &lt;DashboardClient /&gt;</code> (pas d'async)</div>
+            <div style="font-size:0.75rem;color:#9ca3af;text-align:center">↓ useEffect au mount</div>
+            <div style="background:#dcfce7;border-radius:8px;padding:10px 14px;font-size:0.82rem"><strong>Promise.all([fetch("/api/me"), fetch("/api/dashboard"), …])</strong> — chargement parallèle en arrière-plan</div>
+          </div>
+          <div style="margin-top:12px;font-size:0.79rem;color:#16a34a">✓ Navigation instantanée (chrome déjà rendu, pas de re-fetch)<br>✓ Zéro hydration mismatch (Client Component uniquement)<br>✓ Rôle + données chargés en parallèle via <code>Promise.all</code></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Fichiers modifiés -->
+    <div class="card">
+      <h2><span class="icon">📁</span> Fichiers modifiés — Migration architecture</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Fichier</th><th>Avant</th><th>Après</th></tr></thead>
+          <tbody>
+            <tr><td><code>app/(app)/dashboard/page.tsx</code></td><td>async server component — fetch Supabase direct, passait props au Client</td><td>thin wrapper → <code>return &lt;DashboardClient /&gt;</code></td></tr>
+            <tr><td><code>app/(app)/soumissions/page.tsx</code></td><td>async server component — passait <code>role</code> en props</td><td>thin wrapper → <code>return &lt;SoumissionsClient /&gt;</code></td></tr>
+            <tr><td><code>DashboardClient.tsx</code></td><td>Recevait role/userName/userInitials en props depuis le serveur</td><td>Fetch <code>/api/me</code> + <code>/api/dashboard</code> + <code>/api/soumissions</code> + <code>/api/prospects</code> via <code>Promise.all</code></td></tr>
+            <tr><td><code>SoumissionsClient.tsx</code></td><td>Recevait <code>role</code> en props — race condition si soumissions chargées avant le rôle</td><td>Fetch <code>/api/me</code> + <code>/api/soumissions</code> en <code>Promise.all</code> — rôle garanti avant render</td></tr>
+            <tr><td><code>app/api/me/route.ts</code></td><td style="color:#9ca3af">n'existait pas</td><td><strong>Nouvelle route GET</strong> — retourne <code>{ role, full_name }</code> depuis <code>profiles</code> via auth</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- useBp fix -->
+    <div class="card">
+      <h2><span class="icon">🐛</span> Bug corrigé — Hydration mismatch <code>useBp()</code></h2>
+      <div class="grid-2">
+        <div style="background:#fff5f5;padding:16px;border-radius:8px;border:1px solid #fecaca">
+          <strong style="color:#dc2626;font-size:0.85rem">❌ Avant</strong>
+          <pre style="font-size:0.78rem;margin-top:8px;background:#fee2e2;padding:10px;border-radius:6px;overflow:auto">const [bp, set] = useState(
+  typeof window === "undefined"
+    ? "desktop"   // SSR → "desktop"
+    : getBp()     // Client → peut être "mobile"
+);</pre>
+          <p style="font-size:0.8rem;color:#dc2626;margin-top:6px">Le serveur rend "desktop", le client hydrate en "mobile" → React Hydration Error</p>
+        </div>
+        <div style="background:#f0fdf4;padding:16px;border-radius:8px;border:1px solid #bbf7d0">
+          <strong style="color:#16a34a;font-size:0.85rem">✅ Après</strong>
+          <pre style="font-size:0.78rem;margin-top:8px;background:#dcfce7;padding:10px;border-radius:6px;overflow:auto">const [bp, set] = useState("mobile");
+useEffect(() => {
+  const h = () => set(
+    window.innerWidth >= 1024 ? "desktop"
+    : window.innerWidth >= 640 ? "tablet"
+    : "mobile"
+  );
+  h(); // calcul immédiat post-mount
+  window.addEventListener("resize", h);
+  return () => window.removeEventListener("resize", h);
+}, []);</pre>
+          <p style="font-size:0.8rem;color:#16a34a;margin-top:6px">Init stable "mobile" côté serveur et client → mise à jour uniquement après mount</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3 couches de sécurité -->
+    <div class="card">
+      <h2><span class="icon">🛡️</span> Modèle de sécurité — 3 couches de défense</h2>
+      <div class="grid-3">
+        <div style="background:#fff7ed;padding:20px;border-radius:12px;border:2px solid #fed7aa;text-align:center">
+          <div style="font-size:1.8rem;margin-bottom:8px">🔒</div>
+          <strong style="color:#c2410c;font-size:0.95rem">Couche 1 — Middleware Edge</strong>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-top:8px"><code>auth.getUser()</code><br>Validation JWT côté serveur Supabase Auth.<br>Redirige → <code>/login</code> si token invalide ou expiré.</p>
+          <div style="margin-top:10px;background:#fed7aa;border-radius:6px;padding:6px;font-size:0.75rem;color:#9a3412"><strong>Corrigé session 9 :</strong> <code>getSession()</code> faisait confiance au JWT local sans validation réseau — un token forgé passait.</div>
+        </div>
+        <div style="background:#eff6ff;padding:20px;border-radius:12px;border:2px solid #bfdbfe;text-align:center">
+          <div style="font-size:1.8rem;margin-bottom:8px">🔑</div>
+          <strong style="color:#1d4ed8;font-size:0.95rem">Couche 2 — API Routes</strong>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-top:8px"><code>getUser()</code> explicite sur chaque route.<br>Retourne 401 si non authentifié.<br>Indépendant du middleware — défense en profondeur.</p>
+          <div style="margin-top:10px;background:#bfdbfe;border-radius:6px;padding:6px;font-size:0.75rem;color:#1e3a8a"><strong>Session 9 :</strong> auth ajoutée sur 10+ routes qui dépendaient uniquement du RLS. Export routes étaient 100% non protégées.</div>
+        </div>
+        <div style="background:#faf5ff;padding:20px;border-radius:12px;border:2px solid #e9d5ff;text-align:center">
+          <div style="font-size:1.8rem;margin-bottom:8px">🗄️</div>
+          <strong style="color:#7c3aed;font-size:0.95rem">Couche 3 — RLS Supabase</strong>
+          <p style="font-size:0.82rem;color:var(--text-muted);margin-top:8px">Row Level Security au niveau base de données.<br>Même si couches 1 et 2 échouent, les données restent inaccessibles.</p>
+          <div style="margin-top:10px;background:#e9d5ff;border-radius:6px;padding:6px;font-size:0.75rem;color:#6b21a8"><code>WITH CHECK</code> obligatoire en plus de <code>USING</code> pour les inserts. Commercial voit uniquement ses propres entrées.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tableau corrections sécurité -->
+    <div class="card">
+      <h2><span class="icon">🔧</span> Corrections de sécurité — Session 9</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Route / Fichier</th><th>Problème détecté</th><th>Correction appliquée</th><th>Sévérité</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>middleware.ts</code></td>
+              <td><code>getSession()</code> fait confiance au JWT local sans validation réseau — token forgé accepté</td>
+              <td>→ <code>getUser()</code> valide avec les serveurs Supabase Auth</td>
+              <td><span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:600">CRITIQUE</span></td>
+            </tr>
+            <tr>
+              <td><code>/api/clients/export</code></td>
+              <td>Zéro vérification d'auth — toute URL exposait la liste complète des clients en XLSX</td>
+              <td>→ <code>getUser()</code> + 401</td>
+              <td><span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:600">CRITIQUE</span></td>
+            </tr>
+            <tr>
+              <td><code>/api/soumissions/export</code></td>
+              <td>Zéro vérification d'auth — toute URL exposait toutes les soumissions en XLSX</td>
+              <td>→ <code>getUser()</code> + 401</td>
+              <td><span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:600">CRITIQUE</span></td>
+            </tr>
+            <tr>
+              <td><code>/api/export/docx</code></td>
+              <td>Utilisait <code>lib/supabase.ts</code> (client anon banni par convention) + aucun check auth</td>
+              <td>→ <code>createServerClient + cookies()</code> + <code>getUser()</code></td>
+              <td><span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:600">CRITIQUE</span></td>
+            </tr>
+            <tr>
+              <td><code>/api/export/pdf</code></td>
+              <td>Utilisait <code>lib/supabase.ts</code> (client anon banni) + aucun check auth</td>
+              <td>→ <code>createServerClient + cookies()</code> + <code>getUser()</code></td>
+              <td><span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:600">CRITIQUE</span></td>
+            </tr>
+            <tr>
+              <td><code>/api/soumissions/[id]</code> PATCH</td>
+              <td>Mass assignment — body brut passé à Supabase — n'importe quel champ modifiable (ex: <code>client_id</code>, <code>numero_offre</code>)</td>
+              <td>→ Whitelist : <code>statut</code> (enum validé VALID_STATUTS) + <code>versement_recu</code> (≥ 0)</td>
+              <td><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:600">ÉLEVÉ</span></td>
+            </tr>
+            <tr>
+              <td><code>/api/clients/[id]</code> PATCH</td>
+              <td>Mass assignment — body non filtré</td>
+              <td>→ Whitelist : 8 champs (titre, nom_contact, poste, entreprise, adresse, ville, telephone, email)</td>
+              <td><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:600">ÉLEVÉ</span></td>
+            </tr>
+            <tr>
+              <td><code>/api/visites/[id]</code> PATCH</td>
+              <td>Mass assignment + champ <code>resultat</code> non validé côté serveur</td>
+              <td>→ Whitelist + validation enum <code>VALID_RESULTATS</code></td>
+              <td><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:600">ÉLEVÉ</span></td>
+            </tr>
+            <tr>
+              <td><code>/api/generate</code></td>
+              <td>Route IA Claude sans protection — consommation API facturable sans auth</td>
+              <td>→ <code>getUser()</code> + 401</td>
+              <td><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:600">ÉLEVÉ</span></td>
+            </tr>
+            <tr>
+              <td><code>/api/clients</code> GET</td>
+              <td><code>.limit(20)</code> cachée — les clients au-delà du 20ème étaient invisibles dans l'interface</td>
+              <td>→ Limite retirée — retourne tous les clients</td>
+              <td><span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:600">MOYEN</span></td>
+            </tr>
+            <tr>
+              <td>Toutes routes restantes<br><small style="color:#9ca3af">prospects, visites, dashboard, soumissions, lignes</small></td>
+              <td>Dépendaient uniquement du RLS sans guard applicatif explicite</td>
+              <td>→ <code>getUser()</code> ajouté — défense en profondeur (couche 2)</td>
+              <td><span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;font-size:0.78rem;font-weight:600">MOYEN</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- /api/me -->
+    <div class="card">
+      <h2><span class="icon">👤</span> Nouvelle route — <code>GET /api/me</code></h2>
+      <div class="grid-2">
+        <div>
+          <p style="font-size:0.87rem;color:var(--text-muted);line-height:1.7">Permet aux Client Components de récupérer leur rôle et nom sans avoir à recevoir ces données en props depuis un Server Component. Utilisée par <code>DashboardClient</code> et <code>SoumissionsClient</code> en parallèle avec les autres fetches dans <code>Promise.all</code>.</p>
+          <ul style="font-size:0.85rem;list-style:none;line-height:2;margin-top:10px">
+            <li>→ <code>getUser()</code> — validation auth</li>
+            <li>→ <code>profiles.select("role, full_name")</code></li>
+            <li>→ Retourne <code>{ role, full_name }</code></li>
+            <li>→ Fallback : <code>role: "admin"</code> si profil absent</li>
+          </ul>
+        </div>
+        <div style="background:#f8fafc;border-radius:8px;padding:16px">
+          <div style="font-size:0.78rem;color:#6b7280;margin-bottom:8px">Utilisation dans DashboardClient :</div>
+          <pre style="font-size:0.78rem;background:#1e293b;color:#e2e8f0;padding:12px;border-radius:6px;overflow:auto">Promise.all([
+  fetch("/api/me").then(r => r.json()),
+  fetch("/api/dashboard").then(r => r.json()),
+  fetch("/api/soumissions").then(r => r.json()),
+  fetch("/api/prospects?statut=actif").then(r => r.json()),
+]).then(([me, stats, soum, prospects]) => {
+  setRole(me.role ?? "admin");
+  setUserName(me.full_name || "Utilisateur");
+  // ...
+}).catch(() => setLoading(false));</pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Commits -->
+    <div class="card">
+      <h2><span class="icon">📦</span> Commits session 9 (16 mai 2026)</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hash</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>e6e2271</code></td>
+              <td><span class="tag tag-green">refactor</span></td>
+              <td>Migrate dashboard/soumissions to Shell SSR + Client fetch pattern</td>
+            </tr>
+            <tr>
+              <td><code>72de078</code></td>
+              <td><span class="tag tag-orange">fix(security)</span></td>
+              <td>Patch mass assignment, add auth on /api/generate, fix pagination limit</td>
+            </tr>
+            <tr>
+              <td><code>9be3d8a</code></td>
+              <td><span class="tag tag-orange">fix(security)</span></td>
+              <td>middleware getSession() → getUser() to validate JWT server-side</td>
+            </tr>
+            <tr>
+              <td><code>05cd33e</code></td>
+              <td><span class="tag tag-orange">fix(security)</span></td>
+              <td>Add auth to export routes, replace anon client in docx/pdf routes</td>
+            </tr>
+            <tr>
+              <td><code>ddbf16c</code></td>
+              <td><span class="tag tag-orange">fix(security)</span></td>
+              <td>Add getUser() auth check to all remaining API routes (defense in depth)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    themeVariables: {
+      primaryColor: '#1a2e1e',
+      primaryTextColor: '#fff',
+      primaryBorderColor: '#2d4f33',
+      lineColor: '#5a9e64',
+      secondaryColor: '#e8f0e9',
+      tertiaryColor: '#f5f7f5'
+    }
+  });
+
+  function showTab(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+  }
+</script>
+</body>
+</html>
