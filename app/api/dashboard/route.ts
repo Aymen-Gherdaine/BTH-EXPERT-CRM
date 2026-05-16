@@ -24,6 +24,9 @@ async function getSupabase() {
 
 export async function GET() {
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     .toISOString()

@@ -27,6 +27,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const { id } = await params;
   const body = await req.json() as {
     titre?: string;
@@ -40,14 +43,14 @@ export async function PATCH(
   };
 
   const update: Record<string, unknown> = {};
-  if (body.titre      !== undefined) update.titre      = body.titre;
+  if (body.titre       !== undefined) update.titre       = body.titre;
   if (body.nom_contact !== undefined) update.nom_contact = body.nom_contact;
-  if (body.poste      !== undefined) update.poste      = body.poste;
-  if (body.entreprise !== undefined) update.entreprise = body.entreprise;
-  if (body.adresse    !== undefined) update.adresse    = body.adresse;
-  if (body.ville      !== undefined) update.ville      = body.ville;
-  if (body.telephone  !== undefined) update.telephone  = body.telephone;
-  if (body.email      !== undefined) update.email      = body.email;
+  if (body.poste       !== undefined) update.poste       = body.poste;
+  if (body.entreprise  !== undefined) update.entreprise  = body.entreprise;
+  if (body.adresse     !== undefined) update.adresse     = body.adresse;
+  if (body.ville       !== undefined) update.ville       = body.ville;
+  if (body.telephone   !== undefined) update.telephone   = body.telephone;
+  if (body.email       !== undefined) update.email       = body.email;
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: "Aucune modification fournie" }, { status: 400 });
@@ -70,6 +73,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const { id } = await params;
 
   // La suppression cascade les soumissions liées (ON DELETE CASCADE)

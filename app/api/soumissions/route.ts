@@ -26,6 +26,9 @@ async function getSupabase() {
 
 export async function GET(req: NextRequest) {
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const statut = searchParams.get("statut");
   const client_id = searchParams.get("client_id");
@@ -47,6 +50,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const supabase = await getSupabase();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
     const body: { formData: FormDataComplete; contexte: { section_1: string; section_1_1: string } } = await req.json();
     const { formData, contexte } = body;
 

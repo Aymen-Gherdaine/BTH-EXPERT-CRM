@@ -28,6 +28,8 @@ export async function GET(
 ) {
   const { id } = await params;
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   const { data, error } = await supabase
     .from("prospects")
@@ -46,6 +48,9 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const body = await req.json();
 
   const { data, error } = await supabase
@@ -66,6 +71,8 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   const { error } = await supabase.from("prospects").delete().eq("id", id);
 

@@ -30,6 +30,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const { id } = await params;
 
   const { data: soumission, error } = await supabase
@@ -54,6 +57,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const { id } = await params;
   const body = await req.json() as { statut?: string; versement_recu?: number };
 
@@ -95,6 +101,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const { id } = await params;
 
   const { error } = await supabase.from("soumissions").delete().eq("id", id);

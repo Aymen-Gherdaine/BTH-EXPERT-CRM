@@ -26,6 +26,9 @@ export async function PATCH(
 ) {
   const { id } = await params;
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const body = await req.json() as {
     date_visite?: string;
     resultat?: string;
@@ -67,6 +70,8 @@ export async function DELETE(
 ) {
   const { id } = await params;
   const supabase = await getSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   const { error } = await supabase.from("visites").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
