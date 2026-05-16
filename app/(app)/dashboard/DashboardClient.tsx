@@ -257,7 +257,7 @@ export default function DashboardClient() {
       setRecents(all.slice(0, 5));
       setProspects(prospectsRes.data ?? []);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
