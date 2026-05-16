@@ -1,22 +1,49 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { Depense, CategorieDepense } from "@/types";
 import { formatMontant } from "@/lib/utils";
 
+// ─── Breakpoint ───────────────────────────────────────────────────────────────
+
+function useBp(): "mobile" | "tablet" | "desktop" {
+  const [bp, set] = useState<"mobile" | "tablet" | "desktop">("mobile");
+  useEffect(() => {
+    const h = () =>
+      set(
+        window.innerWidth >= 1024
+          ? "desktop"
+          : window.innerWidth >= 640
+          ? "tablet"
+          : "mobile"
+      );
+    h();
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return bp;
+}
+
 // ─── Category config ──────────────────────────────────────────────────────────
 
-type CatConfig = { value: CategorieDepense; label: string; bg: string; text: string };
+type CatConfig = {
+  value: CategorieDepense;
+  label: string;
+  abbr: string;
+  bg: string;
+  text: string;
+  dot: string;
+};
 
 const CATEGORIES: CatConfig[] = [
-  { value: "mission",       label: "Mission",       bg: "bg-blue-100",   text: "text-blue-700"   },
-  { value: "vehicule",      label: "Véhicule",      bg: "bg-amber-100",  text: "text-amber-700"  },
-  { value: "repas",         label: "Repas",         bg: "bg-emerald-100",text: "text-emerald-700"},
-  { value: "materiel",      label: "Matériel",      bg: "bg-purple-100", text: "text-purple-700" },
-  { value: "communication", label: "Communication", bg: "bg-indigo-100", text: "text-indigo-700" },
-  { value: "autre",         label: "Autre",         bg: "bg-gray-100",   text: "text-gray-500"   },
+  { value: "mission",       label: "Mission",       abbr: "MIS", bg: "#dbeafe", text: "#1e40af", dot: "#3b82f6" },
+  { value: "vehicule",      label: "Véhicule",      abbr: "VEH", bg: "#fef3c7", text: "#92400e", dot: "#f59e0b" },
+  { value: "repas",         label: "Repas",         abbr: "REP", bg: "#d1fae5", text: "#065f46", dot: "#10b981" },
+  { value: "materiel",      label: "Matériel",      abbr: "MAT", bg: "#ede9fe", text: "#5b21b6", dot: "#8b5cf6" },
+  { value: "communication", label: "Communication", abbr: "COM", bg: "#e0e7ff", text: "#3730a3", dot: "#6366f1" },
+  { value: "autre",         label: "Autre",         abbr: "AUT", bg: "#f3f4f6", text: "#4b5563", dot: "#9ca3af" },
 ];
 
 function catCfg(cat: string): CatConfig {
@@ -42,6 +69,8 @@ const EMPTY_FORM: FormState = {
   date_depense: new Date().toISOString().slice(0, 10),
   projet_lie: "",
 };
+
+const PER_PAGE = 10;
 
 // ─── Spinner ──────────────────────────────────────────────────────────────────
 
@@ -74,161 +103,140 @@ function DepenseForm({
 }: DepenseFormProps) {
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const field =
-    "w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:border-[#1a2e1e] transition-colors";
-  const lbl = "block text-xs font-medium text-gray-600 mb-1";
+  const inputStyle: React.CSSProperties = {
+    width: "100%",
+    padding: "10px 12px",
+    border: "1px solid #e5e7eb",
+    borderRadius: 8,
+    fontSize: 13,
+    color: "#374151",
+    background: "#fff",
+    outline: "none",
+    boxSizing: "border-box",
+  };
+  const labelStyle: React.CSSProperties = {
+    display: "block",
+    fontSize: 11,
+    fontWeight: 600,
+    color: "#6b7280",
+    marginBottom: 5,
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+  };
 
   return (
-    <form onSubmit={onSubmit} className="p-4 space-y-3">
-
-      {/* Montant + Catégorie (required) */}
-      <div className="grid grid-cols-2 gap-3">
+    <form onSubmit={onSubmit} style={{ padding: "16px 20px 20px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
         <div>
-          <label className={lbl}>Montant (DZD) *</label>
+          <label style={labelStyle}>Montant (DZD) *</label>
           <input
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="0,00"
+            type="number" min="0" step="0.01" placeholder="0,00"
             value={form.montant}
             onChange={(e) => onChange((p) => ({ ...p, montant: e.target.value }))}
             required
-            className={field}
+            style={inputStyle}
           />
         </div>
         <div>
-          <label className={lbl}>Catégorie *</label>
-          <div className="relative">
+          <label style={labelStyle}>Catégorie *</label>
+          <div style={{ position: "relative" }}>
             <select
               value={form.categorie}
-              onChange={(e) =>
-                onChange((p) => ({ ...p, categorie: e.target.value as CategorieDepense }))
-              }
+              onChange={(e) => onChange((p) => ({ ...p, categorie: e.target.value as CategorieDepense }))}
               required
-              className={field + " appearance-none pr-8 cursor-pointer"}
+              style={{ ...inputStyle, appearance: "none", paddingRight: 32, cursor: "pointer" }}
             >
               <option value="">Choisir...</option>
               {CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
-            <svg
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
+            <svg style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#9ca3af", pointerEvents: "none" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </div>
         </div>
       </div>
 
-      {/* Date + Projet lié (optional) */}
-      <div className="grid grid-cols-2 gap-3">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
         <div>
-          <label className={lbl}>Date</label>
+          <label style={labelStyle}>Date</label>
           <input
             type="date"
             value={form.date_depense}
             onChange={(e) => onChange((p) => ({ ...p, date_depense: e.target.value }))}
-            className={field + " cursor-pointer"}
+            style={{ ...inputStyle, cursor: "pointer" }}
           />
         </div>
         <div>
-          <label className={lbl}>Projet lié</label>
-          <div className="relative">
+          <label style={labelStyle}>Projet lié</label>
+          <div style={{ position: "relative" }}>
             <select
               value={form.projet_lie}
               onChange={(e) => onChange((p) => ({ ...p, projet_lie: e.target.value }))}
-              className={field + " appearance-none pr-8 cursor-pointer"}
+              style={{ ...inputStyle, appearance: "none", paddingRight: 32, cursor: "pointer" }}
             >
               <option value="">Aucun</option>
               {soumissions.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.numero_offre} — {s.titre_projet}
-                </option>
+                <option key={s.id} value={s.id}>{s.numero_offre} — {s.titre_projet}</option>
               ))}
             </select>
-            <svg
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
-              fill="none" stroke="currentColor" viewBox="0 0 24 24"
-            >
+            <svg style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#9ca3af", pointerEvents: "none" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </div>
         </div>
       </div>
 
-      {/* Description (optional) */}
-      <div>
-        <label className={lbl}>Description</label>
+      <div style={{ marginBottom: 12 }}>
+        <label style={labelStyle}>Description</label>
         <input
-          type="text"
-          placeholder="Notes optionnelles..."
+          type="text" placeholder="Notes optionnelles..."
           value={form.description}
           onChange={(e) => onChange((p) => ({ ...p, description: e.target.value }))}
-          className={field}
+          style={inputStyle}
         />
       </div>
 
-      {/* Photo capture */}
-      <div>
-        <label className={lbl}>Justificatif (photo optionnelle)</label>
+      <div style={{ marginBottom: 16 }}>
+        <label style={labelStyle}>Justificatif</label>
         <div
           onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-3 min-h-[44px] px-3 py-2.5 border border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-[#1a2e1e] transition-colors"
+          style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 40, padding: "8px 12px", border: "1px dashed #d1d5db", borderRadius: 8, cursor: "pointer" }}
         >
-          <svg
-            className="w-5 h-5 text-gray-400 flex-shrink-0"
-            fill="none" stroke="currentColor" viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+          <svg style={{ width: 14, height: 14, color: "#9ca3af", flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
           </svg>
-          <span className="text-sm text-gray-500 truncate flex-1">
-            {photo ? photo.name : "Photo ou fichier (optionnel)"}
-          </span>
+          <span style={{ fontSize: 12, color: "#9ca3af", flex: 1 }}>{photo ? photo.name : "Photo ou fichier (optionnel)"}</span>
           {photo && (
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onPhoto(null); }}
-              className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button type="button" onClick={(e) => { e.stopPropagation(); onPhoto(null); }} style={{ border: "none", background: "none", cursor: "pointer", color: "#9ca3af", padding: 0 }}>
+              <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           )}
         </div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={(e) => onPhoto(e.target.files?.[0] ?? null)}
-        />
+        <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => onPhoto(e.target.files?.[0] ?? null)} />
       </div>
 
-      {/* Actions */}
-      <div className="flex gap-2 pt-1">
+      <div style={{ display: "flex", gap: 8 }}>
         <motion.button
           type="submit"
           disabled={saving}
           whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="flex-1 flex items-center justify-center gap-2 min-h-[44px] rounded-xl text-sm font-medium text-white cursor-pointer disabled:opacity-60"
-          style={{ backgroundColor: "#1a2e1e" }}
+          whileTap={{ scale: 0.97 }}
+          style={{ flex: 1, height: 40, borderRadius: 8, border: "none", background: "#1a2e1e", color: "#fff", fontSize: 13, fontWeight: 600, cursor: saving ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: saving ? 0.75 : 1 }}
         >
           {saving && <Spinner />}
           {submitLabel}
         </motion.button>
-        <motion.button
+        <button
           type="button"
-          whileTap={{ scale: 0.96 }}
           onClick={onCancel}
-          className="px-4 min-h-[44px] rounded-xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
+          style={{ padding: "0 16px", height: 40, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#6b7280", fontSize: 13, fontWeight: 500, cursor: "pointer" }}
         >
           Annuler
-        </motion.button>
+        </button>
       </div>
     </form>
   );
@@ -236,26 +244,45 @@ function DepenseForm({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+const TH: React.CSSProperties = {
+  textAlign: "left",
+  padding: "10px 16px",
+  fontSize: 11,
+  fontWeight: 600,
+  color: "#6b7280",
+  textTransform: "uppercase",
+  letterSpacing: "0.06em",
+  whiteSpace: "nowrap",
+  background: "#fafafa",
+  position: "sticky",
+  top: 0,
+  zIndex: 1,
+  borderBottom: "1px solid #eaecef",
+};
+
 export default function DepensesPage() {
+  const bp = useBp();
+  const isDesktop = bp !== "mobile";
+
   const [depenses, setDepenses] = useState<Depense[]>([]);
   const [soumissions, setSoumissions] = useState<SoumissionOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
-  // Add form
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [photo, setPhoto] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Edit
   const [editId, setEditId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
   const [editPhoto, setEditPhoto] = useState<File | null>(null);
   const [editSaving, setEditSaving] = useState(false);
 
-  // Delete
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [catFilter, setCatFilter] = useState<CategorieDepense | "">("");
 
   // ── Load ──────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -263,20 +290,13 @@ export default function DepensesPage() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) setUserId(user.id);
     });
-
     Promise.all([
       fetch("/api/depenses").then((r) => r.json()),
       fetch("/api/soumissions").then((r) => r.json()),
     ]).then(([depData, souData]) => {
       setDepenses(depData.data ?? []);
       setSoumissions(
-        (
-          souData.data as Array<{
-            id: string;
-            titre_projet: string;
-            numero_offre: string;
-          }> ?? []
-        ).map((s) => ({
+        (souData.data as Array<{ id: string; titre_projet: string; numero_offre: string }> ?? []).map((s) => ({
           id: s.id,
           titre_projet: s.titre_projet,
           numero_offre: s.numero_offre,
@@ -313,15 +333,36 @@ export default function DepensesPage() {
     [thisMonth]
   );
 
+  // ── Filtered & Paginated ──────────────────────────────────────────────────
+  const filtered = useMemo(() => {
+    const q = search.toLowerCase();
+    return depenses.filter((d) => {
+      if (catFilter && d.categorie !== catFilter) return false;
+      if (q) {
+        const proj = soumissions.find((s) => s.id === d.projet_lie);
+        return (
+          d.description?.toLowerCase().includes(q) ||
+          d.categorie.includes(q) ||
+          proj?.titre_projet.toLowerCase().includes(q) ||
+          proj?.numero_offre.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [depenses, search, catFilter, soumissions]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  useEffect(() => setPage(1), [search, catFilter]);
+
   // ── Storage upload ────────────────────────────────────────────────────────
   async function uploadPhoto(file: File, depenseId: string): Promise<string | null> {
     if (!userId) return null;
     const supabase = createSupabaseBrowserClient();
     const ext = file.name.split(".").pop() ?? "jpg";
     const path = `${userId}/${depenseId}.${ext}`;
-    const { error } = await supabase.storage
-      .from("justificatifs")
-      .upload(path, file, { upsert: true });
+    const { error } = await supabase.storage.from("justificatifs").upload(path, file, { upsert: true });
     if (error) return null;
     return path;
   }
@@ -331,7 +372,6 @@ export default function DepensesPage() {
     e.preventDefault();
     if (!form.categorie || !form.montant) return;
     setSaving(true);
-
     const res = await fetch("/api/depenses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -343,7 +383,6 @@ export default function DepensesPage() {
         projet_lie: form.projet_lie || null,
       }),
     });
-
     const json = await res.json();
     if (res.ok && json.data) {
       const created = json.data as Depense;
@@ -384,7 +423,6 @@ export default function DepensesPage() {
     e.preventDefault();
     if (!editId || !editForm.categorie || !editForm.montant) return;
     setEditSaving(true);
-
     const payload: Record<string, unknown> = {
       categorie: editForm.categorie,
       montant: parseFloat(editForm.montant),
@@ -392,18 +430,15 @@ export default function DepensesPage() {
       date_depense: editForm.date_depense || null,
       projet_lie: editForm.projet_lie || null,
     };
-
     if (editPhoto) {
       const path = await uploadPhoto(editPhoto, editId);
       if (path) payload.justificatif_url = path;
     }
-
     const res = await fetch(`/api/depenses/${editId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-
     const json = await res.json();
     if (res.ok) {
       setDepenses((prev) =>
@@ -427,110 +462,114 @@ export default function DepensesPage() {
   // ── Signed URL ────────────────────────────────────────────────────────────
   async function viewJustificatif(path: string) {
     const supabase = createSupabaseBrowserClient();
-    const { data } = await supabase.storage
-      .from("justificatifs")
-      .createSignedUrl(path, 3600);
+    const { data } = await supabase.storage.from("justificatifs").createSignedUrl(path, 3600);
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   }
 
-  // ── Loading skeleton ──────────────────────────────────────────────────────
+  // ── Loading ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-4">
-        <div className="h-10 bg-white rounded-2xl animate-pulse border border-gray-100" />
-        <div className="grid grid-cols-2 gap-3">
-          {[1, 2].map((i) => (
-            <div key={i} className="bg-white rounded-2xl h-28 animate-pulse border border-gray-100" />
+      <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ height: 44, background: "#fff", borderRadius: 10, animation: "pulse 1.5s ease-in-out infinite", border: "1px solid #eaecef" }} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+          {[1, 2, 3].map((i) => (
+            <div key={i} style={{ height: 72, background: "#fff", borderRadius: 12, animation: "pulse 1.5s ease-in-out infinite", border: "1px solid #eaecef" }} />
           ))}
         </div>
-        {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white rounded-2xl h-16 animate-pulse border border-gray-100" />
+        {[1, 2, 3, 4, 5].map((i) => (
+          <div key={i} style={{ height: 48, background: "#fff", borderRadius: 10, animation: "pulse 1.5s ease-in-out infinite", border: "1px solid #eaecef" }} />
         ))}
       </div>
     );
   }
 
-  const monthLabel = new Date().toLocaleDateString("fr-DZ", {
-    month: "long",
-    year: "numeric",
-  });
+  const px = isDesktop ? 28 : 16;
+  const monthLabel = new Date().toLocaleDateString("fr-DZ", { month: "long", year: "numeric" });
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-4 pb-24 md:pb-6">
+    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#f4f5f7" }}>
 
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
-      >
-        <div>
-          <h1 className="text-xl font-bold text-gray-900">Mes dépenses</h1>
-          <p className="text-sm text-gray-500 capitalize">{monthLabel}</p>
-        </div>
-        <motion.button
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
-          onClick={() => { setShowForm((v) => !v); setEditId(null); }}
-          className="flex items-center gap-2 min-h-[44px] px-4 rounded-xl text-sm font-medium text-white cursor-pointer"
-          style={{ backgroundColor: "#1a2e1e" }}
+      {/* ── HEADER ─────────────────────────────────────────────────────────── */}
+      <div style={{ padding: `${isDesktop ? 24 : 20}px ${px}px 0`, flexShrink: 0 }}>
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}
         >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d={showForm ? "M6 18L18 6M6 6l12 12" : "M12 4v16m8-8H4"}
-            />
-          </svg>
-          <span className="hidden sm:inline">{showForm ? "Fermer" : "Ajouter"}</span>
-        </motion.button>
-      </motion.div>
+          <h1 style={{ fontSize: isDesktop ? 26 : 22, fontWeight: 700, color: "#0f1923", letterSpacing: "-0.5px", margin: 0 }}>
+            Dépenses
+          </h1>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => { setShowForm((v) => !v); setEditId(null); }}
+            style={{ background: "#1a2e1e", color: "#fff", borderRadius: 9999, padding: "0 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, height: 36, border: "none", flexShrink: 0 }}
+          >
+            <span style={{ fontSize: 16, lineHeight: 1 }}>{showForm ? "×" : "+"}</span>
+            {isDesktop && <span>Nouvelle dépense</span>}
+          </motion.button>
+        </motion.div>
 
-      {/* Summary cards */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-        className="grid grid-cols-2 gap-3"
-      >
-        {/* Total ce mois */}
-        <div className="col-span-2 sm:col-span-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs font-medium text-gray-500">Total ce mois</p>
-          <p className="text-2xl font-bold text-gray-900 mt-1">
-            {formatMontant(totalThisMonth)}{" "}
-            <span className="text-sm font-normal text-gray-400">DZD</span>
-          </p>
-          <p className="text-xs text-gray-400 mt-1">
-            {thisMonth.length} dépense{thisMonth.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-
-        {/* Par catégorie */}
-        <div className="col-span-2 sm:col-span-1 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs font-medium text-gray-500 mb-2">Par catégorie</p>
-          {byCat.length === 0 ? (
-            <p className="text-xs text-gray-400 mt-2">Aucune dépense ce mois</p>
-          ) : (
-            <div className="space-y-1.5">
-              {byCat.slice(0, 4).map((c) => (
-                <div key={c.value} className="flex items-center justify-between gap-2">
-                  <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${c.bg} ${c.text}`}>
-                    {c.label}
-                  </span>
-                  <span className="text-xs font-semibold text-gray-700">
-                    {formatMontant(c.total)}
-                  </span>
-                </div>
-              ))}
-              {byCat.length > 4 && (
-                <p className="text-xs text-gray-400">+{byCat.length - 4} autres</p>
-              )}
+        {/* Stat cards */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.06 }}
+          style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}
+        >
+          {/* Total ce mois */}
+          <div style={{ background: "#fff", border: "1px solid #eaecef", borderRadius: 12, padding: isDesktop ? "16px 20px" : "12px 14px", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#9ca3af", marginBottom: 8 }}>
+              Total {monthLabel}
             </div>
-          )}
-        </div>
-      </motion.div>
+            <div style={{ fontSize: isDesktop ? 21 : 15, fontWeight: 700, color: "#0f1923", lineHeight: 1.2, letterSpacing: "-0.5px" }}>
+              {formatMontant(totalThisMonth)}
+              <span style={{ fontSize: 11, fontWeight: 400, color: "#9ca3af", marginLeft: 4 }}>DZD</span>
+            </div>
+            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>
+              {thisMonth.length} dépense{thisMonth.length !== 1 ? "s" : ""}
+            </div>
+          </div>
 
-      {/* Quick-add form */}
+          {/* Dépenses au total */}
+          <div style={{ background: "#fff", border: "1px solid #eaecef", borderRadius: 12, padding: isDesktop ? "16px 20px" : "12px 14px", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
+            <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#9ca3af", marginBottom: 8 }}>
+              Total enregistrées
+            </div>
+            <div style={{ fontSize: isDesktop ? 21 : 15, fontWeight: 700, color: "#0f1923", lineHeight: 1.2, letterSpacing: "-0.5px" }}>
+              {depenses.length}
+              <span style={{ fontSize: 13, fontWeight: 400, color: "#9ca3af", marginLeft: 6 }}>dépenses</span>
+            </div>
+            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>
+              {depenses.filter(d => d.projet_lie).length} liée{depenses.filter(d => d.projet_lie).length !== 1 ? "s" : ""} à un projet
+            </div>
+          </div>
+
+          {/* Justificatifs */}
+          {(() => {
+            const avecRecu = thisMonth.filter(d => d.justificatif_url).length;
+            const total = thisMonth.length;
+            const complet = total > 0 && avecRecu === total;
+            return (
+              <div style={{ background: "#fff", border: "1px solid #eaecef", borderRadius: 12, padding: isDesktop ? "16px 20px" : "12px 14px", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
+                <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#9ca3af", marginBottom: 8 }}>
+                  Justificatifs
+                </div>
+                <div style={{ fontSize: isDesktop ? 21 : 15, fontWeight: 700, color: "#0f1923", lineHeight: 1.2, letterSpacing: "-0.5px" }}>
+                  {avecRecu}
+                  <span style={{ fontSize: 13, fontWeight: 400, color: "#9ca3af", marginLeft: 2 }}>/ {total}</span>
+                </div>
+                <div style={{ fontSize: 11, marginTop: 4, color: complet ? "#16a34a" : total === 0 ? "#9ca3af" : "#f59e0b", fontWeight: complet ? 600 : 400 }}>
+                  {total === 0 ? "ce mois" : complet ? "✓ Tous fournis" : `${total - avecRecu} manquant${total - avecRecu > 1 ? "s" : ""}`}
+                </div>
+              </div>
+            );
+          })()}
+        </motion.div>
+      </div>
+
+      {/* ── ADD FORM ─────────────────────────────────────────────────────────── */}
       <AnimatePresence>
         {showForm && (
           <motion.div
@@ -538,186 +577,368 @@ export default function DepensesPage() {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="overflow-hidden"
+            transition={{ duration: 0.22 }}
+            style={{ overflow: "hidden", flexShrink: 0 }}
           >
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <div className="px-4 py-3 bg-[#F4F6F7] border-b border-gray-100 rounded-t-2xl">
-                <p className="text-sm font-semibold text-gray-700">Nouvelle dépense</p>
+            <div style={{ padding: `0 ${px}px 8px` }}>
+              <div style={{ background: "#fff", border: "1px solid #eaecef", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}>
+                <div style={{ padding: "13px 20px", background: "#fafafa", borderBottom: "1px solid #eaecef", fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                  Nouvelle dépense
+                </div>
+                <DepenseForm
+                  form={form} onChange={setForm} onSubmit={handleAdd}
+                  onCancel={() => { setShowForm(false); setForm(EMPTY_FORM); setPhoto(null); }}
+                  saving={saving} photo={photo} onPhoto={setPhoto}
+                  soumissions={soumissions} submitLabel="Enregistrer"
+                />
               </div>
-              <DepenseForm
-                form={form}
-                onChange={setForm}
-                onSubmit={handleAdd}
-                onCancel={() => { setShowForm(false); setForm(EMPTY_FORM); setPhoto(null); }}
-                saving={saving}
-                photo={photo}
-                onPhoto={setPhoto}
-                soumissions={soumissions}
-                submitLabel="Enregistrer"
-              />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* History */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-      >
-        <div className="px-4 py-3 bg-[#F4F6F7] border-b border-gray-100 flex items-center justify-between">
-          <p className="text-sm font-semibold text-gray-700">Historique</p>
-          <span className="text-xs text-gray-400">{depenses.length} au total</span>
+      {/* ── CONTENT (scrollable) ─────────────────────────────────────────────── */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, padding: `0 ${px}px`, paddingBottom: 20 }}>
+
+        {/* Filter bar */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 10, flexShrink: 0 }}>
+          <div style={{ position: "relative", flex: 1 }}>
+            <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#9ca3af", pointerEvents: "none" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              placeholder="Rechercher une dépense..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: "100%", paddingLeft: 32, paddingRight: 12, height: 36, border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", background: "#fff", outline: "none", boxSizing: "border-box" }}
+            />
+          </div>
+          <div style={{ position: "relative" }}>
+            <select
+              value={catFilter}
+              onChange={(e) => setCatFilter(e.target.value as CategorieDepense | "")}
+              style={{ height: 36, border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: catFilter ? "#374151" : "#9ca3af", background: "#fff", paddingLeft: 10, paddingRight: 28, outline: "none", cursor: "pointer", appearance: "none" }}
+            >
+              <option value="">Toutes catégories</option>
+              {CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+            <svg style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 12, height: 12, color: "#9ca3af", pointerEvents: "none" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
 
-        {depenses.length === 0 ? (
-          <div className="py-12 text-center">
-            <p className="text-sm text-gray-400">Aucune dépense enregistrée</p>
-            <p className="text-xs text-gray-300 mt-1">Appuyez sur Ajouter pour commencer</p>
-          </div>
-        ) : (
-          <ul className="divide-y divide-gray-50">
-            <AnimatePresence>
-              {depenses.map((d, i) => {
-                const cat = catCfg(d.categorie);
-                const projet = soumissions.find((s) => s.id === d.projet_lie);
-                const isEditing = editId === d.id;
+        {/* Table / Card container */}
+        <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1px solid #eaecef", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
 
-                return (
-                  <motion.li
-                    key={d.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, x: -16 }}
-                    transition={{ delay: i * 0.02 }}
-                  >
-                    {/* Normal row */}
-                    {!isEditing && (
-                      <div className="px-4 py-3 flex items-start gap-3">
-                        {/* Category badge */}
-                        <div
-                          className={`mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${cat.bg}`}
+          {/* ─── DESKTOP : table ───────────────────────────────────────────── */}
+          {isDesktop && (
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr>
+                  <th style={TH}>Description</th>
+                  <th style={TH}>Projet</th>
+                  <th style={TH}>Date</th>
+                  <th style={{ ...TH, textAlign: "right" }}>Montant</th>
+                  <th style={{ ...TH, textAlign: "right" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <AnimatePresence>
+                  {paginated.map((d, i) => {
+                    const cat = catCfg(d.categorie);
+                    const projet = soumissions.find((s) => s.id === d.projet_lie);
+                    const isEditing = editId === d.id;
+
+                    return (
+                      <React.Fragment key={d.id}>
+                        <motion.tr
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          transition={{ delay: i * 0.02 }}
+                          style={{ borderBottom: "1px solid #f0f2f5", transition: "background 0.1s, box-shadow 0.1s" }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.background = "#f9fafb";
+                            e.currentTarget.style.boxShadow = "inset 3px 0 0 #1a2e1e";
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.background = "transparent";
+                            e.currentTarget.style.boxShadow = "none";
+                          }}
                         >
-                          <span className={`text-[10px] font-bold uppercase ${cat.text}`}>
-                            {cat.label.slice(0, 3)}
-                          </span>
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-baseline justify-between gap-2">
-                            <span className="text-sm font-bold text-gray-900">
-                              {formatMontant(Number(d.montant))}{" "}
-                              <span className="text-xs font-normal text-gray-400">DZD</span>
-                            </span>
-                            <span className="text-xs text-gray-400 flex-shrink-0">
-                              {new Date(d.date_depense + "T00:00:00").toLocaleDateString("fr-DZ", {
-                                day: "2-digit",
-                                month: "short",
-                              })}
-                            </span>
-                          </div>
-                          {d.description && (
-                            <p className="text-xs text-gray-500 mt-0.5 truncate">{d.description}</p>
-                          )}
-                          {projet && (
-                            <div className="flex items-center gap-1 mt-1">
-                              <svg
-                                className="w-3 h-3 text-gray-400 flex-shrink-0"
-                                fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                              </svg>
-                              <span className="text-xs text-gray-400 truncate">
-                                {projet.numero_offre} — {projet.titre_projet}
+                          {/* Description */}
+                          <td style={{ padding: "13px 16px" }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 5, background: cat.bg, color: cat.text, border: `1px solid ${cat.dot}40`, flexShrink: 0, letterSpacing: "0.04em" }}>
+                                {cat.abbr}
+                              </span>
+                              <span style={{ fontSize: 13, color: d.description ? "#374151" : "#9ca3af", fontStyle: d.description ? "normal" : "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 220 }}>
+                                {d.description || "—"}
                               </span>
                             </div>
-                          )}
-                        </div>
+                          </td>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-0.5 flex-shrink-0">
-                          {d.justificatif_url && (
-                            <motion.button
-                              whileTap={{ scale: 0.9 }}
-                              onClick={() => viewJustificatif(d.justificatif_url!)}
-                              className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:bg-blue-50 hover:text-blue-500 transition-colors cursor-pointer"
-                              title="Voir justificatif"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                              </svg>
-                            </motion.button>
-                          )}
-                          <motion.button
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => openEdit(d)}
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors cursor-pointer"
-                            title="Modifier"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                          </motion.button>
-                          <motion.button
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => handleDelete(d.id)}
-                            disabled={deletingId === d.id}
-                            className="w-9 h-9 rounded-lg flex items-center justify-center text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50"
-                            title="Supprimer"
-                          >
-                            {deletingId === d.id ? (
-                              <Spinner />
+                          {/* Projet */}
+                          <td style={{ padding: "13px 16px" }}>
+                            {projet ? (
+                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <svg style={{ width: 12, height: 12, color: "#9ca3af", flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span style={{ fontSize: 12, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>
+                                  {projet.numero_offre} — {projet.titre_projet}
+                                </span>
+                              </div>
                             ) : (
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
+                              <span style={{ color: "#d1d5db", fontSize: 13 }}>—</span>
                             )}
-                          </motion.button>
-                        </div>
-                      </div>
-                    )}
+                          </td>
 
-                    {/* Inline edit */}
-                    <AnimatePresence>
-                      {isEditing && (
-                        <motion.div
-                          key="edit"
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden bg-gray-50"
-                        >
-                          <div className="px-4 py-2.5 border-b border-gray-100">
-                            <span className="text-xs font-semibold text-gray-600">
-                              Modifier la dépense
+                          {/* Date */}
+                          <td style={{ padding: "13px 16px" }}>
+                            <span style={{ fontSize: 13, color: "#6b7280" }}>
+                              {new Date(d.date_depense + "T00:00:00").toLocaleDateString("fr-DZ", { day: "2-digit", month: "short" })}
                             </span>
+                          </td>
+
+                          {/* Montant */}
+                          <td style={{ padding: "13px 16px", textAlign: "right" }}>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: "#0f1923" }}>{formatMontant(Number(d.montant))}</span>
+                            <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 3 }}>DZD</span>
+                          </td>
+
+                          {/* Actions */}
+                          <td style={{ padding: "10px 16px", textAlign: "right" }}>
+                            <div style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
+                              {d.justificatif_url && (
+                                <button
+                                  onClick={() => viewJustificatif(d.justificatif_url!)}
+                                  title="Voir justificatif"
+                                  style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}
+                                >
+                                  <svg style={{ width: 13, height: 13 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                  </svg>
+                                </button>
+                              )}
+                              <button
+                                onClick={() => openEdit(d)}
+                                title="Modifier"
+                                style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}
+                              >
+                                <svg style={{ width: 13, height: 13 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleDelete(d.id)}
+                                disabled={deletingId === d.id}
+                                title="Supprimer"
+                                style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid #fee2e2", background: "#fff", cursor: deletingId === d.id ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444", opacity: deletingId === d.id ? 0.6 : 1 }}
+                              >
+                                {deletingId === d.id ? <Spinner /> : (
+                                  <svg style={{ width: 13, height: 13 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                        </motion.tr>
+
+                        {/* Inline edit row */}
+                        <AnimatePresence>
+                          {isEditing && (
+                            <motion.tr
+                              key={`edit-${d.id}`}
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              exit={{ opacity: 0 }}
+                            >
+                              <td colSpan={5} style={{ padding: 0, background: "#f8fafc", borderBottom: "1px solid #eaecef" }}>
+                                <div style={{ padding: "10px 16px", background: "#f0f2f5", fontSize: 12, fontWeight: 600, color: "#374151", borderBottom: "1px solid #e5e7eb" }}>
+                                  Modifier la dépense
+                                </div>
+                                <DepenseForm
+                                  form={editForm} onChange={setEditForm} onSubmit={handleEdit}
+                                  onCancel={() => { setEditId(null); setEditPhoto(null); }}
+                                  saving={editSaving} photo={editPhoto} onPhoto={setEditPhoto}
+                                  soumissions={soumissions} submitLabel="Enregistrer"
+                                />
+                              </td>
+                            </motion.tr>
+                          )}
+                        </AnimatePresence>
+                      </React.Fragment>
+                    );
+                  })}
+                </AnimatePresence>
+              </tbody>
+            </table>
+          )}
+
+          {/* ─── MOBILE : card list ────────────────────────────────────────── */}
+          {!isDesktop && (
+            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+              <AnimatePresence>
+                {paginated.map((d, i) => {
+                  const cat = catCfg(d.categorie);
+                  const projet = soumissions.find((s) => s.id === d.projet_lie);
+                  const isEditing = editId === d.id;
+
+                  return (
+                    <motion.li
+                      key={d.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0, x: -12 }}
+                      transition={{ delay: i * 0.03 }}
+                      style={{ borderBottom: "1px solid #f0f2f5" }}
+                    >
+                      {!isEditing ? (
+                        <div style={{ padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: 12 }}>
+                          {/* Category badge */}
+                          <div style={{ width: 38, height: 38, borderRadius: 9, background: cat.bg, border: `1px solid ${cat.dot}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
+                            <span style={{ fontSize: 9, fontWeight: 800, color: cat.text, letterSpacing: "0.05em" }}>{cat.abbr}</span>
+                          </div>
+
+                          {/* Content */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 3 }}>
+                              <span style={{ fontSize: 14, fontWeight: 700, color: "#0f1923" }}>
+                                {formatMontant(Number(d.montant))}
+                                <span style={{ fontSize: 11, fontWeight: 400, color: "#9ca3af", marginLeft: 3 }}>DZD</span>
+                              </span>
+                              <span style={{ fontSize: 12, color: "#9ca3af", flexShrink: 0 }}>
+                                {new Date(d.date_depense + "T00:00:00").toLocaleDateString("fr-DZ", { day: "2-digit", month: "short" })}
+                              </span>
+                            </div>
+                            {d.description && (
+                              <p style={{ fontSize: 12, color: "#6b7280", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                {d.description}
+                              </p>
+                            )}
+                            {projet && (
+                              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+                                <svg style={{ width: 11, height: 11, color: "#9ca3af", flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span style={{ fontSize: 11, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {projet.numero_offre} — {projet.titre_projet}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Actions */}
+                          <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
+                            {d.justificatif_url && (
+                              <button onClick={() => viewJustificatif(d.justificatif_url!)} style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}>
+                                <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                </svg>
+                              </button>
+                            )}
+                            <button onClick={() => openEdit(d)} style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}>
+                              <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                            <button onClick={() => handleDelete(d.id)} disabled={deletingId === d.id} style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid #fee2e2", background: "#fff", cursor: deletingId === d.id ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444" }}>
+                              {deletingId === d.id ? <Spinner /> : (
+                                <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ background: "#f8fafc" }}>
+                          <div style={{ padding: "10px 16px", background: "#f0f2f5", fontSize: 12, fontWeight: 600, color: "#374151", borderBottom: "1px solid #e5e7eb" }}>
+                            Modifier la dépense
                           </div>
                           <DepenseForm
-                            form={editForm}
-                            onChange={setEditForm}
-                            onSubmit={handleEdit}
+                            form={editForm} onChange={setEditForm} onSubmit={handleEdit}
                             onCancel={() => { setEditId(null); setEditPhoto(null); }}
-                            saving={editSaving}
-                            photo={editPhoto}
-                            onPhoto={setEditPhoto}
-                            soumissions={soumissions}
-                            submitLabel="Enregistrer"
+                            saving={editSaving} photo={editPhoto} onPhoto={setEditPhoto}
+                            soumissions={soumissions} submitLabel="Enregistrer"
                           />
-                        </motion.div>
+                        </div>
                       )}
-                    </AnimatePresence>
-                  </motion.li>
-                );
-              })}
-            </AnimatePresence>
-          </ul>
-        )}
-      </motion.div>
+                    </motion.li>
+                  );
+                })}
+              </AnimatePresence>
+            </ul>
+          )}
+
+          {/* Empty state */}
+          {filtered.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              style={{ padding: "56px 24px", textAlign: "center" }}
+            >
+              <svg style={{ width: 36, height: 36, color: "#d1d5db", margin: "0 auto 12px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <p style={{ fontSize: 14, color: "#6b7280", fontWeight: 500, margin: 0 }}>
+                {search || catFilter ? "Aucun résultat" : "Aucune dépense enregistrée"}
+              </p>
+              <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 4 }}>
+                {search || catFilter ? "Essayez d'autres filtres" : "Cliquez sur + pour commencer"}
+              </p>
+            </motion.div>
+          )}
+
+          {/* End of history */}
+          {filtered.length > 0 && paginated.length < PER_PAGE && page === totalPages && (
+            <div style={{ padding: "20px 24px", textAlign: "center", borderTop: "1px solid #f0f2f5" }}>
+              <svg style={{ width: 24, height: 24, color: "#e5e7eb", margin: "0 auto 6px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Fin de l&apos;historique</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── PAGINATION ───────────────────────────────────────────────────────── */}
+      <div style={{ borderTop: "1px solid #eaecef", padding: `10px ${px}px`, display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", flexShrink: 0 }}>
+        <span style={{ fontSize: 12, color: "#9ca3af" }}>
+          {filtered.length} dépense{filtered.length !== 1 ? "s" : ""}
+          {(search || catFilter) ? " trouvée" + (filtered.length !== 1 ? "s" : "") : ""}
+        </span>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+            style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", cursor: page <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: page <= 1 ? 0.35 : 1 }}
+          >
+            <svg style={{ width: 12, height: 12, color: "#374151" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 500, minWidth: 52, textAlign: "center" }}>
+            {page} / {totalPages}
+          </span>
+          <button
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", cursor: page >= totalPages ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: page >= totalPages ? 0.35 : 1 }}
+          >
+            <svg style={{ width: 12, height: 12, color: "#374151" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
     </div>
   );
 }
