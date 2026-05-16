@@ -23,16 +23,15 @@ const CSS = `
 
 /* ── Breakpoint ─────────────────────────────────────────────── */
 type Bp = "mobile" | "tablet" | "desktop";
-function getBp(): Bp {
-  const w = typeof window !== "undefined" ? window.innerWidth : 1024;
-  if (w >= 1024) return "desktop";
-  if (w >= 640) return "tablet";
-  return "mobile";
-}
 function useBp(): Bp {
-  const [bp, set] = useState<Bp>(getBp);
+  const [bp, set] = useState<Bp>("mobile");
   useEffect(() => {
-    const h = () => set(getBp());
+    const h = () => set(
+      window.innerWidth >= 1024 ? "desktop"
+      : window.innerWidth >= 640 ? "tablet"
+      : "mobile"
+    );
+    h();
     window.addEventListener("resize", h);
     return () => window.removeEventListener("resize", h);
   }, []);
@@ -988,10 +987,12 @@ const D0: DeleteState = { open: false, id: "", label: "" };
    MAIN EXPORT
 ══════════════════════════════════════════════════════════════ */
 
-export default function SoumissionsClient({ role }: { role: UserRole }) {
+export default function SoumissionsClient() {
   const router = useRouter();
   const bp = useBp();
   const isDesktop = bp === "desktop";
+
+  const [role, setRole] = useState<UserRole>("admin");
   const isAdmin = role === "admin" || role === "charge_projet";
 
   /* View toggle — persisted in localStorage */
@@ -1037,6 +1038,9 @@ export default function SoumissionsClient({ role }: { role: UserRole }) {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    fetch("/api/me").then(r => r.json()).then(d => { if (d.role) setRole(d.role); });
+  }, []);
   useEffect(() => { setPage(1); }, [filtre, q, view]);
 
   const filtered: SoumissionView[] = soumissions.filter(s => {
