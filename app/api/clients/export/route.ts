@@ -26,6 +26,9 @@ async function getSupabase() {
 export async function GET() {
   const supabase = await getSupabase();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const { data, error } = await supabase
     .from("clients")
     .select("*")

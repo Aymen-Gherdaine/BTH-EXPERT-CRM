@@ -1031,14 +1031,17 @@ export default function SoumissionsClient() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [res, meRes] = await Promise.all([
-      fetch("/api/soumissions"),
-      fetch("/api/me"),
-    ]);
-    const [json, me] = await Promise.all([res.json(), meRes.json()]);
-    if (me.role) setRole(me.role);
-    setSoumissions(json.data ?? []);
-    setLoading(false);
+    try {
+      const [res, meRes] = await Promise.all([
+        fetch("/api/soumissions"),
+        fetch("/api/me"),
+      ]);
+      const [json, me] = await Promise.all([res.json(), meRes.json()]);
+      if (me.role) setRole(me.role);
+      setSoumissions(json.data ?? []);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { load(); }, [load]);
