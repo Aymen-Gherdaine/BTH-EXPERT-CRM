@@ -9,12 +9,6 @@ import { formatMontant } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface Props {
-  role: UserRole;
-  userName: string;
-  userInitials: string;
-}
-
 type OverdueProspect = Prospect & { _lastVisit: Visite };
 
 interface StatCardProps {
@@ -52,18 +46,14 @@ const STATUT_PROSPECT: Record<string, [string, string]> = {
 // ─── Hook ────────────────────────────────────────────────────────────────────
 
 function useBp(): "mobile" | "tablet" | "desktop" {
-  const [bp, setBp] = useState<"mobile" | "tablet" | "desktop">(() =>
-    typeof window === "undefined" ? "desktop"
-    : window.innerWidth < 640 ? "mobile"
-    : window.innerWidth < 1024 ? "tablet"
-    : "desktop"
-  );
+  const [bp, setBp] = useState<"mobile" | "tablet" | "desktop">("mobile");
   useEffect(() => {
     const h = () => setBp(
       window.innerWidth < 640 ? "mobile"
       : window.innerWidth < 1024 ? "tablet"
       : "desktop"
     );
+    h();
     window.addEventListener("resize", h);
     return () => window.removeEventListener("resize", h);
   }, []);
@@ -234,11 +224,14 @@ const CSS = `
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
-export default function DashboardClient({ role, userName, userInitials }: Props) {
+export default function DashboardClient() {
   const bp = useBp();
   const isMobile = bp === "mobile";
   const isDesktop = bp === "desktop";
 
+  const [role, setRole] = useState<UserRole>("admin");
+  const [userName, setUserName] = useState("");
+  const [userInitials, setUserInitials] = useState("U");
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [recents, setRecents] = useState<Soumission[]>([]);
   const [allSoumissions, setAllSoumissions] = useState<Soumission[]>([]);
@@ -247,10 +240,17 @@ export default function DashboardClient({ role, userName, userInitials }: Props)
 
   useEffect(() => {
     Promise.all([
+      fetch("/api/me").then(r => r.json()),
       fetch("/api/dashboard").then(r => r.json()),
       fetch("/api/soumissions").then(r => r.json()),
       fetch("/api/prospects?statut=actif").then(r => r.json()),
-    ]).then(([statsRes, soumRes, prospectsRes]) => {
+    ]).then(([meRes, statsRes, soumRes, prospectsRes]) => {
+      const fullName: string = meRes.full_name ?? "";
+      setRole(meRes.role ?? "admin");
+      setUserName(fullName || "Utilisateur");
+      setUserInitials(
+        fullName.split(" ").filter(Boolean).map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "U"
+      );
       setStats(statsRes);
       const all: Soumission[] = soumRes.data ?? [];
       setAllSoumissions(all);
