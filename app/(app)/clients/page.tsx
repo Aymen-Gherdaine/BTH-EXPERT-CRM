@@ -140,6 +140,53 @@ function SoumissionsTable({ soumissions }: { soumissions: Soumission[] }) {
   );
 }
 
+/* ── Soumissions mobile list (no horizontal scroll) ─────── */
+function SoumMobileList({ soumissions }: { soumissions: Soumission[] }) {
+  if (soumissions.length === 0) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
+        background: "white", borderRadius: 10, border: "1px solid #f1f5f9" }}>
+        <Ic d={I.file} z={16} s="#d1d5db" />
+        <p style={{ fontSize: 13, color: "#9ca3af", fontStyle: "italic" }}>
+          Aucune soumission pour ce client.
+        </p>
+      </div>
+    );
+  }
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {soumissions.map(s => (
+        <Link key={s.id} href={`/soumissions/${s.id}`} onClick={e => e.stopPropagation()}
+          style={{ textDecoration: "none", display: "block" }}>
+          <div style={{
+            background: "white", borderRadius: 10,
+            border: "1px solid #f1f5f9", padding: "10px 12px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+              <span style={{ fontSize: 10.5, fontWeight: 600, color: "#374151",
+                fontFamily: "ui-monospace, monospace", letterSpacing: "0.02em" }}>
+                {s.numero_offre}
+              </span>
+              <StatusBadge st={s.statut} />
+            </div>
+            <p style={{ fontSize: 12.5, fontWeight: 500, color: "#111827", marginBottom: 4,
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {s.titre_projet}
+            </p>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 11, color: "#9ca3af" }}>{formatDateFr(s.date_offre)}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#111827", fontVariantNumeric: "tabular-nums" }}>
+                {fmtInt(s.total_ttc)}{" "}
+                <span style={{ fontSize: 9.5, color: "#9ca3af", fontWeight: 500 }}>DZD</span>
+              </span>
+            </div>
+          </div>
+        </Link>
+      ))}
+    </div>
+  );
+}
+
 interface ClientWithSoumissions extends Client {
   soumissions?: Soumission[];
 }
@@ -398,7 +445,7 @@ export default function ClientsPage() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 16 }}>
               <AnimatePresence>
-                {paginated.map((client, idx) => (
+                {clients.map((client, idx) => (
                   <ClientCard
                     key={client.id} client={client} idx={idx}
                     isExpanded={expandedId === client.id}
@@ -413,8 +460,8 @@ export default function ClientsPage() {
           )}
         </div>
 
-        {/* ── Pagination ───────────────────────────────────── */}
-        {!loading && clients.length > 0 && (
+        {/* ── Pagination (desktop only) ────────────────────── */}
+        {!loading && clients.length > 0 && bp === "desktop" && (
           <div style={{
             flexShrink: 0, background: "#faf9f7", borderTop: "1px solid #e5e7eb",
             display: "grid", gridTemplateColumns: "1fr auto 1fr",
@@ -669,7 +716,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
                   ))}
                 </div>
               ) : (
-                <SoumissionsTable soumissions={soumissions} />
+                <SoumMobileList soumissions={soumissions} />
               )}
             </div>
           </motion.div>
