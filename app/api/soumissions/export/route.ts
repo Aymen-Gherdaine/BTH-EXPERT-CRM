@@ -40,6 +40,9 @@ type SoumissionRow = {
 export async function GET() {
   const supabase = await getSupabase();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const { data, error } = await supabase
     .from("soumissions")
     .select("numero_offre, date_offre, titre_projet, type_etude, delai_jours, total_ht, tva, total_ttc, versement_recu, statut, client:clients(titre, nom_contact, entreprise)")
