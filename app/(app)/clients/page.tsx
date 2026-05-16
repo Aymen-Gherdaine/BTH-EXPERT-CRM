@@ -23,6 +23,11 @@ const SOUM_GRID = "130px 1fr 110px 60px 140px";
 const SOUM_D    = "1px solid #f0f2f5";
 const SOUM_HD   = "1px solid #eaecef";
 
+/* ── Clients table ──────────────────────────────────────── */
+const CT_GRID = "220px 1fr 120px 130px 88px";
+const CT_D    = "1px solid #f0f2f5";
+const CT_HD   = "1px solid #eaecef";
+
 function SoumTableRow({ s }: { s: Soumission }) {
   const [hov, setHov] = useState(false);
   return (
@@ -217,10 +222,24 @@ function StatusBadge({ st }: { st: StatutSoumission }) {
 interface DeleteState { open: boolean; id: string; label: string }
 const D0: DeleteState = { open: false, id: "", label: "" };
 
+/* ── useBp ──────────────────────────────────────────────── */
+function useBp() {
+  const [bp, setBp] = useState<"mobile" | "desktop">("mobile");
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 768px)");
+    setBp(mq.matches ? "desktop" : "mobile");
+    const fn = (e: MediaQueryListEvent) => setBp(e.matches ? "desktop" : "mobile");
+    mq.addEventListener("change", fn);
+    return () => mq.removeEventListener("change", fn);
+  }, []);
+  return bp;
+}
+
 /* ══════════════════════════════════════════════════════════
    MAIN PAGE
 ══════════════════════════════════════════════════════════ */
 export default function ClientsPage() {
+  const bp = useBp();
   const [clients, setClients] = useState<ClientWithSoumissions[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -334,16 +353,25 @@ export default function ClientsPage() {
         </div>
 
         {/* ── Content ─────────────────────────────────────── */}
-        <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 0" }}>
+        <div style={{ flex: 1, overflowY: "auto", padding: bp === "desktop" ? 0 : "16px 16px 0" }}>
           {loading ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {[1, 2, 3, 4, 5].map(i => (
-                <div key={i} className="sk" style={{
-                  height: 82, borderRadius: 14,
-                  background: "white", border: "1px solid #ededeb",
-                }} />
-              ))}
-            </div>
+            bp === "desktop" ? (
+              <div style={{ margin: "16px 32px 20px", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden" }}>
+                <div className="sk" style={{ height: 44, background: "#fafafa", borderBottom: "1.5px solid #e5e7eb" }} />
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="sk" style={{ height: 64, background: "white", borderBottom: "1px solid #f1f5f9" }} />
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="sk" style={{
+                    height: 82, borderRadius: 14,
+                    background: "white", border: "1px solid #ededeb",
+                  }} />
+                ))}
+              </div>
+            )
           ) : clients.length === 0 ? (
             <div style={{ textAlign: "center", padding: "72px 24px", display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div style={{ width: 64, height: 64, borderRadius: 20, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
@@ -358,6 +386,15 @@ export default function ClientsPage() {
                   : "Les clients sont créés automatiquement lors d'une soumission."}
               </p>
             </div>
+          ) : bp === "desktop" ? (
+            <ClientsTable
+              clients={paginated}
+              expandedId={expandedId}
+              soumMap={soumMap}
+              loadingS={loadingS}
+              onToggle={toggleExpand}
+              onDelete={askDelete}
+            />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 16 }}>
               <AnimatePresence>
@@ -461,7 +498,7 @@ export default function ClientsPage() {
 }
 
 /* ══════════════════════════════════════════════════════════
-   CLIENT CARD
+   CLIENT CARD (mobile)
 ══════════════════════════════════════════════════════════ */
 function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onToggle, onDelete }: {
   client: ClientWithSoumissions; idx: number; isExpanded: boolean;
@@ -473,66 +510,102 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.04, duration: 0.22, ease: "easeOut" }}
       style={{
         background: "white", borderRadius: 16, overflow: "hidden",
-        border: `1.5px solid ${isExpanded ? "#1a2e1e25" : "rgba(0,0,0,0.07)"}`,
-        boxShadow: isExpanded ? "0 4px 24px rgba(0,0,0,0.07)" : "0 1px 4px rgba(0,0,0,0.04)",
-        transition: "border-color 0.15s, box-shadow 0.15s",
+        position: "relative",
+        border: `1px solid ${isExpanded ? "#1a2e1e22" : "#ededeb"}`,
+        boxShadow: isExpanded
+          ? "0 6px 24px rgba(26,46,30,0.09)"
+          : "0 1px 4px rgba(0,0,0,0.05)",
+        transition: "border-color 0.18s, box-shadow 0.18s",
       }}
     >
+      {/* Left accent bar */}
+      <div style={{
+        position: "absolute", left: 0, top: 0, bottom: 0,
+        width: 3, background: "#1a2e1e",
+        opacity: isExpanded ? 1 : 0,
+        transition: "opacity 0.18s",
+        borderRadius: "16px 0 0 16px",
+        zIndex: 1,
+      }} />
+
       {/* ── Main row ────────────────────────────────────── */}
       <div
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
         onClick={onToggle}
         style={{
-          display: "flex", alignItems: "center", gap: 14,
-          padding: "14px 14px 14px 16px",
-          cursor: "pointer", minHeight: 72,
+          display: "flex", alignItems: "center", gap: 12,
+          padding: "13px 12px 13px 16px",
+          cursor: "pointer",
           background: hov && !isExpanded ? "#fafafa" : "white",
           transition: "background 0.12s",
         }}
       >
-        <Avatar name={client.entreprise} size={44} />
+        {/* Avatar with ring on expand */}
+        <div style={{
+          flexShrink: 0,
+          padding: 2,
+          borderRadius: "50%",
+          background: isExpanded ? "#1a2e1e15" : "transparent",
+          transition: "background 0.18s",
+        }}>
+          <Avatar name={client.entreprise} size={40} />
+        </div>
 
         {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
-            fontSize: 15, fontWeight: 700, color: isExpanded ? "#1a2e1e" : "#111827",
-            letterSpacing: "-0.3px", lineHeight: 1.2,
+            fontSize: 14.5, fontWeight: 700,
+            color: isExpanded ? "#1a2e1e" : "#111827",
+            letterSpacing: "-0.35px", lineHeight: 1.25,
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-            transition: "color 0.15s",
+            transition: "color 0.18s",
           }}>
             {client.entreprise}
           </p>
-          <p style={{ fontSize: 12.5, color: "#6b7280", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <p style={{
+            fontSize: 12, color: "#6b7280", marginTop: 2,
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+          }}>
             {client.titre} {client.nom_contact}
             {client.poste && <span style={{ color: "#9ca3af" }}> · {client.poste}</span>}
           </p>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
+          {/* Meta chips */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
             {client.ville && (
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "#9ca3af" }}>
-                <Ic d={I.mapPin} z={10} s="#9ca3af" />
+              <span style={{
+                display: "inline-flex", alignItems: "center", gap: 3,
+                fontSize: 10.5, color: "#6b7280", fontWeight: 500,
+                background: "#f3f4f6", borderRadius: 5, padding: "2px 7px",
+              }}>
+                <Ic d={I.mapPin} z={9} s="#9ca3af" />
                 {client.ville}
               </span>
             )}
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "#9ca3af" }}>
-              <Ic d={I.calendar} z={10} s="#9ca3af" />
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 3,
+              fontSize: 10.5, color: "#9ca3af",
+              background: "#f9fafb", border: "1px solid #f0f0ee",
+              borderRadius: 5, padding: "2px 7px",
+            }}>
+              <Ic d={I.calendar} z={9} s="#c4c8cd" />
               {formatDateFr(client.created_at)}
             </span>
           </div>
         </div>
 
         {/* Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
           <button
             title="Supprimer le client"
             onClick={e => onDelete(client, e)}
             style={{
-              width: 34, height: 34, borderRadius: 9,
+              width: 32, height: 32, borderRadius: 8,
               background: hov ? "#fff1f2" : "#f8fafc",
               border: `1px solid ${hov ? "#fecdd3" : "#e5e7eb"}`,
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -540,15 +613,21 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
               cursor: "pointer", transition: "all 0.15s",
             }}
           >
-            <Ic d={I.trash} z={14} />
+            <Ic d={I.trash} z={13} />
           </button>
 
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.22 }}
-            style={{ color: isExpanded ? "#1a2e1e" : "#9ca3af", display: "flex", alignItems: "center" }}
+            style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: isExpanded ? "#1a2e1e" : "#f8fafc",
+              border: `1px solid ${isExpanded ? "#1a2e1e" : "#e5e7eb"}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              transition: "background 0.2s, border-color 0.2s",
+            }}
           >
-            <Ic d={I.chevD} z={20} />
+            <Ic d={I.chevD} z={15} s={isExpanded ? "white" : "#9ca3af"} />
           </motion.div>
         </div>
       </div>
@@ -564,9 +643,9 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
             style={{ overflow: "hidden" }}
           >
             <div style={{ borderTop: "1px solid #f1f5f9", background: "#fafafa", padding: "14px 16px 18px" }}>
-              {/* Details chips */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-                {client.adresse && (
+              {/* Address chip */}
+              {client.adresse && (
+                <div style={{ marginBottom: 12 }}>
                   <span style={{
                     display: "inline-flex", alignItems: "center", gap: 5,
                     fontSize: 11.5, color: "#374151",
@@ -576,10 +655,9 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
                     <Ic d={I.building} z={11} s="#6b7280" />
                     {client.adresse}
                   </span>
-                )}
-              </div>
+                </div>
+              )}
 
-              {/* Soumissions label */}
               <p style={{ fontSize: 10, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
                 Soumissions
               </p>
@@ -598,5 +676,203 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
         )}
       </AnimatePresence>
     </motion.div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   CLIENT TABLE ROW (desktop)
+══════════════════════════════════════════════════════════ */
+function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, onToggle, onDelete }: {
+  client: ClientWithSoumissions;
+  isExpanded: boolean;
+  soumissions: Soumission[];
+  isLoadingSoum: boolean;
+  onToggle: () => void;
+  onDelete: (c: ClientWithSoumissions, e: React.MouseEvent) => void;
+}) {
+  const [hov, setHov] = useState(false);
+
+  return (
+    <div>
+      <div
+        onMouseEnter={() => setHov(true)}
+        onMouseLeave={() => setHov(false)}
+        onClick={onToggle}
+        style={{
+          display: "grid", gridTemplateColumns: CT_GRID,
+          minHeight: 64, alignItems: "stretch",
+          background: hov || isExpanded ? "#fafafa" : "white",
+          boxShadow: hov || isExpanded ? "inset 3px 0 0 #1a2e1e" : "inset 3px 0 0 transparent",
+          borderBottom: "1px solid #f1f5f9",
+          cursor: "pointer",
+          transition: "background 0.12s, box-shadow 0.12s",
+        }}
+      >
+        {/* Entreprise */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 16px", borderRight: CT_D, minWidth: 0 }}>
+          <Avatar name={client.entreprise} size={36} />
+          <span style={{
+            fontSize: 13.5, fontWeight: 700, color: isExpanded ? "#1a2e1e" : "#111827",
+            whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+            transition: "color 0.15s",
+          }}>
+            {client.entreprise}
+          </span>
+        </div>
+        {/* Contact */}
+        <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 16px", borderRight: CT_D, minWidth: 0 }}>
+          <span style={{ fontSize: 13, color: "#111827", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {client.titre} {client.nom_contact}
+          </span>
+          {client.poste && (
+            <span style={{ fontSize: 11, color: "#9ca3af", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {client.poste}
+            </span>
+          )}
+        </div>
+        {/* Ville */}
+        <div style={{ display: "flex", alignItems: "center", padding: "0 16px", borderRight: CT_D }}>
+          {client.ville ? (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12.5, color: "#6b7280" }}>
+              <Ic d={I.mapPin} z={11} s="#9ca3af" />
+              {client.ville}
+            </span>
+          ) : (
+            <span style={{ fontSize: 12, color: "#d1d5db" }}>—</span>
+          )}
+        </div>
+        {/* Client depuis */}
+        <div style={{ display: "flex", alignItems: "center", padding: "0 16px", borderRight: CT_D }}>
+          <span style={{ fontSize: 12.5, color: "#6b7280" }}>
+            {formatDateFr(client.created_at)}
+          </span>
+        </div>
+        {/* Actions */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 12px" }}>
+          <button
+            title="Supprimer le client"
+            onClick={e => onDelete(client, e)}
+            style={{
+              width: 32, height: 32, borderRadius: 8,
+              background: hov ? "#fff1f2" : "#f8fafc",
+              border: `1px solid ${hov ? "#fecdd3" : "#e5e7eb"}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: hov ? "#e11d48" : "#9ca3af",
+              cursor: "pointer", transition: "all 0.15s",
+            }}
+          >
+            <Ic d={I.trash} z={13} />
+          </button>
+          <motion.div
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+            transition={{ duration: 0.22 }}
+            style={{ color: isExpanded ? "#1a2e1e" : "#9ca3af", display: "flex", alignItems: "center" }}
+          >
+            <Ic d={I.chevD} z={18} />
+          </motion.div>
+        </div>
+      </div>
+
+      {/* Expanded soumissions */}
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.24, ease: "easeInOut" }}
+            style={{ overflow: "hidden" }}
+          >
+            <div style={{ background: "#f8fafc", borderBottom: "1px solid #f1f5f9", padding: "14px 20px 18px" }}>
+              {client.adresse && (
+                <div style={{ marginBottom: 12 }}>
+                  <span style={{
+                    display: "inline-flex", alignItems: "center", gap: 5,
+                    fontSize: 11.5, color: "#374151",
+                    background: "#f3f4f6", border: "1px solid #e5e7eb",
+                    borderRadius: 6, padding: "3px 9px",
+                  }}>
+                    <Ic d={I.building} z={11} s="#6b7280" />
+                    {client.adresse}
+                  </span>
+                </div>
+              )}
+              <p style={{ fontSize: 10, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>
+                Soumissions
+              </p>
+              {isLoadingSoum ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {[1, 2, 3].map(j => (
+                    <div key={j} className="sk" style={{ height: 44, borderRadius: 8, background: "white", border: "1px solid #ededeb" }} />
+                  ))}
+                </div>
+              ) : (
+                <SoumissionsTable soumissions={soumissions} />
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   CLIENTS TABLE (desktop)
+══════════════════════════════════════════════════════════ */
+function ClientsTable({ clients, expandedId, soumMap, loadingS, onToggle, onDelete }: {
+  clients: ClientWithSoumissions[];
+  expandedId: string | null;
+  soumMap: Record<string, Soumission[]>;
+  loadingS: string | null;
+  onToggle: (id: string) => void;
+  onDelete: (c: ClientWithSoumissions, e: React.MouseEvent) => void;
+}) {
+  const headers = [
+    { label: "Entreprise",    justify: "flex-start" },
+    { label: "Contact",       justify: "flex-start" },
+    { label: "Ville",         justify: "flex-start" },
+    { label: "Client depuis", justify: "flex-start" },
+    { label: "",              justify: "center"     },
+  ];
+
+  return (
+    <div style={{ margin: "16px 32px 20px", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden", background: "white" }}>
+      {/* Sticky header */}
+      <div style={{
+        display: "grid", gridTemplateColumns: CT_GRID,
+        height: 44, alignItems: "stretch",
+        background: "#fafafa", borderBottom: "1.5px solid #e5e7eb",
+        position: "sticky", top: 0, zIndex: 2,
+      }}>
+        {headers.map(({ label, justify }, i) => (
+          <div key={i} style={{
+            padding: "0 16px", display: "flex", alignItems: "center",
+            justifyContent: justify,
+            borderRight: i < headers.length - 1 ? CT_HD : "none",
+          }}>
+            {label && (
+              <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: "#9ca3af" }}>
+                {label}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+      {/* Rows */}
+      <div>
+        {clients.map(client => (
+          <ClientTableRow
+            key={client.id}
+            client={client}
+            isExpanded={expandedId === client.id}
+            soumissions={soumMap[client.id] ?? []}
+            isLoadingSoum={loadingS === client.id}
+            onToggle={() => onToggle(client.id)}
+            onDelete={onDelete}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
