@@ -18,17 +18,41 @@ async function getSupabase() {
   );
 }
 
+const VALID_RESULTATS = ["soumission_demandee", "rappel_planifie", "pas_interesse", "absent", "autre"] as const;
+
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
   const supabase = await getSupabase();
-  const body = await req.json();
+  const body = await req.json() as {
+    date_visite?: string;
+    resultat?: string;
+    notes_visite?: string | null;
+    date_prochaine_action?: string | null;
+    action_requise?: string | null;
+  };
+
+  const update: Record<string, unknown> = {};
+  if (body.date_visite !== undefined) update.date_visite = body.date_visite;
+  if (body.resultat !== undefined) {
+    if (!VALID_RESULTATS.includes(body.resultat as typeof VALID_RESULTATS[number])) {
+      return NextResponse.json({ error: "Résultat invalide" }, { status: 400 });
+    }
+    update.resultat = body.resultat;
+  }
+  if (body.notes_visite !== undefined) update.notes_visite = body.notes_visite;
+  if (body.date_prochaine_action !== undefined) update.date_prochaine_action = body.date_prochaine_action;
+  if (body.action_requise !== undefined) update.action_requise = body.action_requise;
+
+  if (Object.keys(update).length === 0) {
+    return NextResponse.json({ error: "Aucune modification fournie" }, { status: 400 });
+  }
 
   const { data, error } = await supabase
     .from("visites")
-    .update(body)
+    .update(update)
     .eq("id", id)
     .select()
     .single();

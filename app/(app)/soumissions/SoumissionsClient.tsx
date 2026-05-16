@@ -1031,16 +1031,17 @@ export default function SoumissionsClient() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await fetch("/api/soumissions");
-    const json = await res.json();
+    const [res, meRes] = await Promise.all([
+      fetch("/api/soumissions"),
+      fetch("/api/me"),
+    ]);
+    const [json, me] = await Promise.all([res.json(), meRes.json()]);
+    if (me.role) setRole(me.role);
     setSoumissions(json.data ?? []);
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => {
-    fetch("/api/me").then(r => r.json()).then(d => { if (d.role) setRole(d.role); });
-  }, []);
   useEffect(() => { setPage(1); }, [filtre, q, view]);
 
   const filtered: SoumissionView[] = soumissions.filter(s => {

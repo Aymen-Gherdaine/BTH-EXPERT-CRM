@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { StatutSoumission } from "@/types";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -21,6 +22,8 @@ async function getSupabase() {
     }
   );
 }
+
+const VALID_STATUTS: StatutSoumission[] = ["Brouillon", "Envoyée", "Acceptée", "Refusée"];
 
 export async function GET(
   _req: NextRequest,
@@ -52,11 +55,32 @@ export async function PATCH(
 ) {
   const supabase = await getSupabase();
   const { id } = await params;
-  const body = await req.json();
+  const body = await req.json() as { statut?: string; versement_recu?: number };
+
+  const update: Record<string, unknown> = {};
+
+  if (body.statut !== undefined) {
+    if (!VALID_STATUTS.includes(body.statut as StatutSoumission)) {
+      return NextResponse.json({ error: "Statut invalide" }, { status: 400 });
+    }
+    update.statut = body.statut;
+  }
+
+  if (body.versement_recu !== undefined) {
+    const v = Number(body.versement_recu);
+    if (isNaN(v) || v < 0) {
+      return NextResponse.json({ error: "Versement invalide" }, { status: 400 });
+    }
+    update.versement_recu = v;
+  }
+
+  if (Object.keys(update).length === 0) {
+    return NextResponse.json({ error: "Aucune modification fournie" }, { status: 400 });
+  }
 
   const { data, error } = await supabase
     .from("soumissions")
-    .update(body)
+    .update(update)
     .eq("id", id)
     .select()
     .single();

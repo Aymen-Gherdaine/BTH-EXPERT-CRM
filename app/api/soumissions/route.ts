@@ -66,6 +66,7 @@ export async function POST(req: NextRequest) {
       .select()
       .single();
 
+    let finalClient;
     if (clientError) {
       // Try to find existing client
       const { data: existingClient } = await supabase
@@ -82,12 +83,12 @@ export async function POST(req: NextRequest) {
           .select()
           .single();
         if (insertError) throw insertError;
-        var finalClient = newClient;
+        finalClient = newClient;
       } else {
-        var finalClient = existingClient;
+        finalClient = existingClient;
       }
     } else {
-      var finalClient = clientData;
+      finalClient = clientData;
     }
 
     const total_ht = formData.step3.lignes.reduce(
