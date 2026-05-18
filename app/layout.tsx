@@ -17,6 +17,9 @@ const playfairDisplay = Playfair_Display({
 
 export const metadata: Metadata = {
   title: "BTH Hub",
+  icons: {
+    icon: "/icon.svg",
+  },
   description: "BTH Hub — Gestion des offres",
 };
 

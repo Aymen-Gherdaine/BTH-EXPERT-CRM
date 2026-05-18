@@ -14,9 +14,9 @@ const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 const ROLE_BADGE: Record<UserRole, string> = {
-  admin:          "bg-[#1a2e1e] text-white",
-  charge_projet:  "bg-blue-600 text-white",
-  commercial:     "bg-orange-500 text-white",
+  admin:          "bg-bth-green-800 text-white",
+  charge_projet:  "bg-[#eef5f8] text-[#2f6689] border border-[#cbdde8]",
+  commercial:     "bg-bth-gold-50 text-bth-gold-700 border border-bth-gold-200",
 };
 
 const ROLE_CARD: Record<UserRole, { border: string; bg: string; icon: React.ReactNode; desc: string }> = {
@@ -57,22 +57,35 @@ const ROLE_CARD: Record<UserRole, { border: string; bg: string; icon: React.Reac
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
+function nameFromEmail(email: string | null): string {
+  if (!email) return "Utilisateur";
+  const local = email.split("@")[0]?.replace(/[._-]+/g, " ").trim();
+  if (!local) return email;
+  return local.replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+function userDisplayName(user: UserProfile): string {
+  return user.full_name?.trim() || nameFromEmail(user.email);
+}
+
 function UserAvatar({ user }: { user: UserProfile }) {
-  const name    = user.full_name || user.email || "?";
+  const [failed, setFailed] = useState(false);
+  const name = userDisplayName(user);
   const initials = name.trim().split(/\s+/).map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
-  if (user.avatar_url) {
+  if (user.avatar_url && !failed) {
     return (
       <img
         src={user.avatar_url}
         alt={name}
-        className="w-9 h-9 rounded-full object-cover flex-shrink-0"
+        onError={() => setFailed(true)}
+        className="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-bth-hairline shadow-[0_8px_18px_rgba(26,46,30,.10)] bg-bth-green-800"
       />
     );
   }
   return (
     <div
-      className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0"
+      className="w-11 h-11 rounded-full flex items-center justify-center text-white text-sm font-semibold flex-shrink-0 border border-bth-green-700 shadow-[0_8px_18px_rgba(26,46,30,.12)]"
       style={{ backgroundColor: "#1a2e1e" }}
     >
       {initials}
@@ -95,9 +108,9 @@ function StatusBadge({ isActive }: { isActive: boolean | null }) {
   const active = isActive !== false;
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-      active ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"
+      active ? "bg-[#ecfdf3] text-bth-green-700 border border-bth-green-200" : "bg-bth-n-100 text-bth-n-500 border border-bth-hairline"
     }`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${active ? "bg-emerald-500" : "bg-gray-400"}`} />
+      <span className={`w-1.5 h-1.5 rounded-full ${active ? "bg-bth-success" : "bg-bth-n-400"}`} />
       {active ? "Actif" : "Inactif"}
     </span>
   );
@@ -250,16 +263,23 @@ export default function UtilisateursPage() {
   }
 
   const activeCount = users.filter((u) => u.is_active !== false).length;
+  const adminCount = users.filter((u) => u.role === "admin").length;
+  const commercialCount = users.filter((u) => u.role === "commercial").length;
+  const projectCount = users.filter((u) => u.role === "charge_projet").length;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="p-4 sm:p-6 md:p-8">
+    <div className="min-h-full bg-bth-canvas px-4 py-5 sm:px-6 md:px-8 md:py-8">
 
       {/* ── Page Header ── */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Gestion des utilisateurs</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <div className="flex items-center gap-2 text-[10px] font-bold tracking-[0.28em] uppercase text-bth-gold-600 mb-2">
+            <span className="h-px w-7 bg-bth-gold-500" />
+            Administration
+          </div>
+          <h1 className="font-display text-[32px] leading-[1.05] font-semibold text-bth-n-900 md:text-[40px]">Gestion des utilisateurs</h1>
+          <p className="text-sm text-bth-n-500 mt-2">
             {loading ? "…" : `${activeCount} utilisateur${activeCount !== 1 ? "s" : ""} actif${activeCount !== 1 ? "s" : ""} · ${users.length} au total`}
           </p>
         </div>
@@ -267,7 +287,7 @@ export default function UtilisateursPage() {
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => { setInviteForm({ full_name: "", email: "", role: "" }); setInviteModal(true); }}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-white cursor-pointer flex-shrink-0"
+          className="flex h-11 items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold text-white cursor-pointer flex-shrink-0 shadow-[0_14px_32px_rgba(26,46,30,.18)] bth-focus"
           style={{ backgroundColor: "#1a2e1e" }}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -279,9 +299,24 @@ export default function UtilisateursPage() {
       </div>
 
       {/* ── Users Table ── */}
+      {!loading && (
+        <div className="grid grid-cols-1 gap-3 mb-5 sm:grid-cols-3">
+          {[
+            { label: "Administrateurs", value: adminCount, tone: "text-bth-green-800", bg: "bg-white" },
+            { label: "Commerciaux", value: commercialCount, tone: "text-bth-gold-700", bg: "bg-bth-gold-50" },
+            { label: "Chargés projet", value: projectCount, tone: "text-[#2f6689]", bg: "bg-[#eef5f8]" },
+          ].map((item) => (
+            <div key={item.label} className={`${item.bg} rounded-2xl border border-bth-hairline px-4 py-3 shadow-[var(--bth-shadow-sm)]`}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-bth-n-400">{item.label}</p>
+              <p className={`mt-1 text-2xl font-semibold ${item.tone}`}>{item.value}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
       {loading ? (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="px-6 py-3 bg-[#F4F6F7] border-b border-gray-100 h-12 animate-pulse" />
+        <div className="bg-white rounded-2xl border border-bth-hairline shadow-[var(--bth-shadow-sm)] overflow-hidden">
+          <div className="px-6 py-3 bg-bth-n-100 border-b border-bth-hairline h-12 animate-pulse" />
           {[1, 2, 3].map((i) => (
             <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-gray-50">
               <div className="w-9 h-9 rounded-full bg-gray-100 animate-pulse flex-shrink-0" />
@@ -296,27 +331,27 @@ export default function UtilisateursPage() {
         </div>
       ) : users.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          className="bg-white rounded-2xl border border-bth-hairline shadow-[var(--bth-shadow-sm)] p-16 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-bth-n-100 text-bth-n-500 flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
                 d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </div>
-          <p className="text-gray-500 text-sm">Aucun utilisateur trouvé</p>
+          <p className="text-bth-n-500 text-sm">Aucun utilisateur trouvé</p>
         </motion.div>
       ) : (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-visible"
+          className="bg-white rounded-2xl border border-bth-hairline shadow-[0_18px_46px_rgba(26,46,30,.07)] overflow-visible"
         >
           {/* Table Header */}
-          <div className="hidden md:grid md:grid-cols-[2.5fr_2fr_1.5fr_110px_52px] gap-0 px-6 py-3 bg-[#F4F6F7] border-b border-gray-100 rounded-t-2xl">
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Utilisateur</span>
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</span>
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Rôle</span>
-            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Statut</span>
+          <div className="hidden md:grid md:grid-cols-[2.5fr_2fr_1.5fr_120px_52px] gap-0 px-6 py-3 bg-bth-n-100 border-b border-bth-hairline rounded-t-2xl">
+            <span className="text-[11px] font-semibold text-bth-n-500 uppercase tracking-[0.12em]">Utilisateur</span>
+            <span className="text-[11px] font-semibold text-bth-n-500 uppercase tracking-[0.12em]">Email</span>
+            <span className="text-[11px] font-semibold text-bth-n-500 uppercase tracking-[0.12em]">Rôle</span>
+            <span className="text-[11px] font-semibold text-bth-n-500 uppercase tracking-[0.12em]">Statut</span>
             <span />
           </div>
 
@@ -334,20 +369,20 @@ export default function UtilisateursPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04, duration: 0.2 }}
-                  className="group border-b border-gray-50 last:border-0"
+                  className="group border-b border-bth-hairline last:border-0"
                 >
                   {/* Desktop row */}
-                  <div className="hidden md:grid md:grid-cols-[2.5fr_2fr_1.5fr_110px_52px] gap-0 items-center px-6 py-4 hover:bg-gray-50/50 transition-colors">
+                  <div className="hidden md:grid md:grid-cols-[2.5fr_2fr_1.5fr_120px_52px] gap-0 items-center px-6 py-4 hover:bg-bth-n-50 transition-colors">
 
                     {/* Avatar + Name */}
                     <div className="flex items-center gap-3 min-w-0 pr-4">
                       <UserAvatar user={u} />
                       <div className="min-w-0">
-                        <p className="font-medium text-sm text-gray-900 truncate">
-                          {u.full_name || "—"}
+                        <p className="font-semibold text-sm text-bth-n-900 truncate">
+                          {userDisplayName(u)}
                         </p>
                         {isCurrentUser && (
-                          <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-1.5 py-0.5 font-medium">
+                          <span className="text-xs text-bth-n-500 bg-bth-n-100 rounded-full px-1.5 py-0.5 font-medium">
                             Votre compte
                           </span>
                         )}
@@ -356,7 +391,7 @@ export default function UtilisateursPage() {
 
                     {/* Email */}
                     <div className="min-w-0 pr-4">
-                      <p className="text-sm text-gray-500 truncate">{u.email || "—"}</p>
+                      <p className="text-sm text-bth-n-500 truncate">{u.email || "—"}</p>
                     </div>
 
                     {/* Role — inline edit or badge */}
@@ -367,7 +402,7 @@ export default function UtilisateursPage() {
                             <select
                               value={editingRoleValue}
                               onChange={(e) => setEditingRoleValue(e.target.value as UserRole)}
-                              className="appearance-none pl-2.5 pr-7 py-1.5 border border-gray-300 rounded-lg text-xs text-gray-700 bg-white outline-none focus:border-[#1a2e1e] cursor-pointer"
+                              className="appearance-none pl-2.5 pr-7 py-1.5 border border-bth-hairline-strong rounded-full text-xs text-bth-n-700 bg-white outline-none focus:border-[#1a2e1e] cursor-pointer"
                             >
                               <option value="admin">Administrateur</option>
                               <option value="charge_projet">Chargé de projet</option>
@@ -382,7 +417,7 @@ export default function UtilisateursPage() {
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleSaveRole(u.id)}
                             disabled={isSaving}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white disabled:opacity-60 cursor-pointer"
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-semibold text-white disabled:opacity-60 cursor-pointer"
                             style={{ backgroundColor: "#1a2e1e" }}
                           >
                             {isSaving ? (
@@ -434,7 +469,7 @@ export default function UtilisateursPage() {
                       ) : (
                         <button
                           onClick={() => setMenuId(menuId === u.id ? null : u.id)}
-                          className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
+                          className="w-8 h-8 flex items-center justify-center rounded-full text-bth-n-500 hover:text-bth-n-900 hover:bg-bth-n-100 transition-colors opacity-0 group-hover:opacity-100 cursor-pointer"
                         >
                           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
@@ -499,15 +534,18 @@ export default function UtilisateursPage() {
                     <UserAvatar user={u} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-medium text-sm text-gray-900 truncate">
-                          {u.full_name || u.email || "—"}
+                        <p className="font-semibold text-sm text-bth-n-900 truncate">
+                          {userDisplayName(u)}
                         </p>
                         {isCurrentUser && (
-                          <span className="text-xs text-gray-400 bg-gray-100 rounded-full px-1.5 py-0.5">
+                          <span className="text-xs text-bth-n-500 bg-bth-n-100 rounded-full px-1.5 py-0.5">
                             Vous
                           </span>
                         )}
                       </div>
+                      {u.email && (
+                        <p className="mt-0.5 truncate text-xs text-bth-n-500">{u.email}</p>
+                      )}
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <RoleBadge role={u.role} />
                         <StatusBadge isActive={u.is_active} />
@@ -517,7 +555,7 @@ export default function UtilisateursPage() {
                       <div className="relative flex-shrink-0" ref={menuId === u.id ? menuRef : undefined}>
                         <button
                           onClick={() => setMenuId(menuId === u.id ? null : u.id)}
-                          className="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                          className="w-9 h-9 flex items-center justify-center rounded-full text-bth-n-500 hover:text-bth-n-900 hover:bg-bth-n-100 transition-colors cursor-pointer"
                         >
                           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                             <path d="M12 5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm0 5.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3z" />
@@ -573,7 +611,7 @@ export default function UtilisateursPage() {
                             <select
                               value={editingRoleValue}
                               onChange={(e) => setEditingRoleValue(e.target.value as UserRole)}
-                              className="appearance-none w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 bg-white outline-none focus:border-[#1a2e1e] cursor-pointer"
+                              className="appearance-none w-full pl-3 pr-8 py-2 border border-bth-hairline-strong rounded-full text-sm text-bth-n-700 bg-white outline-none focus:border-[#1a2e1e] cursor-pointer"
                             >
                               <option value="admin">Administrateur</option>
                               <option value="charge_projet">Chargé de projet</option>
@@ -587,13 +625,13 @@ export default function UtilisateursPage() {
                           <button
                             onClick={() => handleSaveRole(u.id)}
                             disabled={isSaving}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60 cursor-pointer"
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold text-white disabled:opacity-60 cursor-pointer"
                             style={{ backgroundColor: "#1a2e1e" }}
                           >
                             {isSaving ? "…" : "Enregistrer"}
                           </button>
                           <button onClick={() => setEditingRoleId(null)}
-                            className="px-3 py-2 rounded-lg text-sm text-gray-500 hover:bg-gray-200 cursor-pointer">
+                            className="px-3 py-2 rounded-full text-sm text-bth-n-500 hover:bg-bth-n-200 cursor-pointer">
                             Annuler
                           </button>
                         </div>
@@ -647,7 +685,7 @@ export default function UtilisateursPage() {
                 </div>
                 <button
                   onClick={() => { setInviteModal(false); setInviteError(null); }}
-                  className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-bth-n-500 hover:text-bth-n-900 hover:bg-bth-n-100 transition-colors cursor-pointer"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -744,7 +782,7 @@ export default function UtilisateursPage() {
                   disabled={inviteLoading}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-full text-sm font-semibold text-white disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
                   style={{ backgroundColor: "#1a2e1e" }}
                 >
                   {inviteLoading ? (

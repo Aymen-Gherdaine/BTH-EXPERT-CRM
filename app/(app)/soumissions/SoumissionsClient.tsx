@@ -9,16 +9,24 @@ import { formatMontant, formatDateFr } from "@/lib/utils";
 
 /* ── Scrollbar + skeleton ────────────────────────────────────── */
 const CSS = `
-  .sc { overflow-y:auto; scrollbar-width:thin; scrollbar-color:#e5e7eb transparent; }
+  .sc { overflow-y:auto; scrollbar-width:thin; scrollbar-color:#C9A96E #f5f0e8; }
   .sc::-webkit-scrollbar { width:4px; }
-  .sc::-webkit-scrollbar-thumb { background:#e5e7eb; border-radius:4px; }
+  .sc::-webkit-scrollbar-thumb { background:#C9A96E; border-radius:9999px; }
   @keyframes sk { 0%,100%{opacity:1} 50%{opacity:.4} }
   .sk { animation: sk 1.5s ease-in-out infinite; }
-  .card-hover { transition: transform 0.2s cubic-bezier(.4,0,.2,1), box-shadow 0.2s cubic-bezier(.4,0,.2,1), border-color 0.2s; }
-  .card-hover:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.10) !important; }
-  .row-hover { transition: background 0.1s; }
+  .card-hover { transition: transform 0.18s cubic-bezier(.2,0,0,1), box-shadow 0.18s cubic-bezier(.2,0,0,1), border-color 0.18s, background 0.18s; }
+  .card-hover:hover { transform: translateY(-1px); box-shadow: 0 14px 36px rgba(26,46,30,0.08) !important; }
+  .row-hover { transition: background 0.1s, box-shadow 0.1s; }
   .action-fade { opacity: 0; transition: opacity 0.15s; }
   tr:hover .action-fade, div:hover .action-fade { opacity: 1; }
+  .submission-table-scroll { overflow:auto; scrollbar-width:thin; scrollbar-color:#C9A96E #f5f0e8; }
+  .submission-table-scroll::-webkit-scrollbar { width:8px; height:8px; }
+  .submission-table-scroll::-webkit-scrollbar-track { background:#f5f0e8; }
+  .submission-table-scroll::-webkit-scrollbar-thumb { background:#C9A96E; border-radius:9999px; }
+  @media (max-width: 639px) {
+    .submission-card-grid { gap: 12px !important; padding: 14px 14px 18px !important; }
+    .submission-pager { padding: 10px 14px !important; }
+  }
 `;
 
 /* ── Breakpoint ─────────────────────────────────────────────── */
@@ -99,12 +107,12 @@ function StatusBadge({ st, sm = false }: { st: StatutSoumission; sm?: boolean })
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 5,
       padding: sm ? "2px 7px" : "3px 10px",
-      borderRadius: 5,
+      borderRadius: 9999,
       background: c.bgBadge,
       border: `1px solid ${c.border}`,
       color: c.textBadge,
       fontSize: sm ? 10.5 : 11.5, fontWeight: 600, whiteSpace: "nowrap",
-      letterSpacing: "0.01em",
+      letterSpacing: 0,
     }}>
       <span style={{ width: sm ? 5 : 6, height: sm ? 5 : 6, borderRadius: "50%", background: c.dot, flexShrink: 0 }} />
       {st}
@@ -127,7 +135,7 @@ function Avatar({ name, size = 32 }: { name: string; size?: number }) {
       background: avatarColor(name || "?"),
       display: "flex", alignItems: "center", justifyContent: "center",
       color: "white", fontWeight: 700, fontSize: Math.floor(size * 0.38),
-      flexShrink: 0, letterSpacing: "-0.5px",
+      flexShrink: 0, letterSpacing: 0,
     }}>
       {(name || "?")[0].toUpperCase()}
     </div>
@@ -224,9 +232,9 @@ function Pager({ page, total, perPage, onPage }: {
     <div style={{
       flexShrink: 0,
       display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "10px 24px", borderTop: "1.5px solid #e5e7eb",
-      background: "white",
-    }}>
+      padding: "10px 24px", borderTop: "1px solid #e8e2d8",
+      background: "#fffdfa",
+    }} className="submission-pager">
       <span style={{ fontSize: 12, color: "#6b7280" }}>
         <strong style={{ color: "#111827" }}>{from}–{to}</strong>
         {" "}sur{" "}
@@ -235,7 +243,7 @@ function Pager({ page, total, perPage, onPage }: {
       <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
         <motion.button whileTap={{ scale: 0.94 }}
           onClick={() => onPage(p => Math.max(1, p - 1))} disabled={page <= 1}
-          style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #e5e7eb", background: "white", display: "flex", alignItems: "center", justifyContent: "center", color: page <= 1 ? "#d1d5db" : "#374151", cursor: page <= 1 ? "default" : "pointer" }}
+          style={{ width: 32, height: 32, borderRadius: 9999, border: "1px solid #e8e2d8", background: "white", display: "flex", alignItems: "center", justifyContent: "center", color: page <= 1 ? "#d0c9be" : "#1a2e1e", cursor: page <= 1 ? "default" : "pointer" }}
         >
           <Ic d={I.chevL} z={13} />
         </motion.button>
@@ -244,7 +252,7 @@ function Pager({ page, total, perPage, onPage }: {
         </span>
         <motion.button whileTap={{ scale: 0.94 }}
           onClick={() => onPage(p => Math.min(pages, p + 1))} disabled={page >= pages}
-          style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #e5e7eb", background: "white", display: "flex", alignItems: "center", justifyContent: "center", color: page >= pages ? "#d1d5db" : "#374151", cursor: page >= pages ? "default" : "pointer" }}
+          style={{ width: 32, height: 32, borderRadius: 9999, border: "1px solid #e8e2d8", background: "white", display: "flex", alignItems: "center", justifyContent: "center", color: page >= pages ? "#d0c9be" : "#1a2e1e", cursor: page >= pages ? "default" : "pointer" }}
         >
           <Ic d={I.chevR} z={13} />
         </motion.button>
@@ -270,13 +278,13 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
       transition={{ delay: idx * 0.05, duration: 0.26, ease: [0.4, 0, 0.2, 1] }}
     >
       <div
-        className="card-hover"
+        className="card-hover submission-card"
         onClick={onClick}
         style={{
-          background: isActive ? "#edf5ee" : "white",
-          borderRadius: 16,
-          border: `1px solid ${isActive ? "#1a2e1e30" : "rgba(0,0,0,0.07)"}`,
-          boxShadow: isActive ? "0 8px 32px rgba(0,0,0,0.10)" : "0 1px 8px rgba(0,0,0,0.04)",
+          background: isActive ? "#f2f7f3" : "linear-gradient(180deg, #fffdfa 0%, #ffffff 100%)",
+          borderRadius: 8,
+          border: `1px solid ${isActive ? "rgba(26,46,30,.32)" : "#e8e2d8"}`,
+          boxShadow: isActive ? "0 14px 34px rgba(26,46,30,0.10)" : "0 8px 24px rgba(26,46,30,0.05)",
           cursor: "pointer",
           overflow: "hidden",
           display: "flex", flexDirection: "column",
@@ -284,17 +292,17 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
         }}
       >
         {/* Top accent bar */}
-        <div style={{ height: 4, background: c.accent, flexShrink: 0 }} />
+        <div style={{ height: 3, background: c.accent, flexShrink: 0 }} />
 
         {/* Body */}
-        <div style={{ padding: "20px 22px 22px", flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "16px", flex: 1, display: "flex", flexDirection: "column" }}>
 
           {/* Badge + Ref */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 12 }}>
             <StatusBadge st={o.statut} />
             <span style={{
               fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-              fontSize: 10.5, color: "#9ca3af", letterSpacing: "0.07em",
+              fontSize: 10.5, color: "#887f74", letterSpacing: 0,
             }}>
               {o.numero_offre}
             </span>
@@ -302,8 +310,8 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
 
           {/* Titre */}
           <h3 style={{
-            fontSize: 16, fontWeight: 700, color: "#111827",
-            letterSpacing: "-0.3px", lineHeight: 1.35, marginBottom: 8,
+            fontSize: 15, fontWeight: 700, color: "#101c12",
+            letterSpacing: 0, lineHeight: 1.35, marginBottom: 8,
           }}>
             {o.titre_projet}
           </h3>
@@ -311,7 +319,7 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
           {/* Description */}
           {o.description_projet && (
             <p style={{
-              fontSize: 13, color: "#6b7280", lineHeight: 1.55, marginBottom: 14,
+              fontSize: 12.5, color: "#635c54", lineHeight: 1.55, marginBottom: 12,
               display: "-webkit-box",
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
@@ -323,10 +331,10 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
 
           {/* Secteur tag */}
           {o.secteur_activite && (
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 14 }}>
               <span style={{
-                display: "inline-block", padding: "2px 9px", borderRadius: 6,
-                background: "#f3f4f6", color: "#6b7280",
+                display: "inline-block", padding: "3px 10px", borderRadius: 9999,
+                background: "#f5f0e8", color: "#635c54",
                 fontSize: 11, fontWeight: 500,
               }}>
                 {o.secteur_activite}
@@ -355,7 +363,7 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
                 <div style={{ display: "flex", alignItems: "baseline", gap: 3, justifyContent: "flex-end" }}>
                   <span style={{
                     fontVariantNumeric: "tabular-nums", fontSize: 16, fontWeight: 800,
-                    color: "#111827", letterSpacing: "-0.5px",
+                    color: "#101c12", letterSpacing: 0,
                   }}>
                     {fmtInt(o.total_ttc)}
                   </span>
@@ -372,12 +380,12 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
 
           {/* Progress bar */}
           {pct > 0 && (
-            <div style={{ height: 4, borderRadius: 4, background: "#f0f0ee", overflow: "hidden" }}>
+            <div style={{ height: 5, borderRadius: 9999, background: "#f5f0e8", overflow: "hidden" }}>
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${pct}%` }}
                 transition={{ delay: idx * 0.05 + 0.3, duration: 0.6, ease: "easeOut" }}
-                style={{ height: "100%", borderRadius: 4, background: c.accent }}
+                style={{ height: "100%", borderRadius: 9999, background: c.accent }}
               />
             </div>
           )}
@@ -392,9 +400,9 @@ function CardGrid({ items, isAdmin, onOpen, selId, px }: {
   onOpen: (o: SoumissionView) => void; selId: string | null; px: number;
 }) {
   return (
-    <div style={{
+    <div className="submission-card-grid" style={{
       display: "grid",
-      gridTemplateColumns: "repeat(auto-fill, minmax(min(300px, 100%), 1fr))",
+      gridTemplateColumns: "repeat(auto-fill, minmax(min(320px, 100%), 1fr))",
       gap: 16,
       padding: `20px ${px}px 28px`,
       alignItems: "start",
@@ -427,15 +435,15 @@ function PremiumTableRow({
   const [hov, setHov] = useState(false);
   const pct = o.total_ttc > 0 ? Math.min(100, ((o.versement_recu ?? 0) / o.total_ttc) * 100) : 0;
   const highlighted = hov || isActive || isSelected;
-  const D = "1px solid #f0f2f5";
+  const D = "1px solid #eee7dc";
 
   const bg = isActive
-    ? "#f0fdf4"
+    ? "#f2f7f3"
     : isSelected
-    ? "#f7fef9"
+    ? "#f7fbf8"
     : hov
-    ? "#fafcfb"
-    : "white";
+    ? "#fffdfa"
+    : "#ffffff";
 
   return (
     <motion.div
@@ -447,10 +455,10 @@ function PremiumTableRow({
       onClick={onClick}
       style={{
         display: "grid", gridTemplateColumns: GRID,
-        minHeight: 60, alignItems: "stretch",
-        borderBottom: "1px solid #f1f5f9",
+        minHeight: 66, alignItems: "stretch",
+        borderBottom: "1px solid #f1ece4",
         cursor: "pointer", background: bg,
-        boxShadow: highlighted ? "inset 3px 0 0 #1a2e1e" : "inset 3px 0 0 transparent",
+        boxShadow: highlighted ? "inset 3px 0 0 #1a2e1e, 0 10px 22px rgba(26,46,30,0.04)" : "inset 3px 0 0 transparent",
         transition: "background 0.12s, box-shadow 0.12s",
       }}
     >
@@ -460,8 +468,8 @@ function PremiumTableRow({
         onClick={e => { e.stopPropagation(); onToggle(o.id); }}
       >
         <div style={{
-          width: 16, height: 16, borderRadius: 4,
-          border: isSelected ? "none" : `1.5px solid ${hov ? "#9ca3af" : "#d1d5db"}`,
+          width: 16, height: 16, borderRadius: 9999,
+          border: isSelected ? "none" : `1.5px solid ${hov ? "#887f74" : "#d0c9be"}`,
           background: isSelected ? "#1a2e1e" : "transparent",
           display: "flex", alignItems: "center", justifyContent: "center",
           transition: "all 0.12s",
@@ -472,10 +480,10 @@ function PremiumTableRow({
 
       {/* Ref + date */}
       <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 4, paddingRight: 8, borderRight: D }}>
-        <p style={{ fontSize: 11, fontWeight: 600, color: "#374151", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", letterSpacing: "0.04em" }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: "#1a2e1e", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", letterSpacing: 0 }}>
           {o.numero_offre}
         </p>
-        <p style={{ fontSize: 10.5, color: "#9ca3af", marginTop: 2, fontWeight: 400 }}>
+        <p style={{ fontSize: 10.5, color: "#887f74", marginTop: 2, fontWeight: 400 }}>
           {formatDateFr(o.date_offre)}
         </p>
       </div>
@@ -485,13 +493,13 @@ function PremiumTableRow({
         <Avatar name={o._cn} size={28} />
         <div style={{ minWidth: 0 }}>
           <p style={{
-            fontSize: 13, fontWeight: 600, color: "#111827",
+            fontSize: 13, fontWeight: 700, color: "#101c12",
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>
             {o._cn}
           </p>
           <p style={{
-            fontSize: 10.5, color: "#9ca3af", marginTop: 1,
+            fontSize: 10.5, color: "#887f74", marginTop: 1,
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>
             {o._contact}
@@ -501,11 +509,11 @@ function PremiumTableRow({
 
       {/* Titre + secteur */}
       <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 4, paddingRight: 16, minWidth: 0, borderRight: D }}>
-        <p style={{ fontSize: 13, color: "#111827", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <p style={{ fontSize: 13, color: "#101c12", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {o.titre_projet}
         </p>
         {o.secteur_activite && (
-          <p style={{ fontSize: 10.5, color: "#9ca3af", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <p style={{ fontSize: 10.5, color: "#887f74", marginTop: 1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {o.secteur_activite}
           </p>
         )}
@@ -523,7 +531,7 @@ function PremiumTableRow({
             {o.delai_jours > 0 && (
               <span style={{ display: "inline-flex", alignItems: "baseline", gap: 3 }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: "#111827", fontVariantNumeric: "tabular-nums" }}>{o.delai_jours}</span>
-                <span style={{ fontSize: 10.5, fontWeight: 500, color: "#9ca3af" }}>jours</span>
+                <span style={{ fontSize: 10.5, fontWeight: 500, color: "#887f74" }}>jours</span>
               </span>
             )}
           </div>
@@ -535,20 +543,20 @@ function PremiumTableRow({
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "flex-end", gap: 2 }}>
                   <span style={{
                     fontVariantNumeric: "tabular-nums", fontSize: 14, fontWeight: 700,
-                    color: "#111827", letterSpacing: "-0.4px",
+                    color: "#101c12", letterSpacing: 0,
                   }}>
                     {fmtInt(o.total_ttc)}
                   </span>
                   <span style={{ fontSize: 9.5, color: "#9ca3af", fontWeight: 500 }}>DZD</span>
                 </div>
                 {pct > 0 && (
-                  <div style={{ marginTop: 4, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
-                    <div style={{ height: 2, borderRadius: 2, background: "#e2e8f0", overflow: "hidden", width: 60 }}>
+                  <div style={{ marginTop: 5, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
+                    <div style={{ height: 3, borderRadius: 9999, background: "#f5f0e8", overflow: "hidden", width: 68 }}>
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
                         transition={{ delay: idx * 0.02 + 0.25, duration: 0.5, ease: "easeOut" }}
-                        style={{ height: "100%", borderRadius: 2, background: "#22c55e" }}
+                        style={{ height: "100%", borderRadius: 9999, background: "#3a7a50" }}
                       />
                     </div>
                     <span style={{ fontSize: 9.5, fontWeight: 600, color: "#15803d", fontVariantNumeric: "tabular-nums" }}>
@@ -572,8 +580,8 @@ function PremiumTableRow({
       }}>
         <Link href={`/soumissions/${o.id}`} onClick={e => e.stopPropagation()}>
           <span title="Ouvrir" style={{
-            width: 28, height: 28, borderRadius: 7,
-            background: "#f8fafc", border: "1px solid #e2e8f0",
+            width: 30, height: 30, borderRadius: 9999,
+            background: "#fffdfa", border: "1px solid #e8e2d8",
             display: "flex", alignItems: "center", justifyContent: "center",
             color: "#374151", cursor: "pointer",
           }}>
@@ -581,15 +589,15 @@ function PremiumTableRow({
           </span>
         </Link>
         <button title="Dupliquer" onClick={e => { e.stopPropagation(); onDuplicate(o); }} style={{
-          width: 28, height: 28, borderRadius: 7,
-          background: "#f8fafc", border: "1px solid #e2e8f0",
+          width: 30, height: 30, borderRadius: 9999,
+          background: "#fffdfa", border: "1px solid #e8e2d8",
           display: "flex", alignItems: "center", justifyContent: "center",
           color: "#374151", cursor: "pointer",
         }}>
           <Ic d={I.copy} z={13} />
         </button>
         <button title="Supprimer" onClick={e => { e.stopPropagation(); onDelete(o); }} style={{
-          width: 28, height: 28, borderRadius: 7,
+          width: 30, height: 30, borderRadius: 9999,
           background: "#fff1f2", border: "1px solid #fecdd3",
           display: "flex", alignItems: "center", justifyContent: "center",
           color: "#e11d48", cursor: "pointer",
@@ -631,7 +639,7 @@ function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle, onDup
 
   const totalRow = sorted.reduce((s, o) => s + o.total_ttc, 0);
 
-  const HD = "1px solid #eaecef"; // header divider
+  const HD = "1px solid #e8e2d8"; // header divider
 
   function TH({ id, label, align = "left" }: { id?: SortCol; label: string; align?: string }) {
     const active = sortCol === id;
@@ -643,8 +651,8 @@ function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle, onDup
         userSelect: "none",
       }}>
         <span style={{
-          fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
-          color: active ? "#1a2e1e" : "#9ca3af",
+          fontSize: 10.5, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase",
+          color: active ? "#1a2e1e" : "#887f74",
           transition: "color 0.15s",
         }}>
           {label}
@@ -661,9 +669,9 @@ function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle, onDup
       {/* Sticky header — premium light */}
       <div style={{
         display: "grid", gridTemplateColumns: GRID,
-        height: 44, alignItems: "stretch",
-        background: "#fafafa",
-        borderBottom: "1.5px solid #e5e7eb",
+        height: 48, alignItems: "stretch",
+        background: "#f5f0e8",
+        borderBottom: "1px solid #e8e2d8",
         position: "sticky", top: 0, zIndex: 5, flexShrink: 0,
       }}>
         <div style={{ borderRight: HD }} />
@@ -681,7 +689,7 @@ function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle, onDup
       </div>
 
       {/* Rows */}
-      <div style={{ flex: 1, overflowY: "auto" }}>
+      <div className="submission-table-scroll" style={{ flex: 1, overflowY: "auto" }}>
         {sorted.map((o, idx) => (
           <PremiumTableRow
             key={o.id} o={o} isAdmin={isAdmin} onClick={() => onOpen(o)}
@@ -697,8 +705,8 @@ function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle, onDup
         display: "grid",
         gridTemplateColumns: isAdmin ? "1fr auto 1fr" : "auto 1fr",
         alignItems: "center", gap: 12,
-        borderTop: "1.5px solid #e5e7eb",
-        background: "#fafafa", flexShrink: 0,
+        borderTop: "1px solid #e8e2d8",
+        background: "#fffdfa", flexShrink: 0,
         padding: "0 16px", height: 48,
       }}>
         {/* Count */}
@@ -714,9 +722,9 @@ function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle, onDup
             onClick={() => onPage(p => Math.max(1, p - 1))}
             disabled={page <= 1}
             style={{
-              width: 28, height: 28, borderRadius: 6, border: "1px solid #e5e7eb",
+              width: 32, height: 32, borderRadius: 9999, border: "1px solid #e8e2d8",
               background: "white", display: "flex", alignItems: "center", justifyContent: "center",
-              color: page <= 1 ? "#d1d5db" : "#374151", cursor: page <= 1 ? "default" : "pointer",
+              color: page <= 1 ? "#d0c9be" : "#1a2e1e", cursor: page <= 1 ? "default" : "pointer",
             }}
           >
             <Ic d={I.chevL} z={13} />
@@ -729,9 +737,9 @@ function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle, onDup
             onClick={() => onPage(p => Math.min(Math.max(1, Math.ceil(total / perPage)), p + 1))}
             disabled={page >= Math.max(1, Math.ceil(total / perPage))}
             style={{
-              width: 28, height: 28, borderRadius: 6, border: "1px solid #e5e7eb",
+              width: 32, height: 32, borderRadius: 9999, border: "1px solid #e8e2d8",
               background: "white", display: "flex", alignItems: "center", justifyContent: "center",
-              color: page >= Math.max(1, Math.ceil(total / perPage)) ? "#d1d5db" : "#374151",
+              color: page >= Math.max(1, Math.ceil(total / perPage)) ? "#d0c9be" : "#1a2e1e",
               cursor: page >= Math.max(1, Math.ceil(total / perPage)) ? "default" : "pointer",
             }}
           >
@@ -746,7 +754,7 @@ function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle, onDup
               Total TTC
             </span>
             <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-              <span style={{ fontVariantNumeric: "tabular-nums", fontSize: 15, fontWeight: 700, color: "#111827", letterSpacing: "-0.4px" }}>
+              <span style={{ fontVariantNumeric: "tabular-nums", fontSize: 15, fontWeight: 700, color: "#111827", letterSpacing: 0 }}>
                 {fmtInt(totalRow)}
               </span>
               <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 500 }}>DZD</span>
@@ -791,7 +799,7 @@ function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, onDelet
                 <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: "#9ca3af", letterSpacing: "0.05em" }}>{o.numero_offre}</span>
                 <StatusBadge st={o.statut} sm />
               </div>
-              <p style={{ fontWeight: 700, fontSize: 17, color: "#111827", letterSpacing: "-0.4px", lineHeight: 1.3, marginBottom: 10 }}>
+              <p style={{ fontWeight: 700, fontSize: 17, color: "#111827", letterSpacing: 0, lineHeight: 1.3, marginBottom: 10 }}>
                 {o.titre_projet}
               </p>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1145,7 +1153,7 @@ export default function SoumissionsClient() {
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <h1 style={{
                 fontWeight: 800, fontSize: isDesktop ? 30 : 24, color: "#111827",
-                letterSpacing: "-0.9px", lineHeight: 1,
+                letterSpacing: 0, lineHeight: 1,
               }}>
                 Soumissions
               </h1>
@@ -1276,7 +1284,7 @@ export default function SoumissionsClient() {
               <div style={{ width: 64, height: 64, borderRadius: 20, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
                 <Ic d={I.file} z={32} s="#9ca3af" />
               </div>
-              <p style={{ fontWeight: 800, fontSize: 18, color: "#111827", marginBottom: 8, letterSpacing: "-0.4px" }}>Aucune soumission</p>
+              <p style={{ fontWeight: 800, fontSize: 18, color: "#111827", marginBottom: 8, letterSpacing: 0 }}>Aucune soumission</p>
               <p style={{ fontSize: 14, color: "#9ca3af", marginBottom: 24 }}>
                 {q || filtre ? "Aucun résultat pour ces critères." : "Créez votre première soumission."}
               </p>
@@ -1309,12 +1317,12 @@ export default function SoumissionsClient() {
                 /* Premium table */
                 <div style={{
                   flex: 1, display: "flex", flexDirection: "column", minHeight: 0,
-                  background: "white",
+                  background: "linear-gradient(180deg, #fffdfa 0%, #ffffff 100%)",
                   margin: "16px 32px 20px",
-                  borderRadius: 16,
-                  border: "1px solid #ededeb",
+                  borderRadius: 8,
+                  border: "1px solid #e8e2d8",
                   overflow: "hidden",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                  boxShadow: "0 18px 48px rgba(26,46,30,0.07)",
                 }}>
                   <PremiumTable
                     items={pageItems} isAdmin={isAdmin} onOpen={openDetail}

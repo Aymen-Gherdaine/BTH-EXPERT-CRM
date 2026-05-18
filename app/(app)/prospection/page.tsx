@@ -8,15 +8,345 @@ import { formatDateFr } from "@/lib/utils";
 
 /* ── global CSS ─────────────────────────────────────────────── */
 const CSS = `
-  .sc { overflow-y:auto; scrollbar-width:thin; scrollbar-color:#e5e7eb transparent; }
+  .prospection-shell {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.72) 0%, rgba(250,248,245,.96) 42%),
+      #faf8f5;
+  }
+  .prospection-header {
+    flex-shrink: 0;
+    padding: clamp(18px, 3vw, 28px) clamp(16px, 3vw, 32px) clamp(16px, 2vw, 22px);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfaf7 100%);
+    border-bottom: 1px solid #e8e2d8;
+  }
+  .prospection-header-inner {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+  }
+  .prospection-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: #a8874e;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .28em;
+    text-transform: uppercase;
+  }
+  .prospection-eyebrow::before {
+    content: "";
+    width: 26px;
+    height: 1px;
+    background: #C9A96E;
+  }
+  .prospection-title {
+    margin: 0;
+    color: #1a1714;
+    font-family: var(--font-display);
+    font-size: clamp(30px, 4vw, 42px);
+    font-weight: 600;
+    line-height: 1.05;
+    letter-spacing: 0;
+  }
+  .prospection-subtitle {
+    margin-top: 8px;
+    color: #887f74;
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  .prospection-urgent {
+    margin-left: 8px;
+    color: #c44a3a;
+    font-weight: 700;
+  }
+  .prospection-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .prospection-btn {
+    height: 40px;
+    padding: 0 14px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--bth-dur-fast) var(--bth-ease-micro), border-color var(--bth-dur-fast) var(--bth-ease-micro), transform var(--bth-dur-instant) var(--bth-ease-micro);
+  }
+  .prospection-btn-secondary {
+    border: 1px solid #d0c9be;
+    background: #ffffff;
+    color: #635c54;
+  }
+  .prospection-btn-primary {
+    border: 1px solid #1a2e1e;
+    background: #1a2e1e;
+    color: #ffffff;
+    box-shadow: 0 12px 26px rgba(26,46,30,.18);
+  }
+  .prospection-controls {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: minmax(260px, 1fr) minmax(210px, 250px) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 14px clamp(16px, 3vw, 32px);
+    background: rgba(255,255,255,.82);
+    border-bottom: 1px solid #e8e2d8;
+    backdrop-filter: blur(12px);
+  }
+  .prospection-field,
+  .prospection-select {
+    height: 40px;
+    border-radius: 9999px;
+    border: 1px solid #d0c9be;
+    background: #ffffff;
+    color: #1a1714;
+    font-size: 14px;
+    outline: none;
+    transition: border-color var(--bth-dur-fast) var(--bth-ease-micro), box-shadow var(--bth-dur-fast) var(--bth-ease-micro), background-color var(--bth-dur-fast) var(--bth-ease-micro);
+  }
+  .prospection-field:focus,
+  .prospection-select:focus {
+    border-color: #1a2e1e;
+    box-shadow: 0 0 0 4px rgba(26,46,30,.10);
+  }
+  .prospection-tabs {
+    display: inline-grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid #e8e2d8;
+    border-radius: 9999px;
+    background: #f5f0e8;
+  }
+  .prospection-tab {
+    min-height: 32px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 9999px;
+    color: #635c54;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color var(--bth-dur-fast) var(--bth-ease-micro), color var(--bth-dur-fast) var(--bth-ease-micro);
+  }
+  .prospection-tab.is-active {
+    background: #1a2e1e;
+    color: #ffffff;
+    box-shadow: 0 6px 16px rgba(26,46,30,.14);
+  }
+  .sc { overflow-y:auto; scrollbar-width:thin; scrollbar-color:#d0c9be transparent; }
   .sc::-webkit-scrollbar { width:4px; }
-  .sc::-webkit-scrollbar-thumb { background:#e5e7eb; border-radius:4px; }
+  .sc::-webkit-scrollbar-thumb { background:#d0c9be; border-radius:4px; }
   @keyframes sk { 0%,100%{opacity:1} 50%{opacity:.4} }
   .sk { animation: sk 1.5s ease-in-out infinite; }
-  .hist-row { cursor:pointer; transition: background 0.1s, box-shadow 0.1s; }
-  .hist-row:hover { background:#fafcfb !important; box-shadow: inset 3px 0 0 #1a2e1e; }
-  .plan-card { cursor:pointer; transition: transform 0.18s cubic-bezier(.4,0,.2,1), box-shadow 0.18s; }
-  .plan-card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.09) !important; }
+  .hist-row { cursor:pointer; transition: background-color var(--bth-dur-fast) var(--bth-ease-micro), box-shadow var(--bth-dur-fast) var(--bth-ease-micro); }
+  .hist-row:hover { background:#fffdfa !important; box-shadow: inset 3px 0 0 #C9A96E; }
+  .history-shell {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    margin: clamp(14px, 2vw, 22px) clamp(16px, 3vw, 32px) clamp(18px, 3vw, 28px);
+    background: #ffffff;
+    border-radius: 12px;
+    border: 1px solid #e8e2d8;
+    overflow: hidden;
+    box-shadow: 0 18px 46px rgba(26,46,30,.07);
+  }
+  .history-card-scroll { flex: 1; overflow: auto; }
+  .history-footer {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 0 20px;
+    height: 48px;
+    border-top: 1px solid #e8e2d8;
+    background: #fbfaf7;
+    flex-shrink: 0;
+  }
+  .history-count {
+    font-size: 12px;
+    color: #887f74;
+  }
+  .history-pager {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-self: center;
+  }
+  .history-page-button {
+    width: 30px;
+    height: 30px;
+    border-radius: 9999px;
+    border: 1px solid #e8e2d8;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color var(--bth-dur-fast) var(--bth-ease-micro), background-color var(--bth-dur-fast) var(--bth-ease-micro), transform var(--bth-dur-instant) var(--bth-ease-micro);
+  }
+  .history-page-label {
+    min-width: 80px;
+    text-align: center;
+    user-select: none;
+    font-size: 12px;
+    color: #2e2a26;
+    font-weight: 600;
+  }
+  .history-footer-spacer {
+    min-width: 1px;
+  }
+  .plan-card { cursor:pointer; transition: transform var(--bth-dur-normal) var(--bth-ease-out), box-shadow var(--bth-dur-normal) var(--bth-ease-out), border-color var(--bth-dur-fast) var(--bth-ease-micro); }
+  .plan-card:hover { transform: translateY(-2px); box-shadow: 0 16px 36px rgba(26,46,30,.10) !important; border-color:#d0c9be !important; }
+  .planning-scroll { flex: 1; overflow-y: auto; padding: clamp(16px, 3vw, 28px) clamp(16px, 3vw, 32px) 32px; }
+  .planning-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .planning-section {
+    margin-bottom: 0;
+    padding: 16px;
+    border: 1px solid #e8e2d8;
+    border-radius: 12px;
+    background: rgba(255,255,255,.78);
+    box-shadow: 0 10px 28px rgba(26,46,30,.045);
+  }
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 20px;
+    text-align: center;
+  }
+  @media (min-width: 1100px) {
+    .planning-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+  @media (max-width: 860px) {
+    .prospection-shell {
+      height: auto;
+      min-height: 100%;
+      display: block;
+    }
+    .prospection-header {
+      padding: 14px 14px 12px;
+    }
+    .prospection-header-inner { flex-direction: column; }
+    .prospection-eyebrow {
+      margin-bottom: 6px;
+      font-size: 9px;
+      gap: 8px;
+    }
+    .prospection-eyebrow::before { width: 22px; }
+    .prospection-title {
+      font-size: 28px;
+      line-height: 1.04;
+    }
+    .prospection-subtitle {
+      margin-top: 5px;
+      font-size: 13px;
+    }
+    .prospection-actions {
+      width: 100%;
+      display: grid;
+      grid-template-columns: minmax(86px, .34fr) minmax(0, 1fr);
+      gap: 8px;
+      margin-top: -2px;
+    }
+    .prospection-actions a, .prospection-actions button { flex: 1; }
+    .prospection-btn {
+      height: 36px;
+      padding: 0 12px;
+      font-size: 13px;
+    }
+    .prospection-btn-primary {
+      box-shadow: 0 8px 18px rgba(26,46,30,.16);
+    }
+    .prospection-controls {
+      grid-template-columns: 1fr;
+      gap: 8px;
+      padding: 12px 14px;
+      background: #faf8f5;
+      backdrop-filter: none;
+    }
+    .prospection-field,
+    .prospection-select {
+      height: 36px;
+      font-size: 13px;
+    }
+    .prospection-tabs { width: 100%; }
+    .prospection-tab { min-height: 34px; }
+    .history-shell {
+      flex: none;
+      min-height: 0;
+      margin: 12px 14px 18px;
+      overflow: visible;
+    }
+    .history-card-scroll {
+      flex: none;
+      overflow: visible;
+    }
+    .history-footer {
+      grid-template-columns: 1fr auto;
+      height: 46px;
+      padding: 0 14px;
+    }
+    .history-pager {
+      justify-self: end;
+    }
+    .history-footer-spacer {
+      display: none;
+    }
+    .planning-scroll {
+      flex: none;
+      overflow: visible;
+      padding: 12px 14px 86px;
+    }
+    .history-head { display: none !important; }
+    .history-card-scroll { padding: 10px; background: #faf8f5; }
+    .hist-row {
+      display: grid !important;
+      grid-template-columns: 42px minmax(0, 1fr);
+      gap: 0;
+      min-height: 0 !important;
+      margin-bottom: 10px;
+      border: 1px solid #e8e2d8;
+      border-radius: 12px;
+      background: #ffffff;
+      overflow: hidden;
+      box-shadow: 0 8px 22px rgba(26,46,30,.055);
+    }
+    .hist-row > div { border-right: 0 !important; border-bottom: 0 !important; }
+    .hist-icon { grid-row: span 4; align-items: flex-start !important; padding-top: 14px; background: #fbfaf7; }
+    .hist-enterprise { padding: 14px 14px 8px !important; }
+    .hist-sector, .hist-contact, .hist-date, .hist-result, .hist-action {
+      grid-column: 2;
+      padding: 4px 14px !important;
+      min-height: 0;
+    }
+    .hist-result { padding-top: 8px !important; }
+    .hist-action { padding-bottom: 14px !important; }
+  }
+  @media (max-width: 520px) {
+    .prospection-title { font-size: 27px; }
+    .prospection-actions { align-items: stretch; }
+    .prospection-btn { width: 100%; }
+    .prospection-tab { padding: 0 8px; font-size: 11.5px; }
+  }
 `;
 
 /* ── types ──────────────────────────────────────────────────── */
@@ -37,12 +367,12 @@ const RESULTAT_LABELS: Record<string, string> = {
 
 type RCfg = { bg: string; text: string; dot: string; border: string };
 const RCFG: Record<string, RCfg> = {
-  soumission_demandee:    { bg: "#f0fdf4", text: "#15803d", dot: "#22c55e", border: "#bbf7d0" },
-  rappel_planifie:        { bg: "#fff7ed", text: "#c2410c", dot: "#f97316", border: "#fed7aa" },
-  visite_expert_demandee: { bg: "#faf5ff", text: "#7c3aed", dot: "#a855f7", border: "#e9d5ff" },
-  pas_interesse:          { bg: "#fff1f2", text: "#be123c", dot: "#f43f5e", border: "#fecdd3" },
-  absent:                 { bg: "#fffbeb", text: "#92400e", dot: "#f59e0b", border: "#fde68a" },
-  autre:                  { bg: "#f8fafc", text: "#475569", dot: "#94a3b8", border: "#e2e8f0" },
+  soumission_demandee:    { bg: "#f2f7f3", text: "#1f4429", dot: "#3a7a50", border: "#c1d9c6" },
+  rappel_planifie:        { bg: "#fefaef", text: "#7c6238", dot: "#C9A96E", border: "#f3dfa0" },
+  visite_expert_demandee: { bg: "#eef5f8", text: "#2f6689", dot: "#3a7ca5", border: "#cbdde8" },
+  pas_interesse:          { bg: "#fff4f1", text: "#9c3c30", dot: "#c44a3a", border: "#efc8bf" },
+  absent:                 { bg: "#fbf4e8", text: "#7c6238", dot: "#a8874e", border: "#ead7b3" },
+  autre:                  { bg: "#f5f0e8", text: "#635c54", dot: "#887f74", border: "#d0c9be" },
 };
 
 const PAGE_SIZE = 15;
@@ -109,7 +439,7 @@ function ResultatBadge({ resultat, sm }: { resultat: string; sm?: boolean }) {
   );
 }
 
-const AV_COLORS = ["#1a2e1e", "#2d5a3d", "#1a3a4e", "#3d6b4f", "#4a3a1e", "#2a4a3e"];
+const AV_COLORS = ["#1a2e1e", "#1f4429", "#3a7a50", "#3a7ca5", "#7c6238", "#45403a"];
 function avColor(n: string) { return AV_COLORS[n.split("").reduce((a, c) => a + c.charCodeAt(0), 0) % AV_COLORS.length]; }
 function Avatar({ name, size = 30 }: { name: string; size?: number }) {
   return (
@@ -141,8 +471,8 @@ function ActionIcon({ r }: { r: string }) {
 
 /* ── HISTORY TABLE ──────────────────────────────────────────── */
 
-const D = "1px solid #f0f2f5";
-const GRID = "52px 200px 1fr 150px 120px 180px 165px";
+const D = "1px solid #eee8df";
+const GRID = "64px minmax(210px, .9fr) minmax(260px, 1.5fr) minmax(160px, .75fr) minmax(138px, .65fr) minmax(185px, .75fr) minmax(170px, .8fr)";
 
 function TH({ label, id, sortCol, sortDir, onSort, align = "left" }: {
   label: string; id?: SortCol; sortCol: SortCol; sortDir: SortDir;
@@ -161,7 +491,7 @@ function TH({ label, id, sortCol, sortDir, onSort, align = "left" }: {
     >
       <span style={{
         fontSize: 10.5, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase",
-        color: active ? "#1a2e1e" : "#9ca3af",
+        color: active ? "#1a2e1e" : "#887f74",
       }}>
         {label}
       </span>
@@ -188,65 +518,65 @@ function HistRow({ visite, prospect, refCode, idx }: {
       <Link href={`/prospection/${prospect.id}`} style={{ textDecoration: "none", display: "block" }}>
         <div
           className="hist-row"
-          style={{ display: "grid", gridTemplateColumns: GRID, minHeight: 58, alignItems: "stretch", borderBottom: "1px solid #f1f5f9" }}
+          style={{ display: "grid", gridTemplateColumns: GRID, minHeight: 66, alignItems: "stretch", borderBottom: "1px solid #eee8df" }}
         >
           {/* Icon */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", borderRight: D }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: cfg.bg, display: "flex", alignItems: "center", justifyContent: "center", color: cfg.text }}>
+          <div className="hist-icon" style={{ display: "flex", alignItems: "center", justifyContent: "center", borderRight: D }}>
+            <div style={{ width: 34, height: 34, borderRadius: 8, background: cfg.bg, border: `1px solid ${cfg.border}`, display: "flex", alignItems: "center", justifyContent: "center", color: cfg.text }}>
               <ActionIcon r={visite.resultat} />
             </div>
           </div>
 
           {/* Entreprise */}
-          <div style={{ display: "flex", alignItems: "center", gap: 9, paddingLeft: 12, paddingRight: 12, borderRight: D }}>
+          <div className="hist-enterprise" style={{ display: "flex", alignItems: "center", gap: 10, paddingLeft: 14, paddingRight: 14, borderRight: D }}>
             <Avatar name={prospect.entreprise} size={28} />
             <div style={{ minWidth: 0 }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              <p style={{ fontSize: 13.5, fontWeight: 700, color: "#1a1714", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {prospect.entreprise}
               </p>
-              <p style={{ fontSize: 10.5, color: "#9ca3af", fontFamily: "ui-monospace,monospace", letterSpacing: "0.04em" }}>
+              <p className="tnum" style={{ fontSize: 10.5, color: "#887f74", fontFamily: "ui-monospace,monospace", letterSpacing: "0.04em" }}>
                 {refCode}
               </p>
             </div>
           </div>
 
           {/* Secteur */}
-          <div style={{ display: "flex", alignItems: "center", paddingLeft: 12, paddingRight: 12, borderRight: D }}>
-            <p style={{ fontSize: 12.5, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div className="hist-sector" style={{ display: "flex", alignItems: "center", paddingLeft: 14, paddingRight: 14, borderRight: D }}>
+            <p style={{ fontSize: 13, color: "#635c54", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {prospect.secteur_activite}
             </p>
           </div>
 
           {/* Contact */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 12, paddingRight: 12, borderRight: D }}>
-            <p style={{ fontSize: 13, fontWeight: 500, color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <div className="hist-contact" style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 14, paddingRight: 14, borderRight: D }}>
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#2e2a26", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {prospect.nom_contact}
             </p>
             {prospect.poste_contact && (
-              <p style={{ fontSize: 10.5, color: "#9ca3af", marginTop: 1 }}>{prospect.poste_contact}</p>
+              <p style={{ fontSize: 11, color: "#887f74", marginTop: 1 }}>{prospect.poste_contact}</p>
             )}
           </div>
 
           {/* Date visite */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 12, borderRight: D }}>
-            <p style={{ fontSize: 12, fontWeight: 500, color: "#374151" }}>{formatDateFr(visite.date_visite)}</p>
-            <p style={{ fontSize: 10.5, color: "#9ca3af", marginTop: 1 }}>{fmt(visite.created_at)}</p>
+          <div className="hist-date" style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 14, paddingRight: 12, borderRight: D }}>
+            <p style={{ fontSize: 12.5, fontWeight: 600, color: "#2e2a26" }}>{formatDateFr(visite.date_visite)}</p>
+            <p className="tnum" style={{ fontSize: 10.5, color: "#887f74", marginTop: 1 }}>{fmt(visite.created_at)}</p>
           </div>
 
           {/* Résultat */}
-          <div style={{ display: "flex", alignItems: "center", paddingLeft: 12, borderRight: D }}>
+          <div className="hist-result" style={{ display: "flex", alignItems: "center", paddingLeft: 14, paddingRight: 12, borderRight: D }}>
             <ResultatBadge resultat={visite.resultat} sm />
           </div>
 
           {/* Prochaine action */}
-          <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 12, paddingRight: 16 }}>
+          <div className="hist-action" style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 14, paddingRight: 16 }}>
             {visite.date_prochaine_action ? (
               <>
-                <p style={{ fontSize: 12, fontWeight: 500, color: "#374151" }}>
+                <p style={{ fontSize: 12.5, fontWeight: 600, color: "#2e2a26" }}>
                   {formatDateFr(visite.date_prochaine_action)}
                 </p>
                 {visite.action_requise && (
-                  <p style={{ fontSize: 10.5, color: "#9ca3af", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <p style={{ fontSize: 10.5, color: "#887f74", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {visite.action_requise}
                   </p>
                 )}
@@ -302,14 +632,14 @@ function HistoryTable({
   const total = sorted.length;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const paged = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const HD = "1px solid #eaecef";
+  const HD = "1px solid #e8e2d8";
 
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
       {/* Sticky header */}
-      <div style={{
+      <div className="history-head" style={{
         display: "grid", gridTemplateColumns: GRID, height: 44, alignItems: "stretch",
-        background: "#fafafa", borderBottom: "1.5px solid #e5e7eb",
+        background: "#fbfaf7", borderBottom: "1px solid #e8e2d8",
         position: "sticky", top: 0, zIndex: 5, flexShrink: 0,
       }}>
         <div style={{ borderRight: HD }} />
@@ -334,9 +664,9 @@ function HistoryTable({
       </div>
 
       {/* Rows */}
-      <div className="sc" style={{ flex: 1, overflowY: "auto" }}>
+      <div className="sc history-card-scroll" style={{ flex: 1, overflowY: "auto" }}>
         {paged.length === 0 ? (
-          <div style={{ padding: "56px 24px", textAlign: "center", color: "#9ca3af", fontSize: 14 }}>
+          <div style={{ padding: "56px 24px", textAlign: "center", color: "#887f74", fontSize: 14 }}>
             Aucun résultat pour ces filtres
           </div>
         ) : (
@@ -353,34 +683,43 @@ function HistoryTable({
       </div>
 
       {/* Footer */}
-      <div style={{
-        display: "flex", alignItems: "center", justifyContent: "space-between",
-        padding: "0 20px", height: 48, borderTop: "1.5px solid #e5e7eb",
-        background: "#fafafa", flexShrink: 0,
-      }}>
-        <span style={{ fontSize: 12, color: "#9ca3af" }}>
-          <strong style={{ color: "#374151", fontWeight: 600 }}>{total}</strong>{" "}
+      <div className="history-footer">
+        <span className="history-count">
+          <strong style={{ color: "#2e2a26", fontWeight: 700 }}>{total}</strong>{" "}
           visite{total !== 1 ? "s" : ""}
         </span>
-        {pages > 1 && (
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <button
-              onClick={() => onPage(Math.max(1, page - 1))} disabled={page <= 1}
-              style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #e5e7eb", background: "white", display: "flex", alignItems: "center", justifyContent: "center", color: page <= 1 ? "#d1d5db" : "#374151", cursor: page <= 1 ? "default" : "pointer" }}
-            >
-              <svg width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
-            </button>
-            <span style={{ fontSize: 12, color: "#374151", fontWeight: 500, minWidth: 80, textAlign: "center", userSelect: "none" }}>
-              Page {page} / {pages}
-            </span>
-            <button
-              onClick={() => onPage(Math.min(pages, page + 1))} disabled={page >= pages}
-              style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #e5e7eb", background: "white", display: "flex", alignItems: "center", justifyContent: "center", color: page >= pages ? "#d1d5db" : "#374151", cursor: page >= pages ? "default" : "pointer" }}
-            >
-              <svg width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>
-            </button>
-          </div>
-        )}
+        <div className="history-pager">
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            onClick={() => onPage(Math.max(1, page - 1))}
+            disabled={page <= 1}
+            className="history-page-button bth-focus"
+            style={{
+              color: page <= 1 ? "#d0c9be" : "#45403a",
+              cursor: page <= 1 ? "default" : "pointer",
+              opacity: page <= 1 ? 0.65 : 1,
+            }}
+          >
+            <svg width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
+          </motion.button>
+          <span className="history-page-label">
+            Page {page} / {pages}
+          </span>
+          <motion.button
+            whileTap={{ scale: 0.94 }}
+            onClick={() => onPage(Math.min(pages, page + 1))}
+            disabled={page >= pages}
+            className="history-page-button bth-focus"
+            style={{
+              color: page >= pages ? "#d0c9be" : "#45403a",
+              cursor: page >= pages ? "default" : "pointer",
+              opacity: page >= pages ? 0.65 : 1,
+            }}
+          >
+            <svg width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>
+          </motion.button>
+        </div>
+        <span className="history-footer-spacer" aria-hidden="true" />
       </div>
     </div>
   );
@@ -397,13 +736,13 @@ function PlanningCard({ prospect, refCode, urgency, idx }: {
   const isOverdue = urgency === "retard";
 
   const timeEl = isOverdue ? (
-    <span style={{ fontSize: 11, fontWeight: 700, color: "#ef4444", background: "#fef2f2", padding: "2px 9px", borderRadius: 9999, border: "1px solid #fecaca" }}>
+    <span style={{ fontSize: 11, fontWeight: 700, color: "#9c3c30", background: "#fff4f1", padding: "2px 8px", borderRadius: 6, border: "1px solid #efc8bf" }}>
       ASAP
     </span>
   ) : urgency === "aujourd_hui" && lastV ? (
-    <span style={{ fontSize: 11, color: "#2563eb", fontWeight: 600 }}>{fmt(lastV.created_at)}</span>
+    <span className="tnum" style={{ fontSize: 11, color: "#3a7ca5", fontWeight: 700 }}>{fmt(lastV.created_at)}</span>
   ) : lastV?.date_prochaine_action ? (
-    <span style={{ fontSize: 11, color: "#6b7280" }}>
+    <span style={{ fontSize: 11, color: "#635c54" }}>
       {parseLocalDate(lastV.date_prochaine_action).toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}
     </span>
   ) : null;
@@ -418,20 +757,21 @@ function PlanningCard({ prospect, refCode, urgency, idx }: {
         <div
           className="plan-card"
           style={{
-            background: "white",
-            borderRadius: 14,
-            border: `1px solid ${isOverdue ? "#fecaca" : "#e5e7eb"}`,
-            padding: "14px 16px",
-            boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+            background: "linear-gradient(180deg, #ffffff 0%, #fffdfa 100%)",
+            borderRadius: 12,
+            border: `1px solid ${isOverdue ? "#efc8bf" : "#e8e2d8"}`,
+            padding: "16px",
+            boxShadow: "0 8px 22px rgba(26,46,30,0.055)",
           }}
         >
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
             {/* Icon */}
             <div style={{
-              width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-              background: isOverdue ? "#fef2f2" : cfg.bg,
+              width: 38, height: 38, borderRadius: 8, flexShrink: 0,
+              background: isOverdue ? "#fff4f1" : cfg.bg,
+              border: `1px solid ${isOverdue ? "#efc8bf" : cfg.border}`,
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: isOverdue ? "#ef4444" : cfg.text,
+              color: isOverdue ? "#9c3c30" : cfg.text,
             }}>
               <ActionIcon r={r} />
             </div>
@@ -442,10 +782,10 @@ function PlanningCard({ prospect, refCode, urgency, idx }: {
               <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>{prospect.entreprise}</span>
-                    <span style={{ fontSize: 10.5, color: "#9ca3af", fontFamily: "ui-monospace,monospace" }}>{refCode}</span>
+                    <span style={{ fontSize: 15, fontWeight: 700, color: "#1a1714" }}>{prospect.entreprise}</span>
+                    <span className="tnum" style={{ fontSize: 10.5, color: "#887f74", fontFamily: "ui-monospace,monospace" }}>{refCode}</span>
                   </div>
-                  <p style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{prospect.secteur_activite}</p>
+                  <p style={{ fontSize: 12.5, color: "#635c54", marginTop: 3 }}>{prospect.secteur_activite}</p>
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <ResultatBadge resultat={r} sm />
@@ -455,17 +795,17 @@ function PlanningCard({ prospect, refCode, urgency, idx }: {
 
               {/* Contact line */}
               <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8 }}>
-                <svg width={11} height={11} fill="none" stroke="#9ca3af" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+                <svg width={11} height={11} fill="none" stroke="#887f74" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
-                <span style={{ fontSize: 11.5, color: "#6b7280" }}>
-                  <strong style={{ color: "#374151" }}>{prospect.nom_contact}</strong>
+                <span style={{ fontSize: 12, color: "#635c54" }}>
+                  <strong style={{ color: "#2e2a26" }}>{prospect.nom_contact}</strong>
                   {prospect.poste_contact && <span style={{ color: "#9ca3af" }}> · {prospect.poste_contact}</span>}
                 </span>
                 {prospect.telephone && (
                   <>
                     <span style={{ color: "#d1d5db", fontSize: 10 }}>·</span>
-                    <span style={{ fontSize: 11, color: "#9ca3af" }}>{prospect.telephone}</span>
+                    <span className="tnum" style={{ fontSize: 11, color: "#887f74" }}>{prospect.telephone}</span>
                   </>
                 )}
               </div>
@@ -473,8 +813,8 @@ function PlanningCard({ prospect, refCode, urgency, idx }: {
               {/* Note / action requise */}
               {(lastV?.action_requise || lastV?.notes_visite) && (
                 <p style={{
-                  marginTop: 10, fontSize: 12, color: "#6b7280", fontStyle: "italic",
-                  lineHeight: 1.5, paddingLeft: 10, borderLeft: "2px solid #e5e7eb",
+                  marginTop: 12, fontSize: 12.5, color: "#635c54", fontStyle: "italic",
+                  lineHeight: 1.5, paddingLeft: 10, borderLeft: "2px solid #C9A96E",
                 }}>
                   &ldquo;{lastV.action_requise || lastV.notes_visite}&rdquo;
                 </p>
@@ -492,19 +832,19 @@ function PlanningSection({ title, prospects, prospectRefMap, urgency, dotColor, 
   urgency: Urgency; dotColor: string; emptyText: string;
 }) {
   return (
-    <div style={{ marginBottom: 24 }}>
+    <div className="planning-section">
       {/* Section header */}
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <div style={{ width: 8, height: 8, borderRadius: "50%", background: dotColor, flexShrink: 0 }} />
-        <span style={{ fontSize: 12, fontWeight: 700, color: "#374151" }}>{title}</span>
-        <div style={{ flex: 1, height: 1, background: "#f1f5f9" }} />
-        <span style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", background: "#f3f4f6", padding: "1px 8px", borderRadius: 9999 }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#2e2a26" }}>{title}</span>
+        <div style={{ flex: 1, height: 1, background: "#e8e2d8" }} />
+        <span style={{ fontSize: 11, fontWeight: 700, color: "#635c54", background: "#f5f0e8", padding: "2px 8px", borderRadius: 6 }}>
           {prospects.length}
         </span>
       </div>
 
       {prospects.length === 0 ? (
-        <p style={{ fontSize: 12, color: "#9ca3af", fontStyle: "italic", paddingLeft: 16 }}>{emptyText}</p>
+        <p style={{ fontSize: 12, color: "#887f74", fontStyle: "italic", paddingLeft: 16 }}>{emptyText}</p>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {prospects.map((p, i) => (
@@ -615,35 +955,33 @@ export default function ProspectionPage() {
   return (
     <>
       <style>{CSS}</style>
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#faf9f7" }}>
+      <div className="prospection-shell">
 
         {/* ── HEADER ── */}
-        <div style={{ background: "white", borderBottom: "1px solid #ededeb", padding: `20px ${px}px 16px`, flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 0 }}>
+        <div className="prospection-header">
+          <div className="prospection-header-inner">
             <div>
-              <h1 style={{ fontWeight: 800, fontSize: 26, color: "#111827", letterSpacing: "-0.8px", lineHeight: 1 }}>
+              <div className="prospection-eyebrow">Prospection</div>
+              <h1 className="prospection-title">
                 Journal d&rsquo;Activité
               </h1>
-              <p style={{ fontSize: 13, color: "#9ca3af", marginTop: 4 }}>
+              <p className="prospection-subtitle">
                 {loading ? "…" : `${prospects.length} prospect${prospects.length !== 1 ? "s" : ""} actif${prospects.length !== 1 ? "s" : ""}`}
                 {totalUrgent > 0 && (
-                  <span style={{ marginLeft: 6, color: "#ef4444", fontWeight: 600 }}>
+                  <span className="prospection-urgent">
                     · {totalUrgent} urgent{totalUrgent > 1 ? "s" : ""}
                   </span>
                 )}
               </p>
             </div>
 
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div className="prospection-actions">
               <motion.button
                 whileTap={{ scale: 0.96 }}
+                className="prospection-btn prospection-btn-secondary bth-focus"
                 onClick={async () => { setExporting(true); await exportProspects(); setExporting(false); }}
                 disabled={exporting}
                 style={{
-                  height: 36, padding: "0 14px", borderRadius: 9999,
-                  border: "1.5px solid #e5e7eb", background: "white",
-                  display: "flex", alignItems: "center", gap: 6,
-                  color: "#6b7280", fontWeight: 500, fontSize: 13, cursor: exporting ? "default" : "pointer",
                   opacity: exporting ? 0.6 : 1,
                 }}
               >
@@ -656,12 +994,7 @@ export default function ProspectionPage() {
               <Link href="/prospection/nouveau">
                 <motion.div
                   whileTap={{ scale: 0.96 }}
-                  style={{
-                    height: 36, padding: "0 16px", borderRadius: 9999,
-                    background: "#1a2e1e", display: "flex", alignItems: "center", gap: 6,
-                    color: "white", fontWeight: 600, fontSize: 13, cursor: "pointer",
-                    boxShadow: "0 2px 10px rgba(26,46,30,.20)", whiteSpace: "nowrap",
-                  }}
+                  className="prospection-btn prospection-btn-primary bth-focus"
                 >
                   <svg width={13} height={13} fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                     <path d="M12 5v14M5 12h14" />
@@ -674,29 +1007,19 @@ export default function ProspectionPage() {
         </div>
 
         {/* ── FILTER BAR ── */}
-        <div style={{
-          background: "white", borderBottom: "1px solid #ededeb",
-          padding: `10px ${px}px`,
-          display: "flex", alignItems: "center", gap: 10, flexShrink: 0, flexWrap: "wrap",
-        }}>
+        <div className="prospection-controls">
           {/* Search */}
-          <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
-            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", display: "flex", pointerEvents: "none" }}>
+          <div style={{ position: "relative" }}>
+            <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#887f74", display: "flex", pointerEvents: "none" }}>
               <svg width={14} height={14} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                 <path d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
               </svg>
             </span>
             <input
               type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher entreprise, contact, secteur…"
-              style={{
-                width: "100%", paddingLeft: 36, paddingRight: search ? 36 : 12, height: 36,
-                border: "1.5px solid #e5e7eb", borderRadius: 9999,
-                fontSize: 13, color: "#111827", background: "white", outline: "none",
-                transition: "border-color 0.15s",
-              }}
-              onFocus={e => (e.target.style.borderColor = "#1a2e1e")}
-              onBlur={e => (e.target.style.borderColor = "#e5e7eb")}
+              placeholder="Rechercher entreprise, contact, secteur..."
+              className="prospection-field"
+              style={{ width: "100%", paddingLeft: 36, paddingRight: search ? 36 : 12 }}
             />
             {search && (
               <button
@@ -715,12 +1038,12 @@ export default function ProspectionPage() {
             <select
               value={filterResultat}
               onChange={e => setFilterResultat(e.target.value)}
+              className="prospection-select bth-focus"
               style={{
-                height: 36, padding: "0 32px 0 14px", borderRadius: 9999,
-                border: `1.5px solid ${filterResultat ? "#1a2e1e" : "#e5e7eb"}`,
-                background: filterResultat ? "#edf5ee" : "white",
-                color: filterResultat ? "#1a2e1e" : "#6b7280",
-                fontWeight: 500, fontSize: 13, cursor: "pointer", outline: "none",
+                width: "100%", padding: "0 32px 0 14px",
+                background: filterResultat ? "#f2f7f3" : "white",
+                color: filterResultat ? "#1a2e1e" : "#635c54",
+                fontWeight: 600, cursor: "pointer",
                 appearance: "none",
               }}
             >
@@ -737,18 +1060,12 @@ export default function ProspectionPage() {
           </div>
 
           {/* Tabs — in filter bar */}
-          <div style={{ display: "flex", gap: 4, marginLeft: "auto" }}>
+          <div className="prospection-tabs">
             {([["planning", "Planning (À faire)"], ["tous", "Tous (Historique)"]] as [Tab, string][]).map(([t, lbl]) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                style={{
-                  height: 34, padding: "0 14px", borderRadius: 9999,
-                  background: tab === t ? "#1a2e1e" : "#f3f4f6",
-                  color: tab === t ? "white" : "#6b7280",
-                  fontWeight: 600, fontSize: 12.5, border: "none", cursor: "pointer",
-                  transition: "all 0.15s",
-                }}
+                className={`prospection-tab bth-focus${tab === t ? " is-active" : ""}`}
               >
                 {lbl}
                 {t === "planning" && totalUrgent > 0 && (
@@ -791,12 +1108,7 @@ export default function ProspectionPage() {
               )}
             </div>
           ) : (
-            <div style={{
-              flex: 1, display: "flex", flexDirection: "column", minHeight: 0,
-              margin: `16px ${px}px 20px`,
-              background: "white", borderRadius: 16, border: "1px solid #ededeb",
-              overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-            }}>
+            <div className="history-shell">
               <HistoryTable
                 entries={histEntries}
                 prospectRefMap={prospectRefMap}
@@ -824,39 +1136,39 @@ export default function ProspectionPage() {
               </Link>
             </div>
           ) : (
-            <div className="sc" style={{ flex: 1, overflowY: "auto", padding: `20px ${px}px 28px` }}>
+            <div className="sc planning-scroll">
 
               {planningGroups.retard.length > 0 && (
                 <AnimatePresence>
                   <motion.div
                     initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
-                    style={{ display: "flex", alignItems: "center", gap: 10, background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 12, padding: "10px 16px", marginBottom: 20 }}
+                    style={{ display: "flex", alignItems: "center", gap: 10, background: "#fff4f1", border: "1px solid #efc8bf", borderRadius: 12, padding: "12px 16px", marginBottom: 18 }}
                   >
                     <svg width={14} height={14} fill="none" stroke="#ef4444" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                       <path d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                     </svg>
-                    <p style={{ fontSize: 13, color: "#b91c1c" }}>
+                    <p style={{ fontSize: 13, color: "#9c3c30" }}>
                       <strong>{planningGroups.retard.length} prospect{planningGroups.retard.length > 1 ? "s" : ""} non traité{planningGroups.retard.length > 1 ? "s" : ""}</strong>
                       {" "}— date de relance dépassée
                     </p>
                   </motion.div>
                 </AnimatePresence>
               )}
-
+              <div className="planning-grid">
               <PlanningSection
-                title="Non traités — ASAP"
+                title="Non traités - ASAP"
                 prospects={planningGroups.retard}
                 prospectRefMap={prospectRefMap}
                 urgency="retard"
-                dotColor="#ef4444"
-                emptyText="Aucun prospect en retard ✓"
+                dotColor="#c44a3a"
+                emptyText="Aucun prospect en retard"
               />
               <PlanningSection
                 title="Aujourd'hui"
                 prospects={planningGroups.auj}
                 prospectRefMap={prospectRefMap}
                 urgency="aujourd_hui"
-                dotColor="#3b82f6"
+                dotColor="#3a7ca5"
                 emptyText="Aucune action prévue aujourd'hui"
               />
               <PlanningSection
@@ -864,7 +1176,7 @@ export default function ProspectionPage() {
                 prospects={planningGroups.sem}
                 prospectRefMap={prospectRefMap}
                 urgency="semaine"
-                dotColor="#9ca3af"
+                dotColor="#C9A96E"
                 emptyText="Aucune relance planifiée cette semaine"
               />
               <PlanningSection
@@ -872,9 +1184,10 @@ export default function ProspectionPage() {
                 prospects={planningGroups.rien}
                 prospectRefMap={prospectRefMap}
                 urgency="non_planifie"
-                dotColor="#d1d5db"
-                emptyText="Tous les prospects ont une relance planifiée ✓"
+                dotColor="#b0a898"
+                emptyText="Tous les prospects ont une relance planifiée"
               />
+              </div>
 
             </div>
           )

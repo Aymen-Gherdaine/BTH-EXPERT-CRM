@@ -34,12 +34,19 @@ function getDisplayName(user: User): string {
   return user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split("@")[0] ?? "Utilisateur";
 }
 
+type CurrentProfile = {
+  full_name?: string | null;
+  avatar_url?: string | null;
+  email?: string | null;
+};
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function Header() {
   const router = useRouter();
   const { setIsOpen: setSidebarOpen } = useSidebar();
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<CurrentProfile | null>(null);
   const [open, setOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
   const [scrolled, setScrolled] = useState(false);
@@ -48,6 +55,10 @@ export default function Header() {
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user));
+    fetch("/api/me")
+      .then(r => r.ok ? r.json() : null)
+      .then(json => setProfile(json))
+      .catch(() => {});
     fetch("/api/prospects/alerts")
       .then(r => r.json())
       .then(json => setAlertCount(json.count ?? 0))
@@ -77,8 +88,12 @@ export default function Header() {
     router.refresh();
   }
 
-  const initials = user ? getInitials(user) : "";
-  const name = user ? getDisplayName(user) : "";
+  const name = profile?.full_name || (user ? getDisplayName(user) : "");
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
+  const initials = name
+    ? name.trim().split(/\s+/).map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
+    : user ? getInitials(user) : "";
+  const email = profile?.email || user?.email || "";
 
   return (
     // Visible on mobile + tablet, hidden on desktop
@@ -130,9 +145,13 @@ export default function Header() {
           <button
             onClick={() => setOpen(v => !v)}
             className="w-8 h-8 rounded-full bg-bth-green-800 border-none flex items-center justify-center
-                       text-white font-semibold text-[12px] cursor-pointer bth-focus"
+                       text-white font-semibold text-[12px] cursor-pointer bth-focus overflow-hidden"
           >
-            {initials || <div className="w-3.5 h-3.5 rounded-full bg-white/30" />}
+            {avatarUrl ? (
+              <img src={avatarUrl} alt={name || "Utilisateur"} className="w-full h-full object-cover" />
+            ) : (
+              initials || <div className="w-3.5 h-3.5 rounded-full bg-white/30" />
+            )}
           </button>
 
           <AnimatePresence>
@@ -148,12 +167,16 @@ export default function Header() {
               >
                 {/* User info */}
                 <div className="flex items-center gap-[10px] px-4 py-3.5 border-b border-bth-hairline">
-                  <div className="w-8 h-8 rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0">
-                    {initials}
+                  <div className="w-8 h-8 rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0 overflow-hidden">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={name || "Utilisateur"} className="w-full h-full object-cover" />
+                    ) : (
+                      initials
+                    )}
                   </div>
                   <div className="min-w-0">
                     <div className="text-[13px] font-semibold text-bth-n-900 truncate">{name}</div>
-                    <div className="text-[11px] text-bth-n-400 truncate">{user?.email}</div>
+                    <div className="text-[11px] text-bth-n-400 truncate">{email}</div>
                   </div>
                 </div>
 

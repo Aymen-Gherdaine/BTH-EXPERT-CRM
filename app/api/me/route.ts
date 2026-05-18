@@ -26,12 +26,23 @@ export async function GET() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, full_name")
+    .select("role, full_name, avatar_url")
     .eq("id", user.id)
     .single();
 
   return NextResponse.json({
     role: profile?.role ?? "admin",
-    full_name: profile?.full_name ?? "",
+    full_name:
+      profile?.full_name ??
+      user.user_metadata?.full_name ??
+      user.user_metadata?.name ??
+      user.email?.split("@")[0] ??
+      "",
+    avatar_url:
+      profile?.avatar_url ??
+      user.user_metadata?.avatar_url ??
+      user.user_metadata?.picture ??
+      null,
+    email: user.email ?? null,
   });
 }

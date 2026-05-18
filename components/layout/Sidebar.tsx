@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -73,13 +72,20 @@ function getDisplayName(user: User): string {
   return user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split("@")[0] ?? "Utilisateur";
 }
 
+type CurrentProfile = {
+  full_name?: string | null;
+  avatar_url?: string | null;
+  email?: string | null;
+};
+
 // ─── SidebarInner ─────────────────────────────────────────────────────────────
 
 function SidebarInner({
-  role, user, onNavClick, width,
+  role, user, profile, onNavClick, width,
 }: {
   role: UserRole;
   user: User | null;
+  profile: CurrentProfile | null;
   onNavClick?: () => void;
   width?: number;
 }) {
@@ -89,9 +95,12 @@ function SidebarInner({
   const profileRef = useRef<HTMLDivElement>(null);
 
   const visible = NAV.filter(item => item.roles.includes(role));
-  const initials = user ? getInitials(user) : "";
-  const name = user ? getDisplayName(user) : "";
-  const avatarUrl: string | undefined = user?.user_metadata?.avatar_url;
+  const name = profile?.full_name || (user ? getDisplayName(user) : "");
+  const avatarUrl = profile?.avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
+  const email = profile?.email || user?.email || "";
+  const initials = name
+    ? name.trim().split(/\s+/).map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
+    : user ? getInitials(user) : "";
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -122,8 +131,8 @@ function SidebarInner({
         className="flex items-center gap-[10px] px-4 bg-white border-b border-bth-hairline flex-shrink-0"
         style={{ height: 64 }}
       >
-        <span className="text-bth-green-800 flex-shrink-0">
-          <Ic d={ICONS.leaf} size={16} sw={1.8} />
+        <span className="w-8 h-8 rounded-bth-md bg-bth-green-800 text-white flex items-center justify-center flex-shrink-0 shadow-[0_8px_18px_rgba(26,46,30,.14)]">
+          <Ic d={ICONS.leaf} size={16} sw={1.9} />
         </span>
         <div>
           <div className="text-bth-green-800 font-semibold text-[14px] leading-none">
@@ -198,8 +207,7 @@ function SidebarInner({
               <div className="flex items-center gap-[10px] px-4 py-3.5 border-b border-bth-hairline">
                 <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden">
                   {avatarUrl ? (
-                    <Image src={avatarUrl} alt={name} width={40} height={40}
-                      className="w-full h-full object-cover" />
+                    <img src={avatarUrl} alt={name || "Utilisateur"} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[13px] font-semibold">
                       {initials}
@@ -208,7 +216,7 @@ function SidebarInner({
                 </div>
                 <div className="min-w-0">
                   <div className="text-[13px] font-semibold text-bth-n-900 truncate">{name}</div>
-                  <div className="text-[11px] text-bth-n-400 truncate">{user?.email}</div>
+                  <div className="text-[11px] text-bth-n-400 truncate">{email}</div>
                 </div>
               </div>
 
@@ -261,8 +269,7 @@ function SidebarInner({
             <div className="relative flex-shrink-0">
               <div className="w-[34px] h-[34px] rounded-full overflow-hidden">
                 {avatarUrl ? (
-                  <Image src={avatarUrl} alt={name} width={34} height={34}
-                    className="w-full h-full object-cover" />
+                  <img src={avatarUrl} alt={name || "Utilisateur"} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-[34px] h-[34px] rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[13px] font-semibold">
                     {initials}
@@ -299,16 +306,21 @@ function SidebarInner({
 export default function Sidebar({ role }: { role: UserRole }) {
   const { isOpen, setIsOpen } = useSidebar();
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<CurrentProfile | null>(null);
 
   useEffect(() => {
     createSupabaseBrowserClient().auth.getUser().then(({ data: { user } }) => setUser(user));
+    fetch("/api/me")
+      .then(r => r.ok ? r.json() : null)
+      .then(json => setProfile(json))
+      .catch(() => {});
   }, []);
 
   return (
     <>
       {/* Desktop — fixed 240px, lg+ */}
       <aside className="hidden lg:flex flex-col flex-shrink-0 bg-white border-r border-bth-hairline h-full" style={{ width: 240 }}>
-        <SidebarInner role={role} user={user} width={240} />
+        <SidebarInner role={role} user={user} profile={profile} width={240} />
       </aside>
 
       {/* Tablet drawer — md to lg, controlled by SidebarContext */}
@@ -333,7 +345,7 @@ export default function Sidebar({ role }: { role: UserRole }) {
               className="absolute top-0 left-0 bottom-0 flex flex-col bg-white shadow-[var(--bth-shadow-xl)]"
               style={{ width: 280 }}
             >
-              <SidebarInner role={role} user={user} width={280} onNavClick={() => setIsOpen(false)} />
+              <SidebarInner role={role} user={user} profile={profile} width={280} onNavClick={() => setIsOpen(false)} />
             </motion.aside>
           </div>
         )}
