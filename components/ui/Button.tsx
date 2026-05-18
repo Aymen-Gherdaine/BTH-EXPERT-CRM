@@ -70,7 +70,7 @@ export function Button({
       transition={{ duration: 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}
       disabled={isDisabled}
       className={cn(
-        "inline-flex items-center justify-center gap-2 font-medium rounded-bth-md bth-focus",
+        "inline-flex items-center justify-center gap-2 font-medium rounded-bth-pill bth-focus",
         "disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none",
         variantClasses[variant],
         sizeClasses[size],
