@@ -6,13 +6,14 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { useSidebar } from "./SidebarContext";
 import type { UserRole } from "@/types";
 import type { User } from "@supabase/supabase-js";
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
-function Ic({ d, size = 18, stroke = "currentColor", sw = 1.7 }: {
-  d: string | string[]; size?: number; stroke?: string; sw?: number;
+function Ic({ d, size = 16, sw = 1.7, stroke = "currentColor" }: {
+  d: string | string[]; size?: number; sw?: number; stroke?: string;
 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
@@ -32,21 +33,25 @@ const ICONS = {
   chart:   ["M18 20v-10", "M12 20V4", "M6 20v-6"],
   admin:   ["M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"],
   chevron: "M18 15l-6-6-6 6",
+  x:       "M18 6 6 18M6 6l12 12",
 };
 
 // ─── Nav config ──────────────────────────────────────────────────────────────
 
-type NavItem = { href: string; label: string; icon: string; roles: UserRole[] };
+type NavGroup = "PRINCIPAL" | "FINANCE" | "ADMINISTRATION";
+type NavItem = { href: string; label: string; icon: keyof typeof ICONS; roles: UserRole[]; group: NavGroup };
 
 const NAV: NavItem[] = [
-  { href: "/dashboard",          label: "Tableau de bord",  icon: "home",   roles: ["admin", "charge_projet"] },
-  { href: "/soumissions",        label: "Soumissions",      icon: "docs",   roles: ["admin", "charge_projet"] },
-  { href: "/clients",            label: "Clients",          icon: "users",  roles: ["admin", "charge_projet", "commercial"] },
-  { href: "/prospection",        label: "Prospection",      icon: "map",    roles: ["admin", "commercial"] },
-  { href: "/depenses",           label: "Dépenses",         icon: "wallet", roles: ["admin", "charge_projet", "commercial"] },
-  { href: "/couts-marges",       label: "Coûts & Marges",   icon: "chart",  roles: ["admin"] },
-  { href: "/admin/utilisateurs", label: "Utilisateurs",     icon: "admin",  roles: ["admin"] },
+  { href: "/dashboard",          label: "Tableau de bord", icon: "home",   roles: ["admin", "charge_projet"],               group: "PRINCIPAL"      },
+  { href: "/soumissions",        label: "Soumissions",     icon: "docs",   roles: ["admin", "charge_projet"],               group: "PRINCIPAL"      },
+  { href: "/clients",            label: "Clients",         icon: "users",  roles: ["admin", "charge_projet", "commercial"], group: "PRINCIPAL"      },
+  { href: "/prospection",        label: "Prospection",     icon: "map",    roles: ["admin", "commercial"],                  group: "PRINCIPAL"      },
+  { href: "/depenses",           label: "Dépenses",        icon: "wallet", roles: ["admin", "charge_projet", "commercial"], group: "FINANCE"        },
+  { href: "/couts-marges",       label: "Coûts & Marges",  icon: "chart",  roles: ["admin"],                                group: "FINANCE"        },
+  { href: "/admin/utilisateurs", label: "Utilisateurs",    icon: "admin",  roles: ["admin"],                                group: "ADMINISTRATION" },
 ];
+
+const NAV_GROUPS: NavGroup[] = ["PRINCIPAL", "FINANCE", "ADMINISTRATION"];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -65,140 +70,159 @@ function getDisplayName(user: User): string {
   return user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split("@")[0] ?? "Utilisateur";
 }
 
-// ─── Component ───────────────────────────────────────────────────────────────
+// ─── SidebarInner ─────────────────────────────────────────────────────────────
 
-export default function Sidebar({ role }: { role: UserRole }) {
+function SidebarInner({
+  role, user, onNavClick, width,
+}: {
+  role: UserRole;
+  user: User | null;
+  onNavClick?: () => void;
+  width?: number;
+}) {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [open, setOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    createSupabaseBrowserClient().auth.getUser().then(({ data: { user } }) => setUser(user));
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-    const h = (e: MouseEvent) => {
-      if (profileRef.current && !profileRef.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, [open]);
-
-  async function handleSignOut() {
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
 
   const visible = NAV.filter(item => item.roles.includes(role));
   const initials = user ? getInitials(user) : "";
   const name = user ? getDisplayName(user) : "";
   const avatarUrl: string | undefined = user?.user_metadata?.avatar_url;
 
-  return (
-    <aside style={{
-      width: 228, flexShrink: 0,
-      background: "#fff",
-      borderRight: "1px solid #e5e7eb",
-      height: "100%",
-      fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-    }} className="hidden md:flex flex-col">
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const h = (e: MouseEvent) => {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, [dropdownOpen]);
 
-      {/* Logo */}
-      <div style={{ padding: "20px 18px 16px", borderBottom: "1px solid #e5e7eb" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 36, height: 36, background: "#1a2e1e", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <Ic d={ICONS.leaf} size={17} stroke="white" sw={1.9} />
+  async function handleSignOut() {
+    await createSupabaseBrowserClient().auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
+  return (
+    <>
+      {/* Logo zone — 64px, bg-bth-green-800 */}
+      <div
+        className="flex items-center gap-[10px] px-4 bg-bth-green-800 flex-shrink-0"
+        style={{ height: 64, borderBottom: "1px solid rgba(201,169,110,0.2)" }}
+      >
+        <Ic d={ICONS.leaf} size={14} stroke="white" sw={1.8} />
+        <div>
+          <div className="text-white font-semibold text-[13px] tracking-[0.15em] leading-none">
+            BTH Hub
           </div>
-          <div>
-            <div style={{ fontWeight: 700, fontSize: 15, color: "#111827", letterSpacing: "-0.4px", lineHeight: 1 }}>BTH Hub</div>
-            <div style={{ fontSize: 10.5, color: "#9ca3af", marginTop: 2 }}>BTH Expert</div>
+          <div className="text-bth-gold-500 font-light text-[10px] tracking-[0.20em] mt-0.5">
+            BTH Expert
           </div>
         </div>
+
+        {/* Close button — drawer only (width > 240 = tablet drawer) */}
+        {width && width > 240 && onNavClick && (
+          <button
+            onClick={onNavClick}
+            className="ml-auto text-white/60 hover:text-white transition-colors duration-100 bth-focus rounded-bth-sm p-1"
+          >
+            <Ic d={ICONS.x} size={16} stroke="currentColor" sw={2} />
+          </button>
+        )}
       </div>
 
-      {/* Nav */}
-      <nav style={{ flex: 1, padding: "10px", display: "flex", flexDirection: "column", gap: 1 }}>
-        {visible.map(({ href, label, icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
+      {/* Nav — flex-1 scrollable */}
+      <nav className="flex-1 py-2 overflow-y-auto">
+        {NAV_GROUPS.map(group => {
+          const items = visible.filter(i => i.group === group);
+          if (items.length === 0) return null;
           return (
-            <Link key={href} href={href} style={{ textDecoration: "none" }}>
-              <motion.div whileTap={{ scale: 0.97 }} style={{
-                display: "flex", alignItems: "center", gap: 10, padding: "9px 12px",
-                borderRadius: 8,
-                background: active ? "#edf5ee" : "transparent",
-                color: active ? "#1a2e1e" : "#6b7280",
-                fontWeight: active ? 600 : 500, fontSize: 13.5,
-                transition: "all .12s", cursor: "pointer",
-              }}>
-                <Ic d={ICONS[icon as keyof typeof ICONS]} size={17} sw={active ? 2 : 1.7} />
-                {label}
-              </motion.div>
-            </Link>
+            <div key={group}>
+              {/* Section label */}
+              <div className="text-[9px] font-semibold text-bth-n-400 tracking-[0.28em] uppercase px-4 pt-5 pb-1.5">
+                {group}
+              </div>
+
+              {/* Items */}
+              {items.map(({ href, label, icon }) => {
+                const active = pathname === href || pathname.startsWith(href + "/");
+                return (
+                  <Link key={href} href={href} onClick={onNavClick} className="block no-underline mx-2">
+                    <div className={[
+                      "flex items-center gap-[10px] py-2 rounded-bth-sm text-[13px]",
+                      active
+                        ? "bg-bth-green-50 text-bth-green-800 font-semibold border-l-2 border-bth-gold-500 pl-[10px] pr-3"
+                        : "text-bth-n-500 font-normal px-3 hover:bg-bth-n-100 hover:text-bth-n-900 transition-colors duration-100",
+                    ].join(" ")}>
+                      <span className={active ? "text-bth-green-700" : "text-bth-n-400"}>
+                        <Ic d={ICONS[icon]} size={16} sw={active ? 2 : 1.7} />
+                      </span>
+                      {label}
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           );
         })}
       </nav>
 
-      {/* User profile with dropdown */}
-      <div style={{ padding: "14px", borderTop: "1px solid #e5e7eb", position: "relative" }} ref={profileRef}>
+      {/* User zone */}
+      <div className="border-t border-bth-hairline p-2 relative flex-shrink-0" ref={profileRef}>
+        {/* Dropdown — opens upward */}
         <AnimatePresence>
-          {open && (
+          {dropdownOpen && (
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 6 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 6 }}
               transition={{ duration: 0.15 }}
-              style={{
-                position: "absolute", left: 10, right: 10, bottom: "calc(100% + 4px)",
-                background: "#fff", borderRadius: 14,
-                border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,.10)",
-                overflow: "hidden", zIndex: 200,
-              }}
+              className="absolute left-2 right-2 bottom-full mb-2 bg-white border border-bth-n-200
+                         rounded-bth-lg shadow-[var(--bth-shadow-md)] overflow-hidden z-50"
             >
               {/* User info */}
-              <div style={{ padding: "14px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, overflow: "hidden" }}>
+              <div className="flex items-center gap-[10px] px-4 py-3.5 border-b border-bth-hairline">
+                <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden">
                   {avatarUrl ? (
-                    <Image src={avatarUrl} alt={name} width={34} height={34} style={{ width: 34, height: 34, objectFit: "cover", borderRadius: "50%" }} />
+                    <Image src={avatarUrl} alt={name} width={32} height={32}
+                      className="w-full h-full object-cover" />
                   ) : (
-                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#1a2e1e", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 700 }}>
+                    <div className="w-8 h-8 rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[11px] font-semibold">
                       {initials}
                     </div>
                   )}
                 </div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
-                  <div style={{ fontSize: 11, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+                <div className="min-w-0">
+                  <div className="text-[13px] font-semibold text-bth-n-900 truncate">{name}</div>
+                  <div className="text-[11px] text-bth-n-400 truncate">{user?.email}</div>
                 </div>
               </div>
 
-              {/* Links */}
-              <div style={{ padding: "6px" }}>
+              {/* Nav links */}
+              <div className="p-1.5">
                 {[
-                  { href: "/profil", label: "Mon profil" },
-                  { href: "/parametres", label: "Paramètres" },
+                  { href: "/profil",     label: "Mon profil"  },
+                  { href: "/parametres", label: "Paramètres"  },
                 ].map(({ href, label }) => (
-                  <Link key={href} href={href} onClick={() => setOpen(false)} style={{
-                    display: "flex", alignItems: "center", padding: "9px 10px",
-                    borderRadius: 8, textDecoration: "none", color: "#374151",
-                    fontSize: 13, fontWeight: 500,
-                  }}>
+                  <Link key={href} href={href}
+                    onClick={() => { setDropdownOpen(false); onNavClick?.(); }}
+                    className="flex items-center px-[10px] py-[9px] rounded-bth-sm text-[13px]
+                               font-medium text-bth-n-700 hover:bg-bth-n-50 transition-colors duration-100 no-underline">
                     {label}
                   </Link>
                 ))}
               </div>
 
-              <div style={{ borderTop: "1px solid #f3f4f6", padding: "6px" }}>
-                <button onClick={handleSignOut} style={{
-                  width: "100%", padding: "9px 10px", borderRadius: 8, border: "none",
-                  background: "transparent", color: "#dc2626",
-                  fontSize: 13, fontWeight: 500, cursor: "pointer", textAlign: "left",
-                  fontFamily: "inherit",
-                }}>
+              <div className="border-t border-bth-hairline p-1.5">
+                <button
+                  onClick={handleSignOut}
+                  className="w-full flex items-center px-[10px] py-[9px] rounded-bth-sm text-[13px]
+                             font-medium text-bth-error hover:bg-bth-n-50 transition-colors duration-100 text-left bth-focus"
+                >
                   Se déconnecter
                 </button>
               </div>
@@ -206,43 +230,90 @@ export default function Sidebar({ role }: { role: UserRole }) {
           )}
         </AnimatePresence>
 
+        {/* Trigger button */}
         {user ? (
           <button
-            onClick={() => setOpen(v => !v)}
-            style={{
-              width: "100%", background: "transparent", border: "none", cursor: "pointer",
-              padding: 0, display: "flex", alignItems: "center", gap: 10, fontFamily: "inherit",
-            }}
+            onClick={() => setDropdownOpen(v => !v)}
+            className="w-full flex items-center gap-[10px] p-2 rounded-bth-sm
+                       hover:bg-bth-n-50 transition-colors duration-100 bth-focus"
           >
-            <div style={{ width: 34, height: 34, borderRadius: "50%", flexShrink: 0, overflow: "hidden" }}>
+            <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden">
               {avatarUrl ? (
-                <Image src={avatarUrl} alt={name} width={34} height={34} style={{ width: 34, height: 34, objectFit: "cover", borderRadius: "50%" }} />
+                <Image src={avatarUrl} alt={name} width={32} height={32}
+                  className="w-full h-full object-cover" />
               ) : (
-                <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#1a2e1e", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700, fontSize: 11 }}>
+                <div className="w-8 h-8 rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[11px] font-semibold">
                   {initials}
                 </div>
               )}
             </div>
-            <div style={{ minWidth: 0, flex: 1, textAlign: "left" }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {name}
-              </div>
-              <div style={{ fontSize: 11, color: "#9ca3af" }}>{ROLE_LABEL[role]}</div>
+            <div className="flex-1 min-w-0 text-left">
+              <div className="text-[13px] font-medium text-bth-n-900 truncate">{name}</div>
+              <div className="text-[11px] text-bth-n-500">{ROLE_LABEL[role]}</div>
             </div>
-            <div style={{ color: "#9ca3af", transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform .15s" }}>
+            <div className={`text-bth-n-400 transition-transform duration-150 flex-shrink-0 ${dropdownOpen ? "rotate-180" : ""}`}>
               <Ic d={ICONS.chevron} size={14} sw={2} />
             </div>
           </button>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#f3f4f6" }} />
-            <div style={{ flex: 1 }}>
-              <div style={{ height: 10, borderRadius: 5, background: "#f3f4f6", marginBottom: 5, width: "70%" }} />
-              <div style={{ height: 8, borderRadius: 4, background: "#f3f4f6", width: "50%" }} />
+          /* Loading skeleton */
+          <div className="flex items-center gap-[10px] p-2">
+            <div className="w-8 h-8 rounded-full bg-bth-n-100 animate-pulse flex-shrink-0" />
+            <div className="flex-1 space-y-1.5">
+              <div className="h-[10px] bg-bth-n-100 rounded animate-pulse w-[70%]" />
+              <div className="h-2 bg-bth-n-100 rounded animate-pulse w-[50%]" />
             </div>
           </div>
         )}
       </div>
-    </aside>
+    </>
+  );
+}
+
+// ─── Sidebar ─────────────────────────────────────────────────────────────────
+
+export default function Sidebar({ role }: { role: UserRole }) {
+  const { isOpen, setIsOpen } = useSidebar();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    createSupabaseBrowserClient().auth.getUser().then(({ data: { user } }) => setUser(user));
+  }, []);
+
+  return (
+    <>
+      {/* Desktop — fixed 240px, lg+ */}
+      <aside className="hidden lg:flex flex-col flex-shrink-0 bg-white border-r border-bth-hairline h-full" style={{ width: 240 }}>
+        <SidebarInner role={role} user={user} width={240} />
+      </aside>
+
+      {/* Tablet drawer — md to lg, controlled by SidebarContext */}
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              onClick={() => setIsOpen(false)}
+              className="absolute inset-0 bg-[rgba(1,8,2,0.4)]"
+            />
+            {/* Drawer panel */}
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="absolute top-0 left-0 bottom-0 flex flex-col bg-white shadow-[var(--bth-shadow-xl)]"
+              style={{ width: 280 }}
+            >
+              <SidebarInner role={role} user={user} width={280} onNavClick={() => setIsOpen(false)} />
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

@@ -5,16 +5,15 @@ import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { useSidebar } from "./SidebarContext";
 import type { User } from "@supabase/supabase-js";
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
-function Ic({ d, size = 20, stroke = "currentColor", sw = 1.8 }: {
-  d: string | string[]; size?: number; stroke?: string; sw?: number;
-}) {
+function Ic({ d, size = 20, sw = 1.8 }: { d: string | string[]; size?: number; sw?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+      stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
       {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
     </svg>
   );
@@ -22,6 +21,7 @@ function Ic({ d, size = 20, stroke = "currentColor", sw = 1.8 }: {
 
 const LEAF = ["M2 22 16 8", "M22 2s-5.67 0-11 5c-4.17 4.17-4.83 9.33-3 11 1.83 1.67 7-1.17 11-5 5-5.33 5-11 5-11z"];
 const BELL = ["M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9", "M13.73 21a2 2 0 0 1-3.46 0"];
+const MENU = ["M3 12h18", "M3 6h18", "M3 18h18"];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -38,6 +38,7 @@ function getDisplayName(user: User): string {
 
 export default function Header() {
   const router = useRouter();
+  const { setIsOpen: setSidebarOpen } = useSidebar();
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
@@ -62,8 +63,7 @@ export default function Header() {
   }, [open]);
 
   async function handleSignOut() {
-    const supabase = createSupabaseBrowserClient();
-    await supabase.auth.signOut();
+    await createSupabaseBrowserClient().auth.signOut();
     router.push("/login");
     router.refresh();
   }
@@ -72,45 +72,54 @@ export default function Header() {
   const name = user ? getDisplayName(user) : "";
 
   return (
-    <header style={{
-      position: "sticky", top: 0, zIndex: 100,
-      background: "#fff",
-      borderBottom: "1px solid #e5e7eb",
-      height: 56,
-      alignItems: "center", justifyContent: "space-between",
-      padding: "0 18px",
-      flexShrink: 0,
-      fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif",
-    }} className="md:hidden flex">
+    // Visible on mobile + tablet, hidden on desktop
+    <header className="flex lg:hidden items-center justify-between px-4 md:px-5 flex-shrink-0
+                       bg-white border-b border-bth-hairline sticky top-0 z-30"
+      style={{ height: 56 }}>
 
-      {/* Logo */}
-      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-        <div style={{ width: 34, height: 34, background: "#1a2e1e", borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <Ic d={LEAF} size={16} stroke="white" sw={1.9} />
+      {/* Left: hamburger (tablet only) + logo */}
+      <div className="flex items-center gap-2">
+        {/* Hamburger — tablet only (md to lg) */}
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="hidden md:flex lg:hidden items-center justify-center w-9 h-9 rounded-bth-sm
+                     text-bth-n-500 hover:bg-bth-n-100 hover:text-bth-n-900
+                     transition-colors duration-100 bth-focus"
+          aria-label="Ouvrir le menu"
+        >
+          <Ic d={MENU} size={18} sw={1.8} />
+        </button>
+
+        {/* Logo */}
+        <div className="flex items-center gap-2">
+          <div className="w-[30px] h-[30px] bg-bth-green-800 rounded-bth-md flex items-center justify-center flex-shrink-0">
+            <Ic d={LEAF} size={14} sw={1.9} />
+          </div>
+          <span className="font-semibold text-[13px] tracking-[0.15em] text-bth-green-800">BTH Hub</span>
         </div>
-        <span style={{ fontWeight: 700, fontSize: 16, color: "#111827", letterSpacing: "-0.4px" }}>BTH Hub</span>
       </div>
 
-      {/* Right zone */}
-      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-
+      {/* Right: bell + avatar */}
+      <div className="flex items-center gap-1">
         {/* Bell */}
-        <Link href="/prospection" style={{ position: "relative", width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}>
-          <Ic d={BELL} size={19} />
+        <Link href="/prospection"
+          className="relative w-9 h-9 rounded-bth-sm flex items-center justify-center
+                     text-bth-n-500 hover:bg-bth-n-100 hover:text-bth-n-900
+                     transition-colors duration-100 bth-focus">
+          <Ic d={BELL} size={18} />
           {alertCount > 0 && (
-            <span style={{ position: "absolute", top: 9, right: 9, width: 7, height: 7, background: "#dc2626", borderRadius: "50%", border: "1.5px solid #fff" }} />
+            <span className="absolute top-2 right-2 w-[7px] h-[7px] bg-bth-error rounded-full border-[1.5px] border-white" />
           )}
         </Link>
 
-        {/* Avatar */}
-        <div style={{ position: "relative" }} ref={ref}>
-          <button onClick={() => setOpen(v => !v)} style={{
-            width: 34, height: 34, borderRadius: "50%", background: "#1a2e1e", border: "none",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            color: "white", fontWeight: 700, fontSize: 12, cursor: "pointer",
-            fontFamily: "inherit",
-          }}>
-            {initials || <div style={{ width: 14, height: 14, borderRadius: "50%", background: "rgba(255,255,255,.3)" }} />}
+        {/* Avatar + dropdown */}
+        <div className="relative" ref={ref}>
+          <button
+            onClick={() => setOpen(v => !v)}
+            className="w-8 h-8 rounded-full bg-bth-green-800 border-none flex items-center justify-center
+                       text-white font-semibold text-[12px] cursor-pointer bth-focus"
+          >
+            {initials || <div className="w-3.5 h-3.5 rounded-full bg-white/30" />}
           </button>
 
           <AnimatePresence>
@@ -120,47 +129,41 @@ export default function Header() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -6 }}
                 transition={{ duration: 0.15 }}
-                style={{
-                  position: "absolute", right: 0, top: "calc(100% + 8px)",
-                  width: 220, background: "#fff", borderRadius: 14,
-                  border: "1px solid #e5e7eb", boxShadow: "0 8px 24px rgba(0,0,0,.10)",
-                  overflow: "hidden", zIndex: 200,
-                }}
+                className="absolute right-0 top-[calc(100%+8px)] w-[220px] bg-white
+                           border border-bth-n-200 rounded-bth-lg shadow-[var(--bth-shadow-md)]
+                           overflow-hidden z-50"
               >
                 {/* User info */}
-                <div style={{ padding: "14px 16px", borderBottom: "1px solid #f3f4f6", display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ width: 34, height: 34, borderRadius: "50%", background: "#1a2e1e", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                <div className="flex items-center gap-[10px] px-4 py-3.5 border-b border-bth-hairline">
+                  <div className="w-8 h-8 rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0">
                     {initials}
                   </div>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: "#111827", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</div>
-                    <div style={{ fontSize: 11, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold text-bth-n-900 truncate">{name}</div>
+                    <div className="text-[11px] text-bth-n-400 truncate">{user?.email}</div>
                   </div>
                 </div>
 
-                {/* Links */}
-                <div style={{ padding: "6px" }}>
+                {/* Nav links */}
+                <div className="p-1.5">
                   {[
-                    { href: "/profil", label: "Mon profil" },
-                    { href: "/parametres", label: "Paramètres" },
+                    { href: "/profil",     label: "Mon profil"  },
+                    { href: "/parametres", label: "Paramètres"  },
                   ].map(({ href, label }) => (
-                    <Link key={href} href={href} onClick={() => setOpen(false)} style={{
-                      display: "flex", alignItems: "center", padding: "9px 10px",
-                      borderRadius: 8, textDecoration: "none", color: "#374151",
-                      fontSize: 13, fontWeight: 500,
-                    }}>
+                    <Link key={href} href={href} onClick={() => setOpen(false)}
+                      className="flex items-center px-[10px] py-[9px] rounded-bth-sm text-[13px]
+                                 font-medium text-bth-n-700 hover:bg-bth-n-50 transition-colors duration-100 no-underline">
                       {label}
                     </Link>
                   ))}
                 </div>
 
-                <div style={{ borderTop: "1px solid #f3f4f6", padding: "6px" }}>
-                  <button onClick={handleSignOut} style={{
-                    width: "100%", padding: "9px 10px", borderRadius: 8, border: "none",
-                    background: "transparent", color: "#dc2626",
-                    fontSize: 13, fontWeight: 500, cursor: "pointer", textAlign: "left",
-                    fontFamily: "inherit",
-                  }}>
+                <div className="border-t border-bth-hairline p-1.5">
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center px-[10px] py-[9px] rounded-bth-sm text-[13px]
+                               font-medium text-bth-error hover:bg-bth-n-50 transition-colors duration-100 text-left bth-focus"
+                  >
                     Se déconnecter
                   </button>
                 </div>
