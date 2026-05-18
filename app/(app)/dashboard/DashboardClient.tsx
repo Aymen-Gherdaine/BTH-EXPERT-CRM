@@ -1,26 +1,474 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { DashboardStats, Prospect, Soumission, UserRole, Visite } from "@/types";
 import { formatMontant } from "@/lib/utils";
-
-// ─── Types ───────────────────────────────────────────────────────────────────
+import { Button } from "@/components/ui/Button";
 
 type OverdueProspect = Prospect & { _lastVisit: Visite };
 
-interface StatCardProps {
+type StatCardProps = {
   icon: ReactNode;
   label: string;
   value: string;
   sub?: string;
   color: string;
   delay?: number;
-}
+};
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+type ChartRow = {
+  label: string;
+  value: number;
+  display: string;
+  color: string;
+};
+
+const CSS = `
+  .dash-shell {
+    min-height: 100%;
+    background: linear-gradient(180deg, #ffffff 0%, #faf8f5 34%, #f7f2ea 100%);
+    color: #1a1714;
+  }
+  .dash-hero {
+    padding: 22px clamp(16px, 3vw, 40px) 20px;
+    background:
+      linear-gradient(135deg, #1a2e1e 0%, #1f4429 58%, #101c12 100%);
+    color: #ffffff;
+    border-bottom: 1px solid rgba(201,169,110,.28);
+  }
+  .dash-hero-inner,
+  .dash-body {
+    width: min(100%, 1540px);
+    margin: 0 auto;
+  }
+  .dash-identity {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: start;
+  }
+  .dash-user {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+  }
+  .dash-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 9999px;
+    display: grid;
+    place-items: center;
+    background: rgba(255,255,255,.13);
+    border: 1px solid rgba(255,255,255,.12);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 900;
+    flex-shrink: 0;
+  }
+  .dash-role {
+    color: rgba(255,255,255,.42);
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .dash-user-name {
+    margin-top: 3px;
+    color: rgba(255,255,255,.82);
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .dash-date-chip {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 13px;
+    border-radius: 9999px;
+    border: 1px solid rgba(201,169,110,.34);
+    background: rgba(255,255,255,.08);
+    color: rgba(255,255,255,.75);
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .dash-title-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 18px;
+    margin-top: 24px;
+  }
+  .dash-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: #c9a96e;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .dash-eyebrow::before {
+    content: "";
+    width: 28px;
+    height: 1px;
+    background: #c9a96e;
+  }
+  .dash-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 38px;
+    line-height: 1.02;
+    font-weight: 600;
+    color: #ffffff;
+  }
+  .dash-subtitle {
+    margin-top: 8px;
+    color: rgba(255,255,255,.58);
+    font-size: 14px;
+  }
+  .dash-actions {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .dash-body {
+    padding: 18px clamp(16px, 3vw, 40px) 96px;
+  }
+  .dash-executive {
+    display: grid;
+    grid-template-columns: minmax(0, 1.06fr) minmax(290px, .94fr);
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .dash-panel,
+  .dash-card {
+    border: 1px solid #e8e2d8;
+    background: rgba(255,255,255,.88);
+    box-shadow: 0 18px 46px rgba(26,46,30,.07);
+  }
+  .dash-panel {
+    border-radius: 16px;
+    padding: 18px;
+  }
+  .dash-panel-kicker,
+  .dash-section-kicker,
+  .dash-kpi-label {
+    color: #887f74;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .dash-panel-title {
+    margin-top: 7px;
+    color: #1a1714;
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 600;
+    line-height: 1.08;
+  }
+  .dash-panel-value {
+    margin-top: 15px;
+    color: #1a2e1e;
+    font-size: 34px;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .dash-panel-value.is-danger {
+    color: #c44a3a;
+  }
+  .dash-panel-value small {
+    font-size: 13px;
+    font-weight: 900;
+  }
+  .dash-panel-note {
+    margin-top: 8px;
+    color: #887f74;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+  .dash-chart {
+    display: grid;
+    gap: 9px;
+    margin-top: 17px;
+    padding: 13px;
+    border: 1px solid rgba(208,201,190,.78);
+    border-radius: 14px;
+    background: rgba(255,255,255,.68);
+  }
+  .dash-chart-row {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+  }
+  .dash-chart-label {
+    color: #635c54;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .dash-chart-track {
+    height: 8px;
+    overflow: hidden;
+    border-radius: 9999px;
+    background: #f0ebe3;
+  }
+  .dash-chart-fill {
+    height: 100%;
+    border-radius: 9999px;
+  }
+  .dash-chart-value {
+    color: #45403a;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+  .dash-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .dash-kpi {
+    min-height: 106px;
+    border-radius: 16px;
+    padding: 15px;
+    border: 1px solid #e8e2d8;
+    background: rgba(255,255,255,.88);
+    box-shadow: 0 14px 34px rgba(26,46,30,.05);
+  }
+  .dash-kpi-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .dash-kpi-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .dash-kpi-value {
+    margin-top: 14px;
+    color: #1a1714;
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .dash-kpi-sub {
+    margin-top: 6px;
+    color: #887f74;
+    font-size: 12px;
+  }
+  .dash-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .dash-stack {
+    display: grid;
+    gap: 14px;
+  }
+  .dash-card {
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .dash-card-header {
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 16px;
+    border-bottom: 1px solid #e8e2d8;
+    background: #fbfaf7;
+  }
+  .dash-card-title {
+    color: #1a1714;
+    font-size: 14px;
+    font-weight: 900;
+  }
+  .dash-card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #1a2e1e;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+  .dash-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 16px;
+    border-top: 1px solid #f0ebe3;
+    text-decoration: none;
+    transition: background-color 150ms var(--bth-ease-micro), box-shadow 150ms var(--bth-ease-micro);
+  }
+  .dash-row:first-child {
+    border-top: 0;
+  }
+  .dash-row:hover {
+    background: #fffdfa;
+    box-shadow: inset 3px 0 0 #c9a96e;
+  }
+  .dash-row-title {
+    color: #1a1714;
+    font-size: 13px;
+    font-weight: 800;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dash-row-meta {
+    margin-top: 4px;
+    color: #887f74;
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dash-row-side {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: flex-end;
+  }
+  .dash-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 24px;
+    padding: 0 9px;
+    border-radius: 9999px;
+    border: 1px solid transparent;
+    font-size: 11px;
+    font-weight: 900;
+    white-space: nowrap;
+  }
+  .dash-empty {
+    display: grid;
+    place-items: center;
+    min-height: 142px;
+    padding: 24px;
+    color: #887f74;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .dash-finance-strip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .dash-finance-cell {
+    padding: 17px 18px;
+    border-left: 1px solid #e8e2d8;
+  }
+  .dash-finance-cell:first-child {
+    border-left: 0;
+  }
+  .dash-finance-label {
+    color: #887f74;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .dash-finance-value {
+    margin-top: 8px;
+    color: #1a1714;
+    font-size: 18px;
+    font-weight: 900;
+  }
+  @media (max-width: 1023px) {
+    .dash-executive,
+    .dash-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 640px) {
+    .dash-hero {
+      padding: 18px 14px 16px;
+    }
+    .dash-identity,
+    .dash-title-row {
+      grid-template-columns: 1fr;
+    }
+    .dash-date-chip {
+      justify-self: start;
+    }
+    .dash-title {
+      font-size: 30px;
+    }
+    .dash-actions {
+      justify-content: stretch;
+    }
+    .dash-actions a {
+      flex: 1;
+    }
+    .dash-actions button {
+      width: 100%;
+    }
+    .dash-body {
+      padding: 14px 14px 92px;
+    }
+    .dash-kpi-grid {
+      display: flex;
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .dash-kpi {
+      min-width: 178px;
+    }
+    .dash-panel-title {
+      font-size: 25px;
+    }
+    .dash-panel-value {
+      font-size: 30px;
+    }
+    .dash-chart-row {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+    .dash-chart-value {
+      justify-self: start;
+    }
+    .dash-finance-strip {
+      grid-template-columns: 1fr;
+    }
+    .dash-finance-cell {
+      border-left: 0;
+      border-top: 1px solid #e8e2d8;
+    }
+    .dash-finance-cell:first-child {
+      border-top: 0;
+    }
+  }
+`;
+
+const STATUS_CLASSES: Record<string, string> = {
+  Brouillon: "bg-bth-n-100 text-bth-n-600 border-bth-n-200",
+  "Envoyée": "bg-[rgba(58,124,165,0.12)] text-bth-info border-[rgba(58,124,165,0.18)]",
+  "Acceptée": "bg-[rgba(58,122,80,0.12)] text-bth-success border-[rgba(58,122,80,0.18)]",
+  "Refusée": "bg-[rgba(196,74,58,0.12)] text-bth-error border-[rgba(196,74,58,0.18)]",
+};
+
+const PROSPECT_STATUS_CLASSES: Record<string, string> = {
+  actif: "bg-[rgba(58,124,165,0.12)] text-bth-info border-[rgba(58,124,165,0.18)]",
+  converti: "bg-[rgba(58,122,80,0.12)] text-bth-success border-[rgba(58,122,80,0.18)]",
+  sans_suite: "bg-bth-n-100 text-bth-n-600 border-bth-n-200",
+};
+
+const PROSPECT_STATUS_LABEL: Record<string, string> = {
+  actif: "Actif",
+  converti: "Converti",
+  sans_suite: "Sans suite",
+};
 
 function fmtInt(n: number): string {
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
@@ -29,21 +477,6 @@ function fmtInt(n: number): string {
 function daysAgo(dateStr: string): number {
   return Math.floor((Date.now() - new Date(dateStr).getTime()) / 86_400_000);
 }
-
-const STATUT_CFG: Record<string, [string, string]> = {
-  Brouillon:  ["#f3f4f6", "#6b7280"],
-  "Envoyée":  ["#eff6ff", "#2563eb"],
-  "Acceptée": ["#f0fdf4", "#16a34a"],
-  "Refusée":  ["#fef2f2", "#dc2626"],
-};
-
-const STATUT_PROSPECT: Record<string, [string, string]> = {
-  actif:      ["#eff6ff", "#2563eb"],
-  converti:   ["#f0fdf4", "#16a34a"],
-  sans_suite: ["#f3f4f6", "#6b7280"],
-};
-
-// ─── Hook ────────────────────────────────────────────────────────────────────
 
 function useBp(): "mobile" | "tablet" | "desktop" {
   const [bp, setBp] = useState<"mobile" | "tablet" | "desktop">("mobile");
@@ -60,127 +493,84 @@ function useBp(): "mobile" | "tablet" | "desktop" {
   return bp;
 }
 
-// ─── Icons ───────────────────────────────────────────────────────────────────
-
 function Ic({ d, size = 16, sw = 1.8 }: { d: string | string[]; size?: number; sw?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
-      {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={sw}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {Array.isArray(d) ? d.map((path, index) => <path key={index} d={path} />) : <path d={d} />}
     </svg>
   );
 }
 
 const IC = {
-  dollar:  ["M12 1v22", "M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"],
-  check:   ["M22 11.08V12a10 10 0 1 1-5.93-9.14", "M22 4 12 14.01l-3-3"],
-  doc:     ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6", "M16 13H8", "M16 17H8"],
-  alert:   ["M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z", "M12 9v4", "M12 17h.01"],
-  bar:     ["M18 20v-10", "M12 20V4", "M6 20v-6"],
-  plus:    "M12 5v14M5 12h14",
-  arrow:   "M5 12h14M12 5l7 7-7 7",
-  leaf:    ["M2 22 16 8", "M22 2s-5.67 0-11 5c-4.17 4.17-4.83 9.33-3 11 1.83 1.67 7-1.17 11-5 5-5.33 5-11 5-11z"],
-  edit:    ["M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7", "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"],
-  send:    ["M22 2L11 13", "M22 2 15 22 11 13 2 9l20-7z"],
-  users:   ["M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2", "M9 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0", "M23 21v-2a4 4 0 0 0-3-3.87", "M16 3.13a4 4 0 0 1 0 7.75"],
-  userchk: ["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", "M9 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0", "M17 11l2 2 4-4"],
-  clock:   ["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z", "M12 6v6l4 2"],
+  dollar: ["M12 1v22", "M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"],
+  check: ["M22 11.08V12a10 10 0 1 1-5.93-9.14", "M22 4 12 14.01l-3-3"],
+  doc: ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6", "M16 13H8", "M16 17H8"],
+  alert: ["M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z", "M12 9v4", "M12 17h.01"],
+  plus: "M12 5v14M5 12h14",
+  arrow: "M5 12h14M12 5l7 7-7 7",
+  edit: ["M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7", "M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"],
+  users: ["M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2", "M9 7a4 4 0 1 0 8 0 4 4 0 0 0-8 0", "M23 21v-2a4 4 0 0 0-3-3.87", "M16 3.13a4 4 0 0 1 0 7.75"],
+  userchk: ["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2", "M9 7a4 4 0 1 0 8 0 4 4 0 0 0 0 8", "M17 11l2 2 4-4"],
+  clock: ["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z", "M12 6v6l4 2"],
 };
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
-function Skel({ h = 16, w = "100%", br = 6 }: { h?: number; w?: number | string; br?: number }) {
+function Skel({ h = 16, w = "100%", br = 8 }: { h?: number; w?: number | string; br?: number }) {
   return (
-    <div style={{
-      height: h, width: w, borderRadius: br, flexShrink: 0,
-      background: "linear-gradient(90deg,#ebebeb 25%,#e2e2e2 50%,#ebebeb 75%)",
-      backgroundSize: "200% 100%",
-      animation: "db-shimmer 1.4s ease-in-out infinite",
-    }} />
+    <div
+      className="animate-pulse bg-gradient-to-r from-bth-n-100 via-white to-bth-n-100"
+      style={{ height: h, width: w, borderRadius: br, flexShrink: 0 }}
+    />
   );
 }
 
-function StatusPill({ label, cfg }: { label: string; cfg?: [string, string] }) {
-  const [bg, text] = cfg ?? STATUT_CFG[label] ?? ["#f3f4f6", "#6b7280"];
+function StatusPill({ label, cfg }: { label: string; cfg?: string }) {
   return (
-    <span style={{
-      background: bg, color: text,
-      fontSize: 10.5, fontWeight: 600, lineHeight: 1,
-      padding: "3px 7px", borderRadius: 20, whiteSpace: "nowrap",
-    }}>
+    <span className={`dash-pill ${cfg ?? STATUS_CLASSES[label] ?? "bg-bth-n-100 text-bth-n-600 border-bth-n-200"}`}>
       {label}
     </span>
   );
 }
 
-function StatCardWithIcon({ icon, label, value, sub, color, delay = 0 }: StatCardProps & { icon: ReactNode }) {
+function StatCardWithIcon({ icon, label, value, sub, color, delay = 0 }: StatCardProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, type: "spring", damping: 30, stiffness: 300 }}
-      style={{
-        background: "#fff",
-        borderRadius: 12,
-        padding: "14px 16px",
-        border: "1px solid var(--db-border)",
-        boxShadow: "0 1px 3px rgba(0,0,0,.04)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-      }}
+      transition={{ delay, duration: 0.2 }}
+      className="dash-kpi"
     >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: 8,
-          background: `${color}15`, color,
-          display: "flex", alignItems: "center", justifyContent: "center",
-          flexShrink: 0,
-        }}>
+      <div className="dash-kpi-top">
+        <div className="dash-kpi-icon" style={{ background: `${color}18`, color }}>
           {icon}
         </div>
-        <span style={{ fontSize: 11, color: "var(--db-text-3)", fontWeight: 500, textAlign: "right", maxWidth: "65%", lineHeight: 1.3 }}>
-          {label}
-        </span>
+        <div className="dash-kpi-label text-right">{label}</div>
       </div>
-      <div>
-        <div style={{
-          fontSize: 18, fontWeight: 600, color: "var(--db-text-1)",
-          lineHeight: 1.2, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.3px",
-        }}>
-          {value}
-        </div>
-        {sub && <div style={{ fontSize: 11, color: "var(--db-text-3)", marginTop: 3 }}>{sub}</div>}
-      </div>
+      <div className="dash-kpi-value tnum">{value}</div>
+      {sub && <div className="dash-kpi-sub">{sub}</div>}
     </motion.div>
   );
 }
 
-function Card({ children, style }: { children: ReactNode; style?: React.CSSProperties }) {
-  return (
-    <div style={{
-      background: "#fff", borderRadius: 12,
-      border: "1px solid var(--db-border)",
-      boxShadow: "0 1px 3px rgba(0,0,0,.04)",
-      overflow: "hidden", ...style,
-    }}>
-      {children}
-    </div>
-  );
+function Card({ children }: { children: ReactNode }) {
+  return <div className="dash-card">{children}</div>;
 }
 
 function CardHeader({ title, link, linkLabel }: { title: string; link?: string; linkLabel?: string }) {
   return (
-    <div style={{
-      display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "12px 16px", borderBottom: "1px solid var(--db-border)",
-    }}>
-      <span style={{ fontSize: 13, fontWeight: 600, color: "var(--db-text-1)" }}>{title}</span>
+    <div className="dash-card-header">
+      <div className="dash-card-title">{title}</div>
       {link && (
-        <Link href={link} style={{
-          textDecoration: "none", fontSize: 12, color: "#1a2e1e",
-          fontWeight: 500, display: "flex", alignItems: "center", gap: 3, opacity: 0.7,
-        }}>
+        <Link href={link} className="dash-card-link bth-focus">
           {linkLabel ?? "Voir tout"}
           <Ic d={IC.arrow} size={12} sw={2} />
         </Link>
@@ -189,45 +579,48 @@ function CardHeader({ title, link, linkLabel }: { title: string; link?: string; 
   );
 }
 
-function EmptyState({ icon, text, textColor, action }: {
-  icon?: ReactNode; text: string; textColor?: string;
-  action?: { label: string; href: string };
-}) {
+function EmptyState({ icon, text, action }: { icon?: ReactNode; text: string; action?: { label: string; href: string } }) {
   return (
-    <div style={{ padding: "28px 16px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
-      {icon && <div style={{ color: textColor ?? "var(--db-text-3)", opacity: 0.6 }}>{icon}</div>}
-      <p style={{ fontSize: 13, color: textColor ?? "var(--db-text-3)", fontWeight: 500, margin: 0, lineHeight: 1.4 }}>{text}</p>
-      {action && (
-        <Link href={action.href} style={{ textDecoration: "none", fontSize: 12.5, color: "#1a2e1e", fontWeight: 600 }}>
-          {action.label} →
-        </Link>
-      )}
+    <div className="dash-empty">
+      <div>
+        {icon && <div className="mb-2 text-bth-n-400 flex justify-center">{icon}</div>}
+        <p>{text}</p>
+        {action && (
+          <Link href={action.href} className="inline-flex mt-3 no-underline">
+            <Button variant="ghost" size="sm">{action.label}</Button>
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
 
-// ─── CSS ─────────────────────────────────────────────────────────────────────
-
-const CSS = `
-  :root {
-    --db-bg: #f4f5f7;
-    --db-text-1: #111827;
-    --db-text-2: #4b5563;
-    --db-text-3: #9ca3af;
-    --db-border: #e5e7eb;
-  }
-  @keyframes db-shimmer {
-    0%   { background-position: -200% 0; }
-    100% { background-position:  200% 0; }
-  }
-`;
-
-// ─── Main ────────────────────────────────────────────────────────────────────
+function Chart({ rows }: { rows: ChartRow[] }) {
+  const max = Math.max(1, ...rows.map(row => row.value));
+  return (
+    <div className="dash-chart" aria-label="Résumé graphique">
+      {rows.map((row, index) => (
+        <div key={row.label} className="dash-chart-row">
+          <span className="dash-chart-label">{row.label}</span>
+          <div className="dash-chart-track">
+            <motion.div
+              className="dash-chart-fill"
+              style={{ background: row.color }}
+              initial={{ width: 0 }}
+              animate={{ width: `${row.value <= 0 ? 0 : Math.max(4, Math.round((row.value / max) * 100))}%` }}
+              transition={{ delay: index * 0.08, duration: 0.55, ease: "easeOut" }}
+            />
+          </div>
+          <span className="dash-chart-value">{row.display}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function DashboardClient() {
   const bp = useBp();
   const isMobile = bp === "mobile";
-  const isDesktop = bp === "desktop";
 
   const [role, setRole] = useState<UserRole>("admin");
   const [userName, setUserName] = useState("");
@@ -266,8 +659,6 @@ export default function DashboardClient() {
     return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().slice(0, 10);
   }, []);
 
-  // ─── Admin computed ───────────────────────────────────────────────────────
-
   const allOverdue = useMemo<OverdueProspect[]>(() => {
     return prospects
       .flatMap(p => {
@@ -282,8 +673,6 @@ export default function DashboardClient() {
   const overdueTop3 = allOverdue.slice(0, 3);
   const overdueCount = allOverdue.length;
 
-  // ─── Chargé de projet computed ────────────────────────────────────────────
-
   const cpStats = useMemo(() => {
     const brouillons = allSoumissions.filter(s => s.statut === "Brouillon").length;
     const envoyeesList = allSoumissions.filter(s => s.statut === "Envoyée").slice(0, 5);
@@ -296,8 +685,6 @@ export default function DashboardClient() {
       .reduce((sum, s) => sum + (s.total_ttc ?? 0), 0);
     return { brouillons, envoyees, envoyeesList, accepteesMonth, caEnCours };
   }, [allSoumissions, firstOfMonth]);
-
-  // ─── Commercial computed ──────────────────────────────────────────────────
 
   const prospectsActifs = useMemo(
     () => prospects.filter(p => p.statut_global === "actif").length,
@@ -316,75 +703,95 @@ export default function DashboardClient() {
     [prospects]
   );
 
-  // ─── Role labels ──────────────────────────────────────────────────────────
-
   const roleLabel = role === "commercial" ? "Commercial"
     : role === "charge_projet" ? "Chargé de projet"
     : "Administrateur";
 
-  // ─── Cards per role ───────────────────────────────────────────────────────
+  const userFirstName = userName.split(" ")[0] || "Aymen";
+  const totalMandats = stats?.total_mandats_acceptes ?? 0;
+  const totalVersements = stats?.total_versements_recus ?? 0;
+  const reste = Math.max(0, totalMandats - totalVersements);
 
   const adminCards: StatCardProps[] = [
-    { icon: <Ic d={IC.dollar} size={14} sw={2} />, label: "CA Mandats",        value: loading ? "—" : formatMontant(stats?.total_mandats_acceptes ?? 0), sub: "DZD total accepté", color: "#1a2e1e" },
-    { icon: <Ic d={IC.check}  size={14} sw={2} />, label: "Mandats acceptés",  value: loading ? "—" : fmtInt(stats?.nombre_mandats_acceptes ?? 0),          color: "#16a34a" },
-    { icon: <Ic d={IC.doc}    size={14} sw={2} />, label: "Offres ce mois",    value: loading ? "—" : fmtInt(stats?.soumissions_mois ?? 0),                  color: "#2563eb" },
-    { icon: <Ic d={IC.dollar} size={14} sw={2} />, label: "Versements reçus",  value: loading ? "—" : formatMontant(stats?.total_versements_recus ?? 0),     sub: "DZD perçus",      color: "#7c3aed" },
+    { icon: <Ic d={IC.dollar} size={15} sw={2} />, label: "CA mandats", value: loading ? "-" : formatMontant(totalMandats), sub: "DZD acceptés", color: "#1a2e1e" },
+    { icon: <Ic d={IC.check} size={15} sw={2} />, label: "Mandats acceptés", value: loading ? "-" : fmtInt(stats?.nombre_mandats_acceptes ?? 0), color: "#3a7a50" },
+    { icon: <Ic d={IC.doc} size={15} sw={2} />, label: "Offres ce mois", value: loading ? "-" : fmtInt(stats?.soumissions_mois ?? 0), color: "#3a7ca5" },
+    { icon: <Ic d={IC.dollar} size={15} sw={2} />, label: "Versements reçus", value: loading ? "-" : formatMontant(totalVersements), sub: "DZD perçus", color: "#c9a96e" },
   ];
 
   const chargeProjetCards: StatCardProps[] = [
-    { icon: <Ic d={IC.edit}   size={14} sw={2} />, label: "En brouillon",           value: loading ? "—" : fmtInt(cpStats.brouillons),       sub: "à finaliser",          color: "#f59e0b" },
-    { icon: <Ic d={IC.clock}  size={14} sw={2} />, label: "En attente de réponse",  value: loading ? "—" : fmtInt(cpStats.envoyees),         sub: "offres envoyées",       color: "#2563eb" },
-    { icon: <Ic d={IC.check}  size={14} sw={2} />, label: "Acceptées ce mois",      value: loading ? "—" : fmtInt(cpStats.accepteesMonth),                                color: "#16a34a" },
-    { icon: <Ic d={IC.dollar} size={14} sw={2} />, label: "CA en cours",            value: loading ? "—" : formatMontant(cpStats.caEnCours), sub: "DZD pipeline actif",    color: "#1a2e1e" },
+    { icon: <Ic d={IC.edit} size={15} sw={2} />, label: "En brouillon", value: loading ? "-" : fmtInt(cpStats.brouillons), sub: "à finaliser", color: "#c9a96e" },
+    { icon: <Ic d={IC.clock} size={15} sw={2} />, label: "En attente", value: loading ? "-" : fmtInt(cpStats.envoyees), sub: "offres envoyées", color: "#3a7ca5" },
+    { icon: <Ic d={IC.check} size={15} sw={2} />, label: "Acceptées ce mois", value: loading ? "-" : fmtInt(cpStats.accepteesMonth), color: "#3a7a50" },
+    { icon: <Ic d={IC.dollar} size={15} sw={2} />, label: "CA en cours", value: loading ? "-" : formatMontant(cpStats.caEnCours), sub: "DZD pipeline", color: "#1a2e1e" },
   ];
 
   const commercialCards: StatCardProps[] = [
-    { icon: <Ic d={IC.users}   size={14} sw={2} />, label: "Prospects actifs",   value: loading ? "—" : fmtInt(prospectsActifs),   sub: "dans le pipeline",                               color: "#1a2e1e" },
-    { icon: <Ic d={IC.alert}   size={14} sw={2} />, label: "Relances urgentes",  value: loading ? "—" : fmtInt(overdueCount),      sub: overdueCount > 0 ? "à traiter" : "tout est à jour", color: overdueCount > 0 ? "#dc2626" : "#16a34a" },
-    { icon: <Ic d={IC.plus}    size={14} sw={2} />, label: "Prospects ce mois",  value: loading ? "—" : fmtInt(prospectsMonth),                                                            color: "#2563eb" },
-    { icon: <Ic d={IC.userchk} size={14} sw={2} />, label: "Convertis",          value: loading ? "—" : fmtInt(prospectsConvertis),                                                       color: "#16a34a" },
+    { icon: <Ic d={IC.users} size={15} sw={2} />, label: "Prospects actifs", value: loading ? "-" : fmtInt(prospectsActifs), sub: "dans le pipeline", color: "#1a2e1e" },
+    { icon: <Ic d={IC.alert} size={15} sw={2} />, label: "Relances urgentes", value: loading ? "-" : fmtInt(overdueCount), sub: overdueCount > 0 ? "à traiter" : "tout est à jour", color: overdueCount > 0 ? "#c44a3a" : "#3a7a50" },
+    { icon: <Ic d={IC.plus} size={15} sw={2} />, label: "Prospects ce mois", value: loading ? "-" : fmtInt(prospectsMonth), color: "#3a7ca5" },
+    { icon: <Ic d={IC.userchk} size={15} sw={2} />, label: "Convertis", value: loading ? "-" : fmtInt(prospectsConvertis), color: "#3a7a50" },
   ];
 
   const displayedCards = role === "admin" ? adminCards
     : role === "charge_projet" ? chargeProjetCards
     : commercialCards;
 
-  // ─── Shared: soumissions récentes ────────────────────────────────────────
+  const executiveTitle = role === "admin" ? "Pilotage financier"
+    : role === "charge_projet" ? "Pipeline offres"
+    : "Priorité commerciale";
+
+  const executiveValue = role === "admin" ? `${formatMontant(totalMandats)}`
+    : role === "charge_projet" ? `${formatMontant(cpStats.caEnCours)}`
+    : `${overdueCount}`;
+
+  const executiveUnit = role === "commercial" ? "relances" : "DZD";
+
+  const executiveNote = role === "admin"
+    ? `${formatMontant(totalVersements)} DZD encaissés, ${formatMontant(reste)} DZD encore ouverts.`
+    : role === "charge_projet"
+    ? `${cpStats.brouillons} brouillon(s), ${cpStats.envoyees} offre(s) en attente.`
+    : overdueCount > 0
+    ? "Relances à traiter en priorité pour protéger le pipeline."
+    : "Pipeline commercial à jour sur les prochaines actions.";
+
+  const chartRows: ChartRow[] = role === "admin"
+    ? [
+        { label: "CA", value: totalMandats, display: `${formatMontant(totalMandats)} DZD`, color: "#1a2e1e" },
+        { label: "Versements", value: totalVersements, display: `${formatMontant(totalVersements)} DZD`, color: "#c9a96e" },
+        { label: "Reste", value: reste, display: `${formatMontant(reste)} DZD`, color: "#c44a3a" },
+      ]
+    : role === "charge_projet"
+    ? [
+        { label: "Brouillons", value: cpStats.brouillons, display: fmtInt(cpStats.brouillons), color: "#c9a96e" },
+        { label: "Envoyées", value: cpStats.envoyees, display: fmtInt(cpStats.envoyees), color: "#3a7ca5" },
+        { label: "Acceptées", value: cpStats.accepteesMonth, display: fmtInt(cpStats.accepteesMonth), color: "#3a7a50" },
+      ]
+    : [
+        { label: "Actifs", value: prospectsActifs, display: fmtInt(prospectsActifs), color: "#1a2e1e" },
+        { label: "Urgents", value: overdueCount, display: fmtInt(overdueCount), color: overdueCount > 0 ? "#c44a3a" : "#3a7a50" },
+        { label: "Convertis", value: prospectsConvertis, display: fmtInt(prospectsConvertis), color: "#c9a96e" },
+      ];
 
   const soumissionsSection = (
     <Card>
       <CardHeader title="Soumissions récentes" link="/soumissions" linkLabel="Voir tout" />
       {loading ? (
-        <div style={{ padding: "10px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
-          {[0, 1, 2].map(i => <Skel key={i} h={48} br={6} />)}
-        </div>
+        <div className="p-4 grid gap-2">{[0, 1, 2].map(i => <Skel key={i} h={52} br={10} />)}</div>
       ) : recents.length === 0 ? (
-        <EmptyState icon={<Ic d={IC.doc} size={22} />} text="Aucune soumission" action={{ label: "Créer une offre", href: "/soumissions/nouvelle" }} />
+        <EmptyState icon={<Ic d={IC.doc} size={24} />} text="Aucune soumission" action={{ label: "Créer une offre", href: "/soumissions/nouvelle" }} />
       ) : (
         <div>
           {recents.map((s, i) => (
-            <motion.div key={s.id} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.15 + i * 0.05, type: "spring", damping: 30, stiffness: 300 }}>
-              <Link href={`/soumissions/${s.id}`} style={{ textDecoration: "none", display: "block" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "1px solid var(--db-border)", transition: "background .1s" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "#f9fafb"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: "var(--db-text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {s.titre_projet}
-                    </div>
-                    <div style={{ fontSize: 11, color: "var(--db-text-3)", marginTop: 2 }}>
-                      {s.numero_offre} · {s.client?.entreprise ?? "—"}
-                    </div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-                    {!isMobile && (
-                      <span style={{ fontSize: 12, fontWeight: 500, color: "var(--db-text-2)", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>
-                        {formatMontant(s.total_ttc)}&nbsp;DZD
-                      </span>
-                    )}
-                    <StatusPill label={s.statut} />
-                  </div>
+            <motion.div key={s.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+              <Link href={`/soumissions/${s.id}`} className="dash-row">
+                <div className="min-w-0">
+                  <div className="dash-row-title">{s.titre_projet}</div>
+                  <div className="dash-row-meta">{s.numero_offre} · {s.client?.entreprise ?? "-"}</div>
+                </div>
+                <div className="dash-row-side">
+                  {!isMobile && <span className="text-[12px] font-bold text-bth-n-700 tnum whitespace-nowrap">{formatMontant(s.total_ttc)} DZD</span>}
+                  <StatusPill label={s.statut} />
                 </div>
               </Link>
             </motion.div>
@@ -394,40 +801,28 @@ export default function DashboardClient() {
     </Card>
   );
 
-  // ─── Shared: relances urgentes ────────────────────────────────────────────
-
   const relancesSection = (
     <Card>
       <CardHeader title="Relances urgentes" link="/prospection" linkLabel="Voir tout" />
       {loading ? (
-        <div style={{ padding: "10px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
-          {[0, 1, 2].map(i => <Skel key={i} h={56} br={6} />)}
-        </div>
+        <div className="p-4 grid gap-2">{[0, 1, 2].map(i => <Skel key={i} h={58} br={10} />)}</div>
       ) : overdueTop3.length === 0 ? (
-        <EmptyState icon={<Ic d={IC.check} size={22} />} text="Aucune relance en retard" textColor="#16a34a" />
+        <EmptyState icon={<Ic d={IC.check} size={24} />} text="Aucune relance en retard" />
       ) : (
         <div>
           {overdueTop3.map((p, i) => {
             const days = daysAgo(p._lastVisit.date_prochaine_action!);
             const hot = days > 3;
             return (
-              <motion.div key={p.id} initial={{ opacity: 0, x: 4 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + i * 0.07, type: "spring", damping: 30, stiffness: 300 }}>
-                <Link href="/prospection" style={{ textDecoration: "none", display: "block" }}>
-                  <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 16px", borderBottom: "1px solid var(--db-border)", transition: "background .1s" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "#f9fafb"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}>
-                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: hot ? "#dc2626" : "#f59e0b", marginTop: 5, flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: "var(--db-text-1)" }}>{p.entreprise}</div>
-                      <div style={{ fontSize: 11, color: "var(--db-text-2)", marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {p.nom_contact} · {p._lastVisit.action_requise ?? "Relance planifiée"}
-                      </div>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: hot ? "#dc2626" : "#d97706", marginTop: 3 }}>
-                        {days === 0 ? "Aujourd'hui" : days === 1 ? "Hier" : `${days} jours de retard`}
-                      </div>
-                    </div>
+              <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                <Link href="/prospection" className="dash-row">
+                  <div className="min-w-0">
+                    <div className="dash-row-title">{p.entreprise}</div>
+                    <div className="dash-row-meta">{p.nom_contact} · {p._lastVisit.action_requise ?? "Relance planifiée"}</div>
                   </div>
+                  <span className={`dash-pill ${hot ? "bg-red-50 text-bth-error border-red-100" : "bg-bth-gold-50 text-bth-gold-700 border-bth-gold-200"}`}>
+                    {days === 0 ? "Aujourd'hui" : days === 1 ? "Hier" : `${days} j retard`}
+                  </span>
                 </Link>
               </motion.div>
             );
@@ -436,42 +831,28 @@ export default function DashboardClient() {
       )}
     </Card>
   );
-
-  // ─── Chargé de projet: offres en attente de réponse ──────────────────────
 
   const enAttenteSection = (
     <Card>
       <CardHeader title="En attente de réponse" link="/soumissions" linkLabel="Voir tout" />
       {loading ? (
-        <div style={{ padding: "10px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
-          {[0, 1, 2].map(i => <Skel key={i} h={48} br={6} />)}
-        </div>
+        <div className="p-4 grid gap-2">{[0, 1, 2].map(i => <Skel key={i} h={52} br={10} />)}</div>
       ) : cpStats.envoyeesList.length === 0 ? (
-        <EmptyState icon={<Ic d={IC.clock} size={22} />} text="Aucune offre en attente de réponse" textColor="#2563eb" />
+        <EmptyState icon={<Ic d={IC.clock} size={24} />} text="Aucune offre en attente de réponse" />
       ) : (
         <div>
           {cpStats.envoyeesList.map((s, i) => {
             const daysSent = daysAgo(s.date_offre);
             return (
-              <motion.div key={s.id} initial={{ opacity: 0, x: 4 }} animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 + i * 0.06, type: "spring", damping: 30, stiffness: 300 }}>
-                <Link href={`/soumissions/${s.id}`} style={{ textDecoration: "none", display: "block" }}>
-                  <div style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "10px 16px", borderBottom: "1px solid var(--db-border)", transition: "background .1s" }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "#f9fafb"; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}>
-                    <div style={{ width: 7, height: 7, borderRadius: "50%", background: daysSent > 14 ? "#f59e0b" : "#2563eb", marginTop: 5, flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: "var(--db-text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {s.titre_projet}
-                      </div>
-                      <div style={{ fontSize: 11, color: "var(--db-text-3)", marginTop: 2 }}>
-                        {s.client?.entreprise ?? "—"} · {formatMontant(s.total_ttc)} DZD
-                      </div>
-                      <div style={{ fontSize: 11, fontWeight: 500, color: daysSent > 14 ? "#d97706" : "var(--db-text-3)", marginTop: 3 }}>
-                        Envoyée {daysSent === 0 ? "aujourd'hui" : daysSent === 1 ? "hier" : `il y a ${daysSent} jours`}
-                      </div>
-                    </div>
+              <motion.div key={s.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+                <Link href={`/soumissions/${s.id}`} className="dash-row">
+                  <div className="min-w-0">
+                    <div className="dash-row-title">{s.titre_projet}</div>
+                    <div className="dash-row-meta">{s.client?.entreprise ?? "-"} · {formatMontant(s.total_ttc)} DZD</div>
                   </div>
+                  <span className="dash-pill bg-[rgba(58,124,165,0.12)] text-bth-info border-[rgba(58,124,165,0.18)]">
+                    {daysSent === 0 ? "Aujourd'hui" : `${daysSent} j`}
+                  </span>
                 </Link>
               </motion.div>
             );
@@ -481,43 +862,23 @@ export default function DashboardClient() {
     </Card>
   );
 
-  // ─── Commercial: prospects récents ────────────────────────────────────────
-
-  const STATUT_LABEL: Record<string, string> = {
-    actif: "Actif", converti: "Converti", sans_suite: "Sans suite",
-  };
-
   const prospectsSection = (
     <Card>
       <CardHeader title="Prospects récents" link="/prospection" linkLabel="Voir tout" />
       {loading ? (
-        <div style={{ padding: "10px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
-          {[0, 1, 2].map(i => <Skel key={i} h={48} br={6} />)}
-        </div>
+        <div className="p-4 grid gap-2">{[0, 1, 2].map(i => <Skel key={i} h={52} br={10} />)}</div>
       ) : prospectsRecents.length === 0 ? (
-        <EmptyState icon={<Ic d={IC.users} size={22} />} text="Aucun prospect" action={{ label: "Ajouter un prospect", href: "/prospection" }} />
+        <EmptyState icon={<Ic d={IC.users} size={24} />} text="Aucun prospect" action={{ label: "Ajouter un prospect", href: "/prospection" }} />
       ) : (
         <div>
           {prospectsRecents.map((p, i) => (
-            <motion.div key={p.id} initial={{ opacity: 0, x: 4 }} animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 + i * 0.06, type: "spring", damping: 30, stiffness: 300 }}>
-              <Link href="/prospection" style={{ textDecoration: "none", display: "block" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "1px solid var(--db-border)", transition: "background .1s" }}
-                  onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.background = "#f9fafb"; }}
-                  onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: "var(--db-text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {p.entreprise}
-                    </div>
-                    <div style={{ fontSize: 11, color: "var(--db-text-3)", marginTop: 2 }}>
-                      {p.nom_contact} · {p.secteur_activite}
-                    </div>
-                  </div>
-                  <StatusPill
-                    label={STATUT_LABEL[p.statut_global] ?? p.statut_global}
-                    cfg={STATUT_PROSPECT[p.statut_global]}
-                  />
+            <motion.div key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+              <Link href="/prospection" className="dash-row">
+                <div className="min-w-0">
+                  <div className="dash-row-title">{p.entreprise}</div>
+                  <div className="dash-row-meta">{p.nom_contact} · {p.secteur_activite}</div>
                 </div>
+                <StatusPill label={PROSPECT_STATUS_LABEL[p.statut_global] ?? p.statut_global} cfg={PROSPECT_STATUS_CLASSES[p.statut_global]} />
               </Link>
             </motion.div>
           ))}
@@ -526,61 +887,39 @@ export default function DashboardClient() {
     </Card>
   );
 
-  // ─── Admin: bilan financier ───────────────────────────────────────────────
-
   const bilanSection = (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.45, type: "spring", damping: 30, stiffness: 300 }}>
-      <Card>
-        <CardHeader title="Bilan financier" />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", padding: isMobile ? "12px" : "16px", gap: 0 }}>
-          {[
-            { label: "CA Mandats",         value: loading ? null : `${formatMontant(stats?.total_mandats_acceptes ?? 0)} DZD`, color: "var(--db-text-1)" },
-            { label: "Versements reçus",   value: loading ? null : `${formatMontant(stats?.total_versements_recus ?? 0)} DZD`, color: "#16a34a" },
-            { label: "Taux d'acceptation", value: loading ? null : `${stats?.taux_acceptation ?? 0}%`,                         color: "#2563eb" },
-          ].map(({ label, value, color }, i) => (
-            <div key={label} style={{ padding: isMobile ? "4px 8px" : "4px 16px", borderLeft: i > 0 ? "1px solid var(--db-border)" : "none" }}>
-              <div style={{ fontSize: isMobile ? 9.5 : 10.5, color: "var(--db-text-3)", fontWeight: 500, marginBottom: 4, textTransform: "uppercase", letterSpacing: ".05em" }}>
-                {label}
-              </div>
-              {value !== null ? (
-                <div style={{ fontSize: isMobile ? 12 : 16, fontWeight: 600, color, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.2px", lineHeight: 1.3 }}>
-                  {value}
-                </div>
-              ) : (
-                <Skel h={isMobile ? 14 : 20} w="80%" />
-              )}
-            </div>
-          ))}
-        </div>
-      </Card>
-    </motion.div>
+    <Card>
+      <CardHeader title="Bilan financier" />
+      <div className="dash-finance-strip">
+        {[
+          { label: "CA mandats", value: loading ? null : `${formatMontant(totalMandats)} DZD`, color: "#1a1714" },
+          { label: "Versements reçus", value: loading ? null : `${formatMontant(totalVersements)} DZD`, color: "#3a7a50" },
+          { label: "Taux d'acceptation", value: loading ? null : `${stats?.taux_acceptation ?? 0}%`, color: "#3a7ca5" },
+        ].map(item => (
+          <div key={item.label} className="dash-finance-cell">
+            <div className="dash-finance-label">{item.label}</div>
+            {item.value ? <div className="dash-finance-value tnum" style={{ color: item.color }}>{item.value}</div> : <Skel h={20} w="70%" />}
+          </div>
+        ))}
+      </div>
+    </Card>
   );
-
-  // ─── Commercial: soumissions (sans montants) ─────────────────────────────
 
   const soumissionsCommercialSection = (
     <Card>
       <CardHeader title="Soumissions récentes" link="/soumissions" linkLabel="Voir tout" />
       {loading ? (
-        <div style={{ padding: "10px 16px", display: "flex", flexDirection: "column", gap: 6 }}>
-          {[0, 1, 2].map(i => <Skel key={i} h={48} br={6} />)}
-        </div>
+        <div className="p-4 grid gap-2">{[0, 1, 2].map(i => <Skel key={i} h={52} br={10} />)}</div>
       ) : recents.length === 0 ? (
-        <EmptyState icon={<Ic d={IC.doc} size={22} />} text="Aucune soumission" />
+        <EmptyState icon={<Ic d={IC.doc} size={24} />} text="Aucune soumission" />
       ) : (
         <div>
           {recents.map((s, i) => (
-            <motion.div key={s.id} initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 + i * 0.05, type: "spring", damping: 30, stiffness: 300 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "1px solid var(--db-border)" }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: "var(--db-text-1)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {s.titre_projet}
-                  </div>
-                  <div style={{ fontSize: 11, color: "var(--db-text-3)", marginTop: 2 }}>
-                    {s.numero_offre} · {s.client?.entreprise ?? "—"}
-                  </div>
+            <motion.div key={s.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
+              <div className="dash-row">
+                <div className="min-w-0">
+                  <div className="dash-row-title">{s.titre_projet}</div>
+                  <div className="dash-row-meta">{s.numero_offre} · {s.client?.entreprise ?? "-"}</div>
                 </div>
                 <StatusPill label={s.statut} />
               </div>
@@ -591,107 +930,100 @@ export default function DashboardClient() {
     </Card>
   );
 
-  // ─── Content layout per role ──────────────────────────────────────────────
-
-  const twoCol = (left: ReactNode, right: ReactNode, below?: ReactNode) => (
-    <div style={{ display: "flex", flexDirection: "column", gap: isDesktop ? 16 : 12 }}>
-      <div style={isDesktop
-        ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }
-        : { display: "flex", flexDirection: "column", gap: 12 }
-      }>
-        {left}
-        {right}
-      </div>
-      {below}
-    </div>
-  );
-
   const contentByRole = () => {
-    if (role === "admin") return twoCol(soumissionsSection, relancesSection, bilanSection);
-    if (role === "charge_projet") return twoCol(soumissionsSection, enAttenteSection);
-    return twoCol(relancesSection, prospectsSection, soumissionsCommercialSection);
+    if (role === "admin") return (
+      <div className="dash-stack">
+        <div className="dash-grid">{soumissionsSection}{relancesSection}</div>
+        {bilanSection}
+      </div>
+    );
+    if (role === "charge_projet") return (
+      <div className="dash-grid">{soumissionsSection}{enAttenteSection}</div>
+    );
+    return (
+      <div className="dash-stack">
+        <div className="dash-grid">{relancesSection}{prospectsSection}</div>
+        {soumissionsCommercialSection}
+      </div>
+    );
   };
 
-  // ─── Render ────────────────────────────────────────────────────────────────
-
-  const FONT = "'Segoe UI', system-ui, -apple-system, sans-serif";
-
   return (
-    <div style={{ fontFamily: FONT, background: "var(--db-bg)", minHeight: "100%" }}>
+    <div className="dash-shell">
       <style>{CSS}</style>
-
-      {/* Hero */}
-      <div style={{
-        background: "#1a2e1e",
-        padding: isMobile ? "22px 16px 28px" : "28px 32px 36px",
-        position: "relative", overflow: "hidden",
-      }}>
-        <div style={{ position: "absolute", top: -60, right: -60, width: 260, height: 260, borderRadius: "50%", background: "rgba(255,255,255,.04)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: -80, right: "20%", width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,.03)", pointerEvents: "none" }} />
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ type: "spring", damping: 30, stiffness: 300 }} style={{ position: "relative" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: isMobile ? 14 : 18 }}>
-            <div style={{
-              width: isMobile ? 34 : 38, height: isMobile ? 34 : 38, borderRadius: "50%",
-              background: "rgba(255,255,255,.12)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: isMobile ? 12 : 13, fontWeight: 700, color: "#fff", flexShrink: 0,
-            }}>
-              {userInitials}
-            </div>
-            <div>
-              <div style={{ fontSize: 10, color: "rgba(255,255,255,.4)", fontWeight: 500, letterSpacing: ".05em", textTransform: "uppercase" }}>
-                {roleLabel}
+      <header className="dash-hero">
+        <div className="dash-hero-inner">
+          <div className="dash-identity">
+            <div className="dash-user">
+              <div className="dash-avatar">{userInitials}</div>
+              <div className="min-w-0">
+                <div className="dash-role">{roleLabel}</div>
+                <div className="dash-user-name truncate">{userName || "Utilisateur"}</div>
               </div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,.65)", fontWeight: 500 }}>{userName}</div>
+            </div>
+            <div className="dash-date-chip">
+              <Ic d={IC.clock} size={14} />
+              Aujourd'hui
             </div>
           </div>
-          <div style={{ fontSize: isMobile ? 20 : 24, fontWeight: 700, color: "#fff", marginBottom: 5, letterSpacing: "-0.4px" }}>
-            Bonjour, {userName.split(" ")[0]}
-          </div>
-          <div style={{ fontSize: isMobile ? 12.5 : 13, color: "rgba(255,255,255,.42)" }}>
-            {role === "admin"
-              ? "Vue d'ensemble de l'activité BTH Expert"
-              : role === "charge_projet"
-              ? "Vos soumissions et projets en cours"
-              : "Votre pipeline commercial du jour"}
-          </div>
-        </motion.div>
-      </div>
 
-      {/* Body */}
-      <div style={{ padding: isMobile ? "16px 16px 80px" : "24px 32px", maxWidth: 1400 }}>
-
-        {/* Stats row */}
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)",
-          gap: isMobile ? 8 : 12,
-          marginBottom: isMobile ? 14 : 20,
-        }}>
-          {loading
-            ? Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} style={{
-                  background: "#fff", borderRadius: 12, padding: 14,
-                  border: "1px solid var(--db-border)", boxShadow: "0 1px 3px rgba(0,0,0,.04)",
-                  display: "flex", flexDirection: "column", gap: 10,
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <Skel h={28} w={28} br={8} />
-                    <Skel h={11} w="55%" />
-                  </div>
-                  <Skel h={18} w="65%" />
-                </div>
-              ))
-            : displayedCards.map((c, i) => (
-                <StatCardWithIcon key={c.label} {...c} delay={i * 0.06} />
-              ))
-          }
+          <div className="dash-title-row">
+            <div>
+              <div className="dash-eyebrow">Tableau de bord</div>
+              <h1 className="dash-title">Bonjour, {userFirstName}</h1>
+              <p className="dash-subtitle">
+                {role === "admin"
+                  ? "Vue consolidée de l'activité, des revenus et des priorités."
+                  : role === "charge_projet"
+                  ? "Suivi des offres, brouillons et réponses en attente."
+                  : "Pipeline commercial et relances à traiter aujourd'hui."}
+              </p>
+            </div>
+            <div className="dash-actions">
+              {role !== "commercial" && (
+                <Link href="/soumissions/nouvelle" className="no-underline">
+                  <Button size="md"><Ic d={IC.plus} size={14} />Nouvelle offre</Button>
+                </Link>
+              )}
+              {role !== "charge_projet" && (
+                <Link href="/prospection/nouveau" className="no-underline">
+                  <Button variant="secondary" size="md"><Ic d={IC.plus} size={14} />Prospect</Button>
+                </Link>
+              )}
+            </div>
+          </div>
         </div>
+      </header>
 
-        {/* Role-specific content */}
+      <main className="dash-body">
+        <section className="dash-executive">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="dash-panel">
+            <div className="dash-panel-kicker">Résumé exécutif</div>
+            <div className="dash-panel-title">{executiveTitle}</div>
+            <div className={`dash-panel-value tnum ${role === "commercial" && overdueCount > 0 ? "is-danger" : ""}`}>
+              {loading ? "-" : executiveValue} <small>{executiveUnit}</small>
+            </div>
+            <p className="dash-panel-note">{loading ? "Chargement des indicateurs..." : executiveNote}</p>
+            <Chart rows={chartRows} />
+          </motion.div>
+
+          <div className="dash-kpi-grid">
+            {loading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="dash-kpi">
+                    <div className="dash-kpi-top">
+                      <Skel h={32} w={32} br={10} />
+                      <Skel h={12} w="55%" />
+                    </div>
+                    <Skel h={22} w="65%" br={7} />
+                  </div>
+                ))
+              : displayedCards.map((card, i) => <StatCardWithIcon key={card.label} {...card} delay={i * 0.04} />)}
+          </div>
+        </section>
+
         {contentByRole()}
-      </div>
+      </main>
     </div>
   );
 }

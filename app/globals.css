@@ -1,28 +1,195 @@
 @import "tailwindcss";
 
+/*
+  BTH HUB — Global Styles v1.0
+  ─────────────────────────────
+  Fonts chargées dans app/layout.tsx (next/font/google) — pas ici.
+
+  @theme → tokens qui génèrent des classes Tailwind (bg-*, text-*, rounded-*, p-*)
+           Tailwind v4 accepte : --color-*, --font-*, --radius-*, --spacing-*
+  :root  → easings, shadows, durées — accessibles via var(--bth-*)
+
+  VS Code warning "Unknown at rule @theme" = IDE uniquement, pas une erreur build.
+  Fix : .vscode/settings.json → { "css.lint.unknownAtRules": "ignore" }
+*/
+
 @theme {
-  --color-primary: #1a2e1e;
-  --color-primary-dark: #235f8a;
-  --color-primary-light: #4a9fd4;
-  --color-bg-section: #F4F6F7;
-  --font-family-sans: "Inter", system-ui, sans-serif;
+
+  /* ── Legacy — backward compat composants existants ── */
+  --color-primary:       #1a2e1e;
+  --color-primary-dark:  #1f4429;
+  --color-primary-light: #3a7a50;
+  --color-bg-section:    #f5f0e8;
+
+  /* ── Fonts (Tailwind v4 : --font-* sans suffixe -family) ── */
+  --font-sans:    'Space Grotesk', system-ui, sans-serif;
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body:    'Lora', Georgia, serif;
+
+  /* ── Surfaces Hub ── */
+  --color-bth-canvas:          #faf8f5;
+  --color-bth-surface-1:       #ffffff;
+  --color-bth-surface-2:       #f5f0e8;
+  --color-bth-surface-3:       #e8e2d8;
+  --color-bth-surface-4:       #d0c9be;
+  --color-bth-hairline:        #e8e2d8;
+  --color-bth-hairline-strong: #d0c9be;
+
+  /* ── Surfaces Site (dark canvas) ── */
+  --color-bth-site-canvas:    #010802;
+  --color-bth-site-surface-1: #0c1a0d;
+  --color-bth-site-surface-2: #152419;
+  --color-bth-site-surface-3: #1d3020;
+
+  /* ── Primary Green ── */
+  --color-bth-green-50:  #f2f7f3;
+  --color-bth-green-100: #e2ede5;
+  --color-bth-green-200: #c1d9c6;
+  --color-bth-green-300: #90bb9a;
+  --color-bth-green-400: #5d9a6e;
+  --color-bth-green-500: #3a7a50;
+  --color-bth-green-600: #2b5c3c;
+  --color-bth-green-700: #1f4429;
+  --color-bth-green-800: #1a2e1e;
+  --color-bth-green-900: #101c12;
+
+  /* ── Accent Gold ── */
+  --color-bth-gold-50:  #fefaef;
+  --color-bth-gold-100: #faf1d4;
+  --color-bth-gold-200: #f3dfa0;
+  --color-bth-gold-300: #e8c96a;
+  --color-bth-gold-400: #d9b24a;
+  --color-bth-gold-500: #C9A96E;
+  --color-bth-gold-600: #a8874e;
+  --color-bth-gold-700: #7c6238;
+
+  /* ── Neutrals Warm ── */
+  --color-bth-n-50:  #faf8f5;
+  --color-bth-n-100: #f5f0e8;
+  --color-bth-n-200: #e8e2d8;
+  --color-bth-n-300: #d0c9be;
+  --color-bth-n-400: #b0a898;
+  --color-bth-n-500: #887f74;
+  --color-bth-n-600: #635c54;
+  --color-bth-n-700: #45403a;
+  --color-bth-n-800: #2e2a26;
+  --color-bth-n-900: #1a1714;
+
+  /* ── Semantic ── */
+  --color-bth-success: #3a7a50;
+  --color-bth-warning: #C9A96E;
+  --color-bth-error:   #c44a3a;
+  --color-bth-info:    #3a7ca5;
+
+  /* ── Border Radius ── */
+  --radius-bth-xs:   4px;
+  --radius-bth-sm:   6px;
+  --radius-bth-md:   8px;
+  --radius-bth-lg:   12px;
+  --radius-bth-xl:   16px;
+  --radius-bth-pill: 9999px;
+
+  /* ── Spacing base 4px ── */
+  --spacing-bth-1:  4px;
+  --spacing-bth-2:  8px;
+  --spacing-bth-3:  12px;
+  --spacing-bth-4:  16px;
+  --spacing-bth-5:  20px;
+  --spacing-bth-6:  24px;
+  --spacing-bth-8:  32px;
+  --spacing-bth-10: 40px;
+  --spacing-bth-12: 48px;
+  --spacing-bth-16: 64px;
+  --spacing-bth-20: 80px;
 }
 
+/* ─────────────────────────────────────────
+   :ROOT — non supporté dans @theme Tailwind v4
+   easings, shadows, durées — usage : var(--bth-ease-spring)
+───────────────────────────────────────── */
+:root {
+  /* Durées */
+  --bth-dur-instant: 100ms;
+  --bth-dur-fast:    150ms;
+  --bth-dur-normal:  250ms;
+  --bth-dur-slow:    400ms;
+  --bth-dur-slower:  600ms;
+  --bth-dur-slowest: 800ms;
+
+  /* Easings */
+  --bth-ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --bth-ease-apple:  cubic-bezier(0.2, 0, 0, 1);
+  --bth-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --bth-ease-micro:  cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --bth-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Shadows */
+  --bth-shadow-sm:      0 1px 3px rgba(26, 46, 30, 0.06);
+  --bth-shadow-md:      0 4px 12px rgba(26, 46, 30, 0.08);
+  --bth-shadow-lg:      0 12px 40px rgba(26, 46, 30, 0.12);
+  --bth-shadow-xl:      0 24px 64px rgba(26, 46, 30, 0.16);
+  --bth-shadow-product: rgba(0, 0, 0, 0.22) 3px 5px 30px 0;
+}
+
+/* ─────────────────────────────────────────
+   BASE
+───────────────────────────────────────── */
 @layer base {
   html {
-    font-family: "Inter", system-ui, sans-serif;
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    font-feature-settings: "ss01";
     overflow-x: hidden;
   }
 
   body {
-    @apply bg-white text-gray-900;
+    background-color: #faf8f5;
+    color: #1a1714;
     overflow-x: hidden;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #C9A96E #f5f0e8;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: #f5f0e8;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #1a2e1e 0%, #C9A96E 100%);
+    border: 2px solid #f5f0e8;
+    border-radius: 9999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #1f4429 0%, #a8874e 100%);
   }
 }
 
+/* ─────────────────────────────────────────
+   UTILITIES
+───────────────────────────────────────── */
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
+    scrollbar-color: #C9A96E #f5f0e8;
+  }
+
+  .bth-focus:focus-visible {
+    outline: 2px solid #1a2e1e;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(26, 46, 30, 0.10);
+    transition: box-shadow 150ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+
+  .tnum {
+    font-feature-settings: "tnum";
+    letter-spacing: -0.42px;
   }
 }

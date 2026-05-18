@@ -36,6 +36,10 @@ Une faille de sécurité sur ce projet = données clients exposées.
 
 **`bth-document-style`** — Obligatoire pour toute génération ou correction de document officiel BTH Expert (soumissions DOCX/PDF).
 
+> ⚠️ Après toute génération via frontend-design ou /ui-ux-pro-max :
+> remplacer systématiquement les couleurs générées par les tokens --bth-*,
+> Inter/Roboto par Space Grotesk, et tout gris froid par les warm neutrals bth-n-*.
+
 ---
 
 ## Stack
@@ -49,10 +53,63 @@ Une faille de sécurité sur ce projet = données clients exposées.
 
 ---
 
+## Design System — LIRE AVANT TOUT COMPOSANT UI
+
+> Source de vérité : **`DESIGN.md`** (à la racine du projet)
+> Tokens CSS : **`app/globals.css`** — bloc `@theme` préfixe `--color-bth-*`
+
+### Règles non-négociables
+
+**Couleurs**
+- Nouveaux composants → toujours `bg-bth-green-800`, `text-bth-n-900`, etc. (classes générées par @theme)
+- Composants existants → peuvent garder `bg-primary` pour la compatibilité
+- Jamais de couleur hardcodée (`#1a2e1e`) — utiliser les tokens
+- Jamais de gris froid (`#f8f8f8`, `#e0e0e0`, `gray-100`) — toujours warm neutral (`bth-n-*`)
+- Gold `bth-gold-500` scarce : max 8 usages par page
+
+**Typographie**
+- Font UI : Space Grotesk partout dans le Hub
+- Font display/editorial : Playfair Display (titres de page seulement)
+- Font body dense : Lora (aperçus de soumission seulement)
+- Jamais Inter, Roboto, ou system-ui par défaut
+
+**Montants DZD — règle absolue**
+```tsx
+// TOUJOURS sur les cellules de montant
+<td className="tnum text-right font-medium">
+  {formatMontant(montant)}
+</td>
+// OU via classe utilitaire globale : className="tnum"
+// OU via CSS : font-feature-settings: "tnum"; letter-spacing: -0.42px;
+```
+
+**Boutons Hub**
+- `border-radius: 8px` (--radius-bth-md) — jamais pill (9999px) dans le Hub
+- 1 seul bouton Primary par zone/section
+- Press state : `transform: scale(0.97)` — toujours
+
+**Animations**
+- Jamais de gradient animé, float infini, pulse-glow
+- Jamais `transition: all` — nommer la propriété explicitement
+- Modal enter : `scale(0.95) translateY(16px) → scale(1)`, 400ms ease-spring
+- Hover card : `translateY(-2px)`, 250ms ease-out
+
+**Focus & Accessibilité**
+- Focus ring sur TOUS les éléments interactifs : classe `bth-focus` ou outline manuel
+- Touch targets minimum 44×44px
+
+### Surfaces Hub (hiérarchie à respecter)
+```
+canvas (#faf8f5) → surface-1 (#fff) → surface-2 (#f5f0e8) → surface-3 (#e8e2d8)
+Ne jamais sauter un niveau.
+```
+
+---
+
 ## Conventions critiques
 
-- Couleur : `#1a2e1e` | UI : **BTH Hub** | Documents officiels : **BTH Expert**
-- Montants : `100\u00A0000,00` via `formatMontant()` dans `lib/utils.ts`
+- UI : **BTH Hub** | Documents officiels : **BTH Expert**
+- Montants : `100\u00A0000,00` via `formatMontant()` dans `lib/utils.ts` + classe `tnum`
 - API routes : toujours `createServerClient` + `cookies()` — jamais le client anon (RLS 42501)
 - Policies RLS : `WITH CHECK` obligatoire en plus de `USING` pour les inserts
 - Clés API : uniquement `.env.local`, jamais dans le code
@@ -92,7 +149,7 @@ RLS : commercial voit uniquement ses propres entrées — admin voit tout.
 
 ## Fichiers à ne jamais modifier sans permission explicite
 
-`templates/template-standard.docx` · `lib/anthropic.ts` · `middleware.ts` · `lib/supabase-browser.ts` · `lib/supabase-server.ts` · `.env.local`
+`templates/template-standard.docx` · `lib/anthropic.ts` · `middleware.ts` · `lib/supabase-browser.ts` · `lib/supabase-server.ts` · `.env.local` · `DESIGN.md` (modifier uniquement si évolution du design system validée)
 
 ---
 
