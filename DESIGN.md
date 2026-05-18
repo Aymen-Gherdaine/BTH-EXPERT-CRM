@@ -1,270 +1,429 @@
-# Design System: BTH Hub CRM
-
-## 1. Visual Theme & Atmosphere
-
-A precision-calibrated, data-forward dashboard for environmental consultants. The atmosphere is **professional without being sterile** — like a well-lit architecture studio that happens to run financial projections. Every surface breathes; every element earns its place.
-
-**Density:** 6/10 — "Daily App Balanced." Data tables and cards coexist without crowding. Generous vertical rhythm inside dense components.
-
-**Variance:** 5/10 — Structured asymmetry. Left-anchored navigation, offset hero sections, split-column layouts with deliberate weight imbalance. Not chaotic — disciplined.
-
-**Motion:** 6/10 — Fluid CSS with spring physics. Slide-over panels spring in from the right. Status badges pulse on active state. Staggered list reveals on every data load. No theatrics — motion serves comprehension.
-
-**Mood language:** "A dense forest at dawn — precise, deep, alive. The green is not decorative; it is territorial. The interface knows what it is for."
+# BTH Hub — Design System
+> Version 1.0 · Mai 2026 · Référentiel : Linear (structure) + Stripe (data) + Apple (typography)
+> **Source de vérité UI pour tous les composants de BTH Hub.**
+> Claude Code lit ce fichier avant de générer ou modifier tout composant UI.
+> Mode : Light uniquement — dark mode non supporté dans BTH Hub.
 
 ---
 
-## 2. Color Palette & Roles
+## Fichiers de référence
 
-### Backgrounds & Surfaces
-- **Warm Parchment** (`#f6f6f4`) — Global page canvas. Warm off-white, never stark.
-- **Pure Surface** (`#ffffff`) — Cards, modals, sidebar, header. Elevated from canvas.
-- **Whisper Fill** (`#f3f4f6`) — Alternating table rows, skeleton loaders, inactive input fills.
-- **Subtle Fill** (`#edf5ee`) — Active navigation items, selected states, hover backgrounds for green-adjacent contexts.
-
-### Text Hierarchy
-- **Deep Ink** (`#111827`) — Primary text. Headlines, values, labels. Near-black, never pure black.
-- **Steel** (`#6b7280`) — Secondary text. Descriptions, dates, metadata.
-- **Ash** (`#9ca3af`) — Tertiary text. Placeholders, column headers, helper text, timestamps.
-
-### Structure
-- **Cool Border** (`#e5e7eb`) — Primary structural lines. Table dividers, card outlines, input borders.
-- **Ghost Border** (`#f3f4f6`) — Subtle internal dividers. Table row separators, between-section lines.
-
-### Brand Green (Single Accent System)
-- **Forest Deep** (`#1a2e1e`) — Primary CTA buttons, active sidebar items, brand mark, avatar fills. Maximum authority.
-- **Forest Mid** (`#2d5a3d`) — Progress bars, versement indicators, secondary green actions.
-- **Forest Whisper** (`#edf5ee`) — Green tinted backgrounds for selected rows, filter chip active state, status change hover.
-
-### Status Semantic Colors
-- **Draft Gray** — Background `#f3f4f6` · Text `#4b5563` · Dot `#9ca3af`
-- **Sent Blue** — Background `#dbeafe` · Text `#1d4ed8` · Dot `#60a5fa`
-- **Accepted Green** — Background `#dcfce7` · Text `#16a34a` · Dot `#4ade80`
-- **Refused Red** — Background `#fee2e2` · Text `#dc2626` · Dot `#f87171`
-
-### Banned Colors
-- Pure black `#000000` — NEVER use. Use Deep Ink `#111827` instead.
-- Any purple, violet, or indigo — off-brand.
-- Neon or oversaturated greens — the brand green is desaturated and deep, not lime.
-- Warm grays mixed with cool grays — the palette is exclusively cool-neutral.
+```
+DESIGN.md              ← ce fichier (racine du projet)
+CLAUDE.md              ← instructions Claude Code (résumé des règles design inclus)
+app/globals.css        ← tous les tokens CSS (@theme --color-bth-*, :root --bth-ease-*)
+app/layout.tsx         ← import des fonts (Space Grotesk, Playfair Display, Lora)
+```
 
 ---
 
-## 3. Typography Rules
+## Stack & Contraintes
 
-### Display & Headings — Syne
-- **Font:** `Syne` (Google Fonts, weights 700 and 800)
-- **Usage:** Page titles (`h1`), panel headers, section headers, modal titles
-- **Letter spacing:** `-0.4px` to `-0.8px` depending on size — always track-tight
-- **Scale:** `28px` (desktop page title) → `24px` (mobile) → `20px` (card title) → `17px` (panel title) → `14px` (section label)
-- **Rendering:** `lineHeight: 1` for large headlines, `1.3` for panel headers
-
-### Body & UI — Figtree
-- **Font:** `Figtree` (Google Fonts, weights 400, 500, 600, 700)
-- **Usage:** All body copy, table data, button labels, form inputs, metadata, navigation
-- **Base size:** `13px` for UI text, `12px` for metadata, `11.5px` for tertiary labels
-- **Leading:** `1.5` for multi-line body, `1` for single-line UI elements
-- **Max-width:** 65ch for all paragraph text
-
-### Numeric Display — Tabular Nums
-- **Property:** `fontVariantNumeric: "tabular-nums"` on all monetary values and statistics
-- **Applies to:** TTC amounts in table rows, dashboard KPIs, versement percentages
-- **Letter spacing:** `-0.4px` to `-0.5px` on large numeric displays (16px+)
-
-### BANNED
-- `Inter` — generic, overused in dashboards, no personality
-- Any serif font — this is a professional software UI, never editorial
-- `system-ui` fallbacks as primary — always specify Syne or Figtree explicitly
-- ALL CAPS labels beyond 10.5px — use uppercase only for section headers at ≤11px
+- Next.js App Router + TypeScript strict
+- Tailwind CSS v4 — tokens via `@theme` dans `globals.css`
+- Framer Motion pour les animations
+- Polices chargées dans `app/layout.tsx` via `next/font/google`
+  - `Space Grotesk` (subsets: latin, weights: 300 400 500 600 700)
+  - `Playfair Display` (subsets: latin, weights: 400 500 600 700, italic: 400 500)
+  - `Lora` (subsets: latin, weights: 400 500, italic: 400)
 
 ---
 
-## 4. Component Stylings
+## Philosophie
 
-### Buttons
-- **Primary (Forest Deep):** `background: #1a2e1e`, white text, `borderRadius: 8–10px`, `height: 36–38px`, `padding: 0 13–14px`. Box shadow: `0 2px 8px rgba(26,46,30,.18)`. Active state: `whileTap={{ scale: .94 }}` — tactile push.
-- **Secondary (Ghost):** `border: 1.5px solid #e5e7eb`, white background, `#6b7280` text. No shadow. Active: `scale: .96`.
-- **Danger (Softened):** `background: #fee2e2`, `color: #dc2626`, `border: 1.5px solid #f8717140`. Not aggressive — contained red.
-- **Success (Green Tint):** `background: #edf5ee`, `color: #16a34a`, `border: 1.5px solid #4ade8060`.
-- **Square Icon Button:** `36×36px`, `borderRadius: 10px`. Used for mobile "+" and compact actions.
-- NO outer glows. NO neon drop-shadows. NO custom cursors.
-
-### Cards & Panels
-- **List Cards (Mobile):** `borderRadius: 14px`, `border: 1px solid #e5e7eb`, `boxShadow: 0 1px 3px rgba(0,0,0,.05), 0 4px 12px rgba(0,0,0,.04)`. Left status bar: 4px wide, colored by `statut` dot color. No color background fill.
-- **KPI Chips (Stats Bar):** `borderRadius: 8px`, `background: #f6f6f4`, `border: 1px solid #e5e7eb`, `padding: 6px 12px`. Inline icon + label + value. Compact, non-elevated.
-- **Detail Panels (Sections inside slide-over):** `background: #f6f6f4`, `borderRadius: 10px`, `border: 1px solid #e5e7eb`, `padding: 12–14px`. Used for grouped information (finances, status change, budget lines).
-- **Modals:** `borderRadius: 20px`, `boxShadow: 0 25px 60px rgba(0,0,0,.15)`, `maxWidth: 400px`. Spring in from center with scale + y transform. Backdrop: `rgba(0,0,0,.3)` + `backdropFilter: blur(4px)`.
-
-### Table (Desktop)
-- **Row height:** 44px — compact single-line. No wrapping.
-- **Header:** `height: 36px`, `background: #f6f6f4`, `fontSize: 10.5px`, uppercase, `letterSpacing: 0.7px`, `color: #9ca3af`. Sticky with `position: sticky, top: 0`.
-- **Hover:** `background: #f7f8f6`. Selected: `#edf5ee`. Active (panel open): `#e6f0e7`.
-- **Actions column:** Hidden by default (`opacity: 0`), appear on row hover (`opacity: 1`). 28×28px icon buttons.
-- **Footer total:** 52px fixed bar at table bottom. Left: count. Right: total DZD TTC. Separated by spacer flex-1.
-- **Sort indicator:** Small chevron SVG, 10px, appended to active column header only.
-
-### Status Pills
-- `display: inline-flex`, `alignItems: center`, `gap: 5px`. Colored dot (4–5px) + label. `borderRadius: 20px`. `fontWeight: 600`. Sizes: small (`fontSize: 10.5px, padding: 2px 8px`) and regular (`fontSize: 11.5px, padding: 3px 10px`).
-
-### Avatars (Client Initials)
-- Circle or rounded square depending on `size`. Background color deterministically derived from client name (stable hash → palette index). `AVATAR_COLORS`: 7 forest-adjacent deep tones. White text, `fontWeight: 700`. Size 26–32px for tables, 28–30px for cards.
-
-### Inputs & Forms
-- `height: 38px`, `border: 1.5px solid #e5e7eb`, `borderRadius: 8px`. `fontFamily: Figtree`, `fontSize: 13px`. Focus: border color transitions to `#1a2e1e` (no ring glow, no box-shadow explosion).
-- Label always above. Error text below in `#dc2626`. Helper text in `#9ca3af`.
-- Search fields: Left-aligned icon at 10px from edge, `paddingLeft: 32–34px`. Icon color `#9ca3af`.
-- NO floating labels. NO animated label morphing on focus.
-
-### Slide-over Detail Panel
-- **Desktop:** Fixed right `width: 440px`, `position: fixed, top: 0, right: 0, bottom: 0`. Spring animation: `x: "100%" → 0`, `type: "spring", damping: 28, stiffness: 280`. Background overlay: `rgba(0,0,0,.12)` — light, not blocking.
-- **Mobile:** Bottom sheet, `borderRadius: 20px 20px 0 0`, `maxHeight: 90%`. Spring animation: `y: "100%" → 0`. Backdrop: `rgba(0,0,0,.38)` + blur. Drag handle: 36×4px pill at top.
-
-### Skeleton Loaders
-- Exact layout dimensions, `borderRadius: 10px`, `background: #f3f4f6`, animated with CSS keyframe: `opacity 1 → 0.4 → 1`, `1.5s ease-in-out infinite`. NO circular spinners.
-
-### Filter Dropdown
-- Trigger button: `height: 38px`, `borderRadius: 8px`. Active state border turns Forest Deep `#1a2e1e` with Whisper background.
-- Popover: Spring scale from `0.97` + `y: -6px → 0`. `borderRadius: 10px`, `boxShadow: 0 8px 24px rgba(0,0,0,.10)`. Fixed overlay div at `z: 49` for click-outside dismiss.
-- Items: 36px rows with dot indicator + count in muted parenthesis.
+BTH Hub est un **outil professionnel premium** pour des consultants en environnement.
+- La densité est assumée — pas de décoration superflue
+- Chaque animation a une raison fonctionnelle
+- Le vert (#1a2e1e) est l'autorité. Le gold (#C9A96E) est l'accent rare.
+- Les montants DZD utilisent TOUJOURS `font-feature-settings: "tnum"` — signature d'un outil financier sérieux (principe Stripe)
+- Jamais de gris froid — warm neutrals uniquement
 
 ---
 
-## 5. Layout Principles
+## Tokens Couleurs
 
-### Navigation Architecture
-- **Desktop sidebar:** `width: 256px (64 * 4)`, fixed height, `border-right: 1px solid #e5e7eb`, `background: white`. Nav items: `height: ~40px`, `borderRadius: 8px`, icon + label. Active: Forest Deep background + white text. `hidden md:flex`.
-- **Mobile bottom nav:** Fixed bottom, `background: white`, `border-top: 1px solid #e5e7eb`. 5 items equally spaced. Active item gets `background: #edf5ee` pill behind icon. `position: absolute, bottom: 0` (within layout container, not fixed to viewport).
-- **Header:** `height: 56px`, sticky top, `z: 40`. Mobile only — shows BTH Hub logo + user avatar.
+> Tokens disponibles comme classes Tailwind : `bg-bth-green-800`, `text-bth-n-600`, etc.
+> Définis dans `app/globals.css` bloc `@theme`.
 
-### Page Content Container
-- All page content lives in `<main>` with `flex-1 overflow-y-auto overflow-x-hidden pb-16 md:pb-0`.
-- Desktop table pages: card container `margin: 16px 32px`, `borderRadius: 12px`, `border: 1px solid #e5e7eb`, `overflow: hidden`.
-- Mobile: `padding: 12px 18px 80px` (80px to clear bottom nav).
+### Canvas & Surfaces Hub (Light-first, 4 niveaux — principe Linear)
+```
+--color-bth-canvas:    #faf8f5   /* fond de page — warm cream */
+--color-bth-surface-1: #ffffff   /* cards, panels */
+--color-bth-surface-2: #f5f0e8   /* featured cards, hover state */
+--color-bth-surface-3: #e8e2d8   /* sub-nav, dropdown menus */
+--color-bth-surface-4: #d0c9be   /* deepest lifted surface */
+--color-bth-hairline:        #e8e2d8
+--color-bth-hairline-strong: #d0c9be
+```
 
-### Hero / Page Header Section
-- White background, `border-bottom: 1px solid #e5e7eb`. Padding: `20px [px]px 16px`.
-- Title (Syne 800) + count badge on left. Action buttons on right.
-- Stats chips row below title when isAdmin — `gap: 8px, flexWrap: wrap`.
-- Filter bar as its own white stripe below hero, `border-bottom: 1px solid #e5e7eb`.
+### Primaire — Forest Green
+```
+--color-bth-green-50:  #f2f7f3
+--color-bth-green-100: #e2ede5
+--color-bth-green-200: #c1d9c6
+--color-bth-green-300: #90bb9a
+--color-bth-green-400: #5d9a6e
+--color-bth-green-500: #3a7a50
+--color-bth-green-600: #2b5c3c
+--color-bth-green-700: #1f4429
+--color-bth-green-800: #1a2e1e   /* ← brand primary — CTA, headings, focus */
+--color-bth-green-900: #101c12
+```
 
-### Grid & Spacing
-- CSS Grid for all table layouts: explicit `gridTemplateColumns` strings, never `repeat(auto-fill)` for data tables.
-- Flexbox for navigation, cards, and inline compositions.
-- 44px minimum touch target for all interactive elements on mobile.
-- Section padding: `px` variable scales from `18px` (mobile) to `32px` (desktop).
-- `max-width` for modal content: `400px`.
+### Accent — Gold (SCARCE — max 8 usages par page)
+```
+--color-bth-gold-50:  #fefaef
+--color-bth-gold-100: #faf1d4
+--color-bth-gold-200: #f3dfa0
+--color-bth-gold-300: #e8c96a
+--color-bth-gold-400: #d9b24a
+--color-bth-gold-500: #C9A96E   /* ← brand accent */
+--color-bth-gold-600: #a8874e
+--color-bth-gold-700: #7c6238
+```
 
----
+**Usages gold autorisés (8 max) :**
+logo separator · bullet points listes · barre gauche nav-item actif · ligne TTC tableaux ·
+filets de séparation H1 · top-border page documents · eyebrow text · OBJET italique documents
 
-## 6. Motion & Interaction
+### Neutrals Warm (JAMAIS de gris froid — #f8f8f8, gray-100, etc.)
+```
+--color-bth-n-50:  #faf8f5
+--color-bth-n-100: #f5f0e8
+--color-bth-n-200: #e8e2d8
+--color-bth-n-300: #d0c9be
+--color-bth-n-400: #b0a898
+--color-bth-n-500: #887f74
+--color-bth-n-600: #635c54
+--color-bth-n-700: #45403a
+--color-bth-n-800: #2e2a26
+--color-bth-n-900: #1a1714
+```
 
-### Spring Physics
-- **Default spring:** `type: "spring", damping: 28, stiffness: 280` — used for slide-over panels (snappy, premium).
-- **Snappier spring:** `damping: 28, stiffness: 320` — mobile bottom sheets.
-- **Slower reveal:** `duration: .25, ease: [.25,.46,.45,.94]` — card list items on page load.
-- NO `linear` easing anywhere. NO `ease-in` or abrupt stops.
+### Ink (texte)
+```
+--color-bth-ink:         = bth-n-900 → #1a1714  /* titres, texte principal */
+Utiliser directement bg-bth-n-900 / text-bth-n-900 dans Tailwind.
+```
 
-### Perpetual Micro-Interactions
-- **Status dot badge in header:** Ping animation (`animate-ping`) on unread alerts. Red outer ring pulse.
-- **Progress bars:** Always animate from `width: 0` to `width: ${pct}%` with `duration: .6, ease: "easeOut"` on mount.
-- **Skeleton loaders:** Continuous opacity pulse at 1.5s cycle.
-- **Row hover:** Background color transition `0.08s`. Action buttons opacity `0.12s`.
-
-### Staggered Reveals
-- Mobile cards: `delay: idx * 0.06` stagger, `duration: .25` each.
-- Progress bars on mobile cards: `delay: idx * .06 + .3` (offset to follow card entrance).
-- List items inside detail panel: no stagger (already inside a panel animation).
-
-### Transition Constraints
-- Animate ONLY `transform` and `opacity`. Never `width`, `height`, `top`, `left`, `backgroundColor`.
-- Exception: background-color on hover/selected rows uses CSS `transition: background .08s` — not Framer Motion (native browser transition for performance on dense tables).
-- Detail panel backdrop: `opacity 0 → 1` only. No scale, no blur animation on backdrop.
-
-### whileTap Feedback
-- Primary buttons: `scale: .94`
-- Secondary/ghost buttons: `scale: .96`
-- Mobile cards: `scale: .988`
-- Danger buttons in panel: `scale: .96`
-- Modals buttons: `scale: .97`
-
----
-
-## 7. Responsive Rules
-
-### Breakpoints
-- **Mobile:** `< 640px` — single column, bottom nav, 5 cards per page, square icon buttons
-- **Tablet:** `640px–1023px` — hybrid; sidebar hidden, bottom nav shown, card layout
-- **Desktop:** `≥ 1024px` — sidebar visible, table layout, 10 rows per page, full button labels
-
-### Layout Collapse
-- Sidebar `hidden md:flex` → BottomNav appears on mobile
-- Page hero: `fontSize: 24px` on mobile → `28px` on desktop
-- "Nouvelle soumission" button: full label on desktop → square `+` icon button on mobile (36×36px)
-- Stats chips: wrap freely (`flexWrap: wrap`) — never clip or overflow horizontally
-- Table: hidden below `md`, replaced by card list
-
-### Typography Scaling
-- `h1` page title: `28px desktop / 24px mobile` (explicit, not clamp — step function tied to sidebar breakpoint)
-- Body text minimum `13px` (never below `11px` for any visible label)
-- All `fontSize` values are `px` or `em` — no `rem` needed since page root font is standard
-
-### Touch Targets
-- All interactive elements: `minHeight: 44px` on mobile
-- Table action buttons (28px) are desktop-only — hidden on mobile
-- Bottom nav items: `minHeight: 44px` with `5-item` grid
+### Sémantiques
+```
+--color-bth-success: #3a7a50   /* vert-500 */
+--color-bth-warning: #C9A96E   /* gold-500 */
+--color-bth-error:   #c44a3a
+--color-bth-info:    #3a7ca5
+```
 
 ---
 
-## 8. Iconography
+## Typographie
 
-- **Source:** Hand-drawn SVG paths (`viewBox="0 0 24 24"`), `strokeLinecap="round"`, `strokeLinejoin="round"`
-- **Weight:** `strokeWidth: 1.6` default, `2` for active/emphasized states, `2.5` for close/dismiss buttons
-- **Size scale:** `12px` for action row icons, `13px` for chip icons, `14–15px` for button icons, `18–20px` for empty state icons, `28px` for large empty state illustrations
-- **Color:** Always inherits from parent (`currentColor`) or explicit `s="#9ca3af"` for muted contexts
-- **Fill:** Always `fill="none"` for stroke icons. Circle fills only for status dots.
+### Familles
+- **Space Grotesk** — TOUT l'UI Hub : titres, labels, boutons, inputs, tableaux, navigation
+- **Playfair Display** — titres display uniquement (hero sections, titres de page majeurs)
+- **Lora** — uniquement corps de texte dense (aperçus de soumission, texte éditorial)
+- Jamais Inter, Roboto, ou la police système par défaut
+
+### Échelle (principe Linear — tracking négatif sur grandes tailles)
+```
+Token          Size  Weight  Line-H  Tracking  Usage
+display-xl     40px  700     1.10    -1.0px    Titres de page (Playfair ou Space Grotesk)
+display-lg     32px  600     1.15    -0.6px    Titres de section
+headline       24px  600     1.20    -0.4px    Card titles
+title          20px  500     1.25    -0.2px    Sous-titres
+body-lg        17px  400     1.50    0         Corps principal (principe Apple — 17px pas 16px)
+body           15px  400     1.50    0         UI par défaut
+body-sm        13px  400     1.50    0         Labels secondaires
+caption        11px  500     1.40    +0.02em   Meta, timestamps
+button         14px  500     1.20    0         Labels boutons
+eyebrow        10px  600     1.30    +0.28em   Section eyebrow (tracking POSITIF intentionnel)
+mono-num       14px  400     1.40    -0.42px   Montants DZD (+ tnum obligatoire)
+```
+
+### Règle critique — montants financiers (principe Stripe)
+```tsx
+// Classe utilitaire globale définie dans globals.css
+<td className="tnum text-right font-medium">
+  {formatMontant(montant)} DZD
+</td>
+
+// CSS équivalent :
+// font-feature-settings: "tnum";
+// letter-spacing: -0.42px;
+// font-weight: 500;
+```
+
+### Weight ladder : 300 / 400 / 500 / 600 / 700 — jamais 800+, jamais 500 absent
 
 ---
 
-## 9. Anti-Patterns (Banned)
+## Espacement (base 4px)
 
-### Typography
-- `Inter` font — BANNED. Use Syne (display) + Figtree (body).
-- Any serif font (`Georgia`, `Times New Roman`, `Garamond`) — BANNED for all dashboard and software UI contexts.
-- ALL CAPS labels at body size — use `textTransform: uppercase` only at 10.5px max with 0.7px letter-spacing.
-- Gradient text on headings — BANNED.
+Classes Tailwind générées : `p-bth-6` = 24px, `gap-bth-4` = 16px, etc.
 
-### Color
-- Pure black `#000000` — BANNED. Use `#111827`.
-- Neon outer glow shadows (`0 0 20px rgba(0,255,0,.5)`) — BANNED.
-- Oversaturated or lime green — the brand green is `#1a2e1e`, not #00ff00.
-- Purple, violet, indigo — completely off-brand.
-- Warm gray mixed with cool gray in the same view — pick one and hold it.
+```
+--spacing-bth-1:  4px    p-bth-1
+--spacing-bth-2:  8px    p-bth-2
+--spacing-bth-3:  12px   p-bth-3
+--spacing-bth-4:  16px   p-bth-4
+--spacing-bth-5:  20px   p-bth-5
+--spacing-bth-6:  24px   p-bth-6   ← card padding standard
+--spacing-bth-8:  32px   p-bth-8   ← modal padding
+--spacing-bth-10: 40px
+--spacing-bth-12: 48px
+--spacing-bth-16: 64px
+--spacing-bth-20: 80px
+```
 
-### Layout
-- Centered hero sections — this is a dashboard, not a landing page.
-- Three equal-width cards horizontally — use offset asymmetric grids, zig-zag, or horizontal scroll.
-- `h-screen` for full-height sections — use `min-h-[100dvh]` (iOS Safari bug).
-- Overlapping elements — every element occupies a clean spatial zone with no stacking.
-- Horizontal overflow on mobile — always clip or collapse.
-- `position: absolute` for layout — only for overlays and positioned dropdowns.
+---
 
-### Motion
-- `linear` easing — BANNED. Spring physics or named easing curves only.
-- Animating `width`, `height`, `top`, `left` — use `transform: scaleX()` or `transform: translateX()` instead.
-- Mounting entire lists instantly — always stagger with `delay: idx * 0.06`.
-- Grain/noise filters without `will-change: transform` — perf failure on low-end devices.
+## Border Radius
 
-### Content & Copy
-- Placeholder names like "John Doe", "Acme Corp", "Entreprise SAS" — BANNED in demos.
-- Fabricated metrics ("99.99% uptime", "124ms response") — BANNED. Use `[metric]` placeholders.
-- AI copywriting: "Elevate your workflow", "Seamless integration", "Unleash potential" — BANNED.
-- Filler UI: "Scroll to explore", bouncing chevrons, "Learn more →" secondary CTAs — BANNED.
-- Emojis anywhere in the UI — BANNED.
-- `LABEL // YEAR` formatting conventions — BANNED.
+```
+--radius-bth-xs:   4px    badges, status chips
+--radius-bth-sm:   6px    inline tags, sidebar nav items
+--radius-bth-md:   8px    TOUS les boutons Hub (JAMAIS pill)
+--radius-bth-lg:   12px   cards, panels
+--radius-bth-xl:   16px   modals, drawers
+--radius-bth-pill: 9999px status badges uniquement — PAS les boutons Hub
+```
 
-### Components
-- Circular loading spinners — use skeletal loaders matching exact layout dimensions.
-- Custom mouse cursors — BANNED.
-- Floating labels on inputs — always label above, static.
-- Generic "No data" empty states — compose meaningful empty states with context-aware messaging.
-- Action menus on click without visual affordance — use hover-reveal with smooth opacity transition.
+---
+
+## Animations
+
+### Tokens (dans :root de globals.css — non supportés dans @theme)
+```
+--bth-ease-out:    cubic-bezier(0.16, 1, 0.3, 1)    /* reveals, entrées */
+--bth-ease-apple:  cubic-bezier(0.2, 0, 0, 1)        /* transitions de page */
+--bth-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1)      /* changements d'état */
+--bth-ease-micro:  cubic-bezier(0.25, 0.46, 0.45, 0.94) /* hover, focus */
+--bth-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1) /* modals, drawers */
+
+--bth-dur-instant: 100ms   hover bg, focus ring
+--bth-dur-fast:    150ms   tooltips, badges
+--bth-dur-normal:  250ms   menus, state changes
+--bth-dur-slow:    400ms   modals, reveals
+--bth-dur-slower:  600ms   scroll reveals
+--bth-dur-slowest: 800ms   hero reveals
+```
+
+### Règles d'animation
+- Déclenchées par l'utilisateur ou scroll — jamais auto-play loop
+- Jamais : float infini, pulse-glow, gradient animé
+- Modal enter : `scale(0.95) translateY(16px) → scale(1) translateY(0)` · 400ms ease-spring
+- Bouton press : `transform: scale(0.97)` · 100ms instant (principe Apple)
+- Hover card : `translateY(-2px)` · 250ms ease-out
+- Focus ring : border + box-shadow · 150ms ease-out
+- Page transition : `translateX` · 400ms ease-apple · Framer Motion AnimatePresence
+- Skeleton : shimmer 1.8s ease-in-out infinite (seul loop autorisé — utilitaire)
+- Jamais `transition: all` — nommer la propriété explicitement
+
+---
+
+## Composants
+
+### Button
+
+**Primary** — 1 par zone maximum
+```tsx
+className="bg-bth-green-800 hover:bg-bth-green-700 text-white
+           font-medium text-sm px-4 py-2 rounded-bth-md
+           transition-colors duration-bth-instant
+           active:scale-97 bth-focus"
+```
+
+**Secondary**
+```tsx
+className="bg-white hover:bg-bth-n-50 text-bth-n-900
+           border border-bth-hairline-strong
+           font-medium text-sm px-4 py-2 rounded-bth-md
+           transition-colors duration-bth-instant bth-focus"
+```
+
+**Ghost**
+```tsx
+className="bg-transparent hover:bg-bth-n-100 text-bth-n-600
+           font-medium text-sm px-4 py-2 rounded-bth-md
+           transition-colors duration-bth-instant bth-focus"
+```
+
+**Danger**
+```tsx
+className="bg-bth-error hover:bg-[#a83c2e] text-white
+           font-medium text-sm px-4 py-2 rounded-bth-md
+           transition-colors duration-bth-instant bth-focus"
+```
+
+### Input / Form Field
+```tsx
+className="w-full bg-white border border-bth-n-300
+           rounded-bth-md px-3 py-2.5 text-sm text-bth-n-900
+           placeholder:text-bth-n-400 font-normal
+           focus:border-bth-green-800 focus:ring-0
+           focus:shadow-[0_0_0_3px_rgba(26,46,30,0.10)]
+           transition-[border-color,box-shadow] duration-bth-fast"
+```
+
+### Card
+```tsx
+/* Surface-1 standard */
+className="bg-white border border-bth-hairline rounded-bth-lg p-6
+           shadow-[var(--bth-shadow-sm)]
+           hover:shadow-[var(--bth-shadow-md)] hover:-translate-y-0.5
+           transition-[box-shadow,transform] duration-bth-normal"
+
+/* Surface-2 featured */
+className="bg-bth-surface-2 border border-bth-hairline-strong rounded-bth-lg p-6"
+```
+
+### Status Badge
+```tsx
+/* accepted */  "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[rgba(58,122,80,0.12)] text-bth-success"
+/* pending */   "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[rgba(201,169,110,0.12)] text-bth-gold-600"
+/* refused */   "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[rgba(196,74,58,0.12)] text-bth-error"
+/* draft */     "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-bth-n-100 text-bth-n-600"
+```
+
+### Navigation Top Nav
+```
+height: 56px · bg-white · border-b border-bth-hairline · px-6
+Logo: Space Grotesk 600 · text-[13px] · tracking-[0.15em] · text-bth-green-800
+Links: text-[13px] · text-bth-n-500 · hover:text-bth-n-900
+Active: text-bth-n-900 · font-medium
+```
+
+### Sidebar
+```
+width: 240px · bg-white · border-r border-bth-hairline · px-3 py-4
+
+nav-item default: px-3 py-2 · rounded-bth-sm · text-[13px] · text-bth-n-500
+nav-item hover:  bg-bth-n-100 · text-bth-n-900 · transition 100ms
+nav-item active: bg-bth-green-50 · text-bth-green-800 · font-semibold
+                 border-l-2 border-bth-gold-500 (gold — usage autorisé)
+
+section-label: text-[9px] · font-semibold · tracking-[0.25em] · uppercase · text-bth-n-400
+               pt-4 pb-1 px-3
+```
+
+### Table
+```
+thead:
+  bg-bth-n-200 · border-t-2 border-bth-green-800 · border-b border-bth-n-300
+  th: Space Grotesk 600 · text-[11px] · tracking-[0.06em] · uppercase · text-bth-green-800
+      px-4 py-2.5
+
+tbody tr: border-b border-bth-hairline · hover:bg-bth-n-50 · transition 100ms
+tbody td: text-[13px] · text-bth-n-700 · px-4 py-3
+
+td.amount (OBLIGATOIRE):
+  className="tnum text-right font-medium"
+
+row-total: bg-bth-n-800 · text-white · font-semibold
+row-tva:   bg-bth-n-100 · text-bth-n-600
+row-ttc:   bg-bth-gold-500 · text-white · font-bold   (gold — usage autorisé)
+```
+
+### Modal (Framer Motion)
+```tsx
+// Overlay
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  exit={{ opacity: 0 }}
+  transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+  className="fixed inset-0 bg-[rgba(1,8,2,0.6)] backdrop-blur-sm flex items-center justify-center z-50"
+>
+// Box
+<motion.div
+  initial={{ scale: 0.95, y: 16, opacity: 0 }}
+  animate={{ scale: 1, y: 0, opacity: 1 }}
+  exit={{ scale: 0.95, opacity: 0 }}
+  transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+  className="bg-white border border-bth-n-200 rounded-bth-xl p-8 max-w-[480px] w-full
+             shadow-[var(--bth-shadow-xl)]"
+>
+```
+
+### Toast
+```tsx
+// enter: translateY(80px)→0 · 400ms ease-spring · auto-dismiss 3000ms
+className="bg-bth-n-800 text-white px-5 py-3 rounded-bth-md
+           font-medium text-[13px] shadow-[0_4px_24px_rgba(0,0,0,0.2)]
+           flex items-center gap-2"
+```
+
+### Skeleton
+```tsx
+className="animate-pulse bg-gradient-to-r from-bth-n-100 via-bth-n-200 to-bth-n-100
+           bg-[length:200%_100%] rounded-bth-xs"
+// animation: shimmer 1.8s ease-in-out infinite (seul loop autorisé)
+```
+
+---
+
+## Do's ✓
+
+- `font-feature-settings: "tnum"` + classe `tnum` sur TOUS les montants DZD
+- 1 seul bouton Primary par section/zone
+- Hiérarchie surfaces : canvas → surface-1 → surface-2 → surface-3 (ne pas sauter)
+- Gold uniquement pour les 8 usages documentés ci-dessus
+- Classe `bth-focus` sur TOUS les éléments interactifs
+- Touch targets ≥ 44×44px (accessibilité obligatoire)
+- Nommer la propriété dans `transition:` (pas `transition: all`)
+- Body text à 17px pas 16px (principe Apple)
+- `font-feature-settings: "ss01"` déjà actif globalement via html dans globals.css
+
+## Don'ts ✗
+
+- Jamais gradient décoratif, float infini, pulse-glow
+- Jamais gris froid (gray-100, #f8f8f8, #e0e0e0)
+- Jamais couleur hardcodée en dehors des tokens
+- Jamais montant sans classe `tnum`
+- Jamais `border-radius: 9999px` sur les boutons Hub
+- Jamais `transition: all`
+- Jamais font-size < 11px
+- Jamais Inter ou Roboto
+- Jamais weight 800+ ou weight 500 absent du ladder
+
+---
+
+## Responsive
+
+### Breakpoints (Tailwind v4)
+```
+xs:  320px   sm:480px   md:768px   lg:1024px   xl:1280px   2xl:1440px
+```
+
+### Typographie fluid (clamp)
+```css
+display-xl: clamp(28px, 2.5vw + 14px, 40px)
+display-lg: clamp(22px, 2vw + 10px, 32px)
+headline:   clamp(18px, 1.5vw + 8px, 24px)
+body-lg:    clamp(15px, 1vw + 10px, 17px)
+```
+
+### Layout adaptatif
+- Desktop ≥1024px : sidebar fixe 240px · toutes colonnes tables
+- Tablet 768-1023px : sidebar en drawer overlay · colonnes secondaires masquées
+- Mobile <768px : bottom navigation bar · tables en card layout
+
+---
+
+## Prompt Claude Code — page de test
+
+Pour valider l'intégration du design system, créer `/app/design-test/page.tsx` :
+
+```
+Lis DESIGN.md.
+
+Crée /app/design-test/page.tsx — page de test isolée (n'impacte rien d'existant).
+Affiche : palette bth-*, échelle typo, 4 variants boutons, card avec badge,
+input avec focus state, tableau 3 lignes avec montants DZD (classe tnum obligatoire),
+skeleton loading.
+
+Utilise uniquement les classes Tailwind bg-bth-*, text-bth-*, border-bth-*
+et les variables CSS var(--bth-*).
+Aucune couleur hardcodée. Aucun composant existant modifié.
+Lance npm run build après. 0 erreurs attendues.
+```
