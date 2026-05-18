@@ -42,6 +42,7 @@ export default function Header() {
   const [user, setUser] = useState<User | null>(null);
   const [open, setOpen] = useState(false);
   const [alertCount, setAlertCount] = useState(0);
+  const [scrolled, setScrolled] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,6 +63,14 @@ export default function Header() {
     return () => document.removeEventListener("mousedown", h);
   }, [open]);
 
+  useEffect(() => {
+    const main = document.querySelector("main");
+    if (!main) return;
+    const h = () => setScrolled(main.scrollTop > 8);
+    main.addEventListener("scroll", h, { passive: true });
+    return () => main.removeEventListener("scroll", h);
+  }, []);
+
   async function handleSignOut() {
     await createSupabaseBrowserClient().auth.signOut();
     router.push("/login");
@@ -73,9 +82,15 @@ export default function Header() {
 
   return (
     // Visible on mobile + tablet, hidden on desktop
-    <header className="flex lg:hidden items-center justify-between px-4 md:px-5 flex-shrink-0
-                       bg-white border-b border-bth-hairline sticky top-0 z-30"
-      style={{ height: 56 }}>
+    <header
+      className={[
+        "flex lg:hidden items-center justify-between px-4 flex-shrink-0",
+        "border-b border-bth-hairline sticky top-0 z-30",
+        "transition-[background-color,backdrop-filter] duration-200",
+        scrolled ? "bg-white/90 backdrop-blur-[8px]" : "bg-white",
+      ].join(" ")}
+      style={{ height: 56 }}
+    >
 
       {/* Left: hamburger (tablet only) + logo */}
       <div className="flex items-center gap-2">
@@ -91,11 +106,9 @@ export default function Header() {
         </button>
 
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="w-[30px] h-[30px] bg-bth-green-800 rounded-bth-md flex items-center justify-center flex-shrink-0">
-            <Ic d={LEAF} size={14} sw={1.9} />
-          </div>
-          <span className="font-semibold text-[13px] tracking-[0.15em] text-bth-green-800">BTH Hub</span>
+        <div className="flex items-center gap-2 text-bth-green-800">
+          <Ic d={LEAF} size={18} sw={1.9} />
+          <span className="font-semibold text-[15px] tracking-[0.1em]">BTH Hub</span>
         </div>
       </div>
 
@@ -106,7 +119,7 @@ export default function Header() {
           className="relative w-9 h-9 rounded-bth-sm flex items-center justify-center
                      text-bth-n-500 hover:bg-bth-n-100 hover:text-bth-n-900
                      transition-colors duration-100 bth-focus">
-          <Ic d={BELL} size={18} />
+          <Ic d={BELL} size={20} />
           {alertCount > 0 && (
             <span className="absolute top-2 right-2 w-[7px] h-[7px] bg-bth-error rounded-full border-[1.5px] border-white" />
           )}
