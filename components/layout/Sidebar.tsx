@@ -117,17 +117,19 @@ function SidebarInner({
 
   return (
     <>
-      {/* Logo zone — 64px, bg-bth-green-800 */}
+      {/* Logo zone — 64px, bg-white */}
       <div
-        className="flex items-center gap-[10px] px-4 bg-bth-green-800 flex-shrink-0"
-        style={{ height: 64, borderBottom: "1px solid rgba(201,169,110,0.2)" }}
+        className="flex items-center gap-[10px] px-4 bg-white border-b border-bth-hairline flex-shrink-0"
+        style={{ height: 64 }}
       >
-        <Ic d={ICONS.leaf} size={14} stroke="white" sw={1.8} />
+        <span className="text-bth-green-800 flex-shrink-0">
+          <Ic d={ICONS.leaf} size={16} sw={1.8} />
+        </span>
         <div>
-          <div className="text-white font-semibold text-[13px] tracking-[0.15em] leading-none">
+          <div className="text-bth-green-800 font-semibold text-[14px] leading-none">
             BTH Hub
           </div>
-          <div className="text-bth-gold-500 font-light text-[10px] tracking-[0.20em] mt-0.5">
+          <div className="text-bth-n-500 font-normal text-[11px] mt-0.5">
             BTH Expert
           </div>
         </div>
@@ -136,7 +138,7 @@ function SidebarInner({
         {width && width > 240 && onNavClick && (
           <button
             onClick={onNavClick}
-            className="ml-auto text-white/60 hover:text-white transition-colors duration-100 bth-focus rounded-bth-sm p-1"
+            className="ml-auto text-bth-n-400 hover:text-bth-n-700 transition-colors duration-100 bth-focus rounded-bth-sm p-1"
           >
             <Ic d={ICONS.x} size={16} stroke="currentColor" sw={2} />
           </button>
@@ -164,9 +166,9 @@ function SidebarInner({
                       "flex items-center gap-[10px] py-2 rounded-bth-sm text-[13px]",
                       active
                         ? "bg-bth-green-50 text-bth-green-800 font-semibold border-l-2 border-bth-gold-500 pl-[10px] pr-3"
-                        : "text-bth-n-500 font-normal px-3 hover:bg-bth-n-100 hover:text-bth-n-900 transition-colors duration-100",
+                        : "text-bth-green-800 font-normal px-3 hover:bg-bth-n-100 transition-colors duration-100",
                     ].join(" ")}>
-                      <span className={active ? "text-bth-green-700" : "text-bth-n-400"}>
+                      <span className="text-bth-green-700">
                         <Ic d={ICONS[icon]} size={16} sw={active ? 2 : 1.7} />
                       </span>
                       {label}
