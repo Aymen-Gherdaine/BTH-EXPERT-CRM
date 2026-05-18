@@ -3,6 +3,17 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase-admin";
 
+function nameFromEmail(email: string | null): string | null {
+  if (!email) return null;
+  const local = email.split("@")[0]?.replace(/[._-]+/g, " ").trim();
+  if (!local) return email;
+  return local.replace(/\b\w/g, (m) => m.toUpperCase());
+}
+
+function metadataString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
 async function getSupabase() {
   const cookieStore = await cookies();
   return createServerClient(
@@ -63,7 +74,20 @@ export async function GET() {
 
   const { data: authData } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
   const authMap = new Map(
-    (authData?.users ?? []).map((u) => [u.id, { email: u.email ?? null }])
+    (authData?.users ?? []).map((u) => {
+      const meta = u.user_metadata ?? {};
+      const email = u.email ?? null;
+      return [u.id, {
+        email,
+        full_name:
+          metadataString(meta.full_name) ??
+          metadataString(meta.name) ??
+          nameFromEmail(email),
+        avatar_url:
+          metadataString(meta.avatar_url) ??
+          metadataString(meta.picture),
+      }];
+    })
   );
 
   // Try to also get is_active from profiles (works once migration has been run)
@@ -75,11 +99,16 @@ export async function GET() {
     (profilesWithActive ?? []).map((p: { id: string; is_active: boolean | null }) => [p.id, p.is_active])
   );
 
-  const merged = (profiles ?? []).map((p) => ({
-    ...p,
-    email: authMap.get(p.id)?.email ?? null,
-    is_active: activeMap.has(p.id) ? activeMap.get(p.id) : true,
-  }));
+  const merged = (profiles ?? []).map((p) => {
+    const auth = authMap.get(p.id);
+    return {
+      ...p,
+      full_name: p.full_name ?? auth?.full_name ?? nameFromEmail(auth?.email ?? null),
+      avatar_url: p.avatar_url ?? auth?.avatar_url ?? null,
+      email: auth?.email ?? null,
+      is_active: activeMap.has(p.id) ? activeMap.get(p.id) : true,
+    };
+  });
 
   return NextResponse.json({ data: merged });
 }

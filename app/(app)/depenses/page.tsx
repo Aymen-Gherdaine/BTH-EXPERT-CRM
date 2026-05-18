@@ -1,58 +1,637 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
-import type { Depense, CategorieDepense } from "@/types";
+import type { CategorieDepense, Depense } from "@/types";
 import { formatMontant } from "@/lib/utils";
 
-// ─── Breakpoint ───────────────────────────────────────────────────────────────
+const CSS = `
+  @keyframes depSk { 0%,100%{opacity:1} 50%{opacity:.42} }
+  .dep-sk { animation: depSk 1.45s ease-in-out infinite; }
 
-function useBp(): "mobile" | "tablet" | "desktop" {
-  const [bp, set] = useState<"mobile" | "tablet" | "desktop">("mobile");
-  useEffect(() => {
-    const h = () =>
-      set(
-        window.innerWidth >= 1024
-          ? "desktop"
-          : window.innerWidth >= 640
-          ? "tablet"
-          : "mobile"
-      );
-    h();
-    window.addEventListener("resize", h);
-    return () => window.removeEventListener("resize", h);
-  }, []);
-  return bp;
-}
+  .depenses-page {
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: linear-gradient(180deg, #ffffff 0%, #faf8f5 42%, #f6f1e9 100%);
+    color: #1a1714;
+  }
+  .depenses-header {
+    flex-shrink: 0;
+    padding: 24px clamp(16px, 3vw, 40px) 18px;
+    border-bottom: 1px solid #e8e2d8;
+    background: rgba(255,255,255,.9);
+  }
+  .depenses-header-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 16px;
+    align-items: start;
+  }
+  .depenses-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 7px;
+    color: #a8874e;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .depenses-kicker::before {
+    content: "";
+    width: 28px;
+    height: 1px;
+    background: #c9a96e;
+  }
+  .depenses-title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 34px;
+    line-height: 1.04;
+    font-weight: 600;
+    color: #1a1714;
+    letter-spacing: 0;
+  }
+  .depenses-subtitle {
+    margin: 6px 0 0;
+    color: #887f74;
+    font-size: 14px;
+  }
+  .depenses-add-btn {
+    height: 44px;
+    border: 0;
+    border-radius: 9999px;
+    padding: 0 18px;
+    background: #1a2e1e;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 16px 34px rgba(26,46,30,.20);
+    white-space: nowrap;
+  }
+  .depenses-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .depenses-stat {
+    min-height: 86px;
+    border-radius: 16px;
+    border: 1px solid #e8e2d8;
+    background: linear-gradient(180deg, #fffdfa 0%, #ffffff 100%);
+    padding: 15px 16px;
+    box-shadow: 0 16px 40px rgba(26,46,30,.06);
+    position: relative;
+    overflow: hidden;
+  }
+  .depenses-stat::after {
+    content: "";
+    position: absolute;
+    right: -36px;
+    top: -42px;
+    width: 92px;
+    height: 92px;
+    border-radius: 9999px;
+    background: rgba(201,169,110,.11);
+  }
+  .depenses-stat-label {
+    color: #9a9184;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+  .depenses-stat-value {
+    margin-top: 9px;
+    color: #0b1620;
+    font-size: 24px;
+    line-height: 1;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+  .depenses-stat-value small {
+    margin-left: 4px;
+    color: #887f74;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .depenses-stat-note {
+    margin-top: 7px;
+    color: #887f74;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .depenses-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 16px clamp(16px, 3vw, 40px) 18px;
+  }
+  .depenses-tools {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 220px);
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .depenses-field {
+    position: relative;
+  }
+  .depenses-field svg {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #887f74;
+    pointer-events: none;
+  }
+  .depenses-input,
+  .depenses-select {
+    width: 100%;
+    height: 44px;
+    box-sizing: border-box;
+    border-radius: 9999px;
+    border: 1px solid #d0c9be;
+    background: #ffffff;
+    color: #1a1714;
+    font-size: 14px;
+    outline: none;
+    box-shadow: 0 10px 26px rgba(26,46,30,.04);
+  }
+  .depenses-input {
+    padding: 0 16px 0 44px;
+  }
+  .depenses-select {
+    appearance: none;
+    padding: 0 38px 0 15px;
+    cursor: pointer;
+  }
+  .depenses-input:focus,
+  .depenses-select:focus,
+  .depenses-form-input:focus,
+  .depenses-form-select:focus {
+    border-color: #1a2e1e;
+    box-shadow: 0 0 0 4px rgba(26,46,30,.10);
+  }
+  .depenses-shell {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    border-radius: 16px;
+    border: 1px solid #e8e2d8;
+    background: rgba(255,255,255,.92);
+    box-shadow: 0 20px 50px rgba(26,46,30,.07);
+  }
+  .depenses-table-scroll {
+    height: 100%;
+    overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #C9A96E #f5f0e8;
+  }
+  .depenses-table-scroll::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .depenses-table-scroll::-webkit-scrollbar-track {
+    background: #f5f0e8;
+  }
+  .depenses-table-scroll::-webkit-scrollbar-thumb {
+    background: #C9A96E;
+    border-radius: 9999px;
+  }
+  .depenses-table {
+    min-width: 920px;
+  }
+  .depenses-table-head,
+  .depenses-table-row {
+    display: grid;
+    grid-template-columns: minmax(260px, 1.15fr) minmax(310px, 1.25fr) 130px 170px 136px;
+    align-items: stretch;
+  }
+  .depenses-table-head {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    min-height: 48px;
+    background: #fbfaf7;
+    border-bottom: 1px solid #e8e2d8;
+  }
+  .depenses-th {
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    border-right: 1px solid #e8e2d8;
+    color: #9a9184;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .depenses-th:last-child {
+    border-right: 0;
+  }
+  .depenses-table-row {
+    min-height: 66px;
+    background: #ffffff;
+    border-bottom: 1px solid #f0ebe3;
+    transition: background .16s ease, box-shadow .16s ease;
+  }
+  .depenses-table-row:hover {
+    background: #fffdfa;
+    box-shadow: inset 3px 0 0 #C9A96E;
+  }
+  .depenses-td {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    padding: 0 16px;
+    border-right: 1px solid #f0ebe3;
+  }
+  .depenses-td:last-child {
+    border-right: 0;
+  }
+  .depenses-category {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 58px;
+    justify-content: center;
+    padding: 5px 9px;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .04em;
+  }
+  .depenses-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    flex-shrink: 0;
+  }
+  .depenses-desc {
+    min-width: 0;
+    color: #1a1714;
+    font-size: 13.5px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .depenses-muted {
+    color: #887f74;
+    font-size: 12px;
+  }
+  .depenses-project {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    color: #635c54;
+    font-size: 12.5px;
+  }
+  .depenses-project span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .depenses-amount {
+    width: 100%;
+    text-align: right;
+    color: #0b1620;
+    font-size: 15px;
+    font-weight: 900;
+    font-variant-numeric: tabular-nums;
+  }
+  .depenses-amount small {
+    color: #887f74;
+    font-size: 10.5px;
+    font-weight: 700;
+    margin-left: 3px;
+  }
+  .depenses-actions {
+    display: inline-flex;
+    gap: 6px;
+    justify-content: flex-end;
+    width: 100%;
+  }
+  .depenses-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    border: 1px solid #e8e2d8;
+    background: #fffdfa;
+    color: #635c54;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+  }
+  .depenses-icon-btn:hover {
+    transform: translateY(-1px);
+    background: #f5f0e8;
+    border-color: #d0c9be;
+    color: #1a2e1e;
+  }
+  .depenses-icon-btn.danger {
+    border-color: #f0c8c0;
+    color: #c44a3a;
+    background: #fff7f5;
+  }
+  .depenses-edit-panel {
+    border-bottom: 1px solid #e8e2d8;
+    background: #fbfaf7;
+  }
+  .depenses-edit-title {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e8e2d8;
+    color: #635c54;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .depenses-card-list {
+    height: 100%;
+    overflow: auto;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .depenses-card {
+    position: relative;
+    border-radius: 16px;
+    border: 1px solid #e8e2d8;
+    background: linear-gradient(180deg, #fffdfa 0%, #ffffff 100%);
+    box-shadow: 0 14px 34px rgba(26,46,30,.06);
+    overflow: hidden;
+  }
+  .depenses-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 3px;
+    background: linear-gradient(90deg, #1a2e1e 0%, #C9A96E 100%);
+  }
+  .depenses-card-body {
+    padding: 15px 14px 14px;
+  }
+  .depenses-card-top,
+  .depenses-card-meta,
+  .depenses-card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .depenses-card-title {
+    margin: 11px 0 5px;
+    color: #1a1714;
+    font-size: 14.5px;
+    font-weight: 800;
+    line-height: 1.25;
+  }
+  .depenses-card-meta {
+    align-items: flex-start;
+    color: #887f74;
+    font-size: 12px;
+  }
+  .depenses-card-actions {
+    justify-content: flex-end;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f0ebe3;
+  }
+  .depenses-empty {
+    min-height: 340px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 48px 20px;
+    color: #887f74;
+  }
+  .depenses-empty-icon {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    background: #f5f0e8;
+    color: #a8874e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+  .depenses-history-end {
+    padding: 18px 24px;
+    text-align: center;
+    color: #9a9184;
+    font-size: 12px;
+    border-top: 1px solid #f0ebe3;
+  }
+  .depenses-pagination {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 10px clamp(16px, 3vw, 40px);
+    border-top: 1px solid #e8e2d8;
+    background: #fbfaf7;
+  }
+  .depenses-page-count {
+    color: #887f74;
+    font-size: 12.5px;
+  }
+  .depenses-pager {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .depenses-page-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 9999px;
+    border: 1px solid #e8e2d8;
+    background: #ffffff;
+    color: #1a2e1e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+  .depenses-page-btn:disabled {
+    color: #c8c1b7;
+    cursor: default;
+    opacity: .65;
+  }
+  .depenses-page-label {
+    min-width: 70px;
+    text-align: center;
+    color: #1a1714;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .depenses-form {
+    padding: 16px 18px 18px;
+  }
+  .depenses-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .depenses-form-label {
+    display: block;
+    margin-bottom: 6px;
+    color: #887f74;
+    font-size: 10.5px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  .depenses-form-input,
+  .depenses-form-select {
+    width: 100%;
+    min-height: 42px;
+    box-sizing: border-box;
+    border-radius: 12px;
+    border: 1px solid #d0c9be;
+    background: #ffffff;
+    color: #1a1714;
+    font-size: 13px;
+    outline: none;
+    padding: 0 13px;
+  }
+  .depenses-form-select {
+    appearance: none;
+    padding-right: 34px;
+    cursor: pointer;
+  }
+  .depenses-file {
+    min-height: 44px;
+    padding: 9px 12px;
+    border-radius: 12px;
+    border: 1px dashed #d0c9be;
+    background: #fffdfa;
+    color: #887f74;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+  }
+  .depenses-form-actions {
+    display: flex;
+    gap: 9px;
+    margin-top: 14px;
+  }
+  .depenses-submit,
+  .depenses-cancel {
+    height: 42px;
+    border-radius: 9999px;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .depenses-submit {
+    flex: 1;
+    border: 0;
+    background: #1a2e1e;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+  }
+  .depenses-cancel {
+    padding: 0 16px;
+    border: 1px solid #d0c9be;
+    background: #ffffff;
+    color: #635c54;
+  }
+  @media (max-width: 767px) {
+    .depenses-header {
+      padding: 18px 14px 14px;
+    }
+    .depenses-title {
+      font-size: 30px;
+    }
+    .depenses-subtitle {
+      font-size: 13px;
+    }
+    .depenses-add-btn {
+      width: 42px;
+      height: 42px;
+      padding: 0;
+      box-shadow: 0 12px 28px rgba(26,46,30,.18);
+    }
+    .depenses-stats {
+      grid-template-columns: repeat(3, minmax(164px, 1fr));
+      overflow-x: auto;
+      gap: 10px;
+      padding-bottom: 2px;
+    }
+    .depenses-stat {
+      min-height: 78px;
+      padding: 13px 14px;
+    }
+    .depenses-stat-value {
+      font-size: 20px;
+    }
+    .depenses-content {
+      padding: 14px 14px 12px;
+    }
+    .depenses-tools {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    .depenses-input,
+    .depenses-select {
+      height: 42px;
+      font-size: 13px;
+    }
+    .depenses-shell {
+      border-radius: 16px;
+    }
+    .depenses-card-list {
+      padding: 12px;
+      gap: 10px;
+    }
+    .depenses-form {
+      padding: 14px;
+    }
+    .depenses-form-grid {
+      grid-template-columns: 1fr;
+    }
+    .depenses-pagination {
+      padding: 9px 14px;
+    }
+    .depenses-page-count {
+      font-size: 12px;
+    }
+  }
+`;
 
-// ─── Category config ──────────────────────────────────────────────────────────
+type Breakpoint = "mobile" | "tablet" | "desktop";
 
-type CatConfig = {
-  value: CategorieDepense;
-  label: string;
-  abbr: string;
-  bg: string;
-  text: string;
-  dot: string;
+type SoumissionOption = {
+  id: string;
+  titre_projet: string;
+  numero_offre: string;
 };
-
-const CATEGORIES: CatConfig[] = [
-  { value: "mission",       label: "Mission",       abbr: "MIS", bg: "#dbeafe", text: "#1e40af", dot: "#3b82f6" },
-  { value: "vehicule",      label: "Véhicule",      abbr: "VEH", bg: "#fef3c7", text: "#92400e", dot: "#f59e0b" },
-  { value: "repas",         label: "Repas",         abbr: "REP", bg: "#d1fae5", text: "#065f46", dot: "#10b981" },
-  { value: "materiel",      label: "Matériel",      abbr: "MAT", bg: "#ede9fe", text: "#5b21b6", dot: "#8b5cf6" },
-  { value: "communication", label: "Communication", abbr: "COM", bg: "#e0e7ff", text: "#3730a3", dot: "#6366f1" },
-  { value: "autre",         label: "Autre",         abbr: "AUT", bg: "#f3f4f6", text: "#4b5563", dot: "#9ca3af" },
-];
-
-function catCfg(cat: string): CatConfig {
-  return CATEGORIES.find((c) => c.value === cat) ?? CATEGORIES[5];
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type SoumissionOption = { id: string; titre_projet: string; numero_offre: string };
 
 type FormState = {
   categorie: CategorieDepense | "";
@@ -61,6 +640,25 @@ type FormState = {
   date_depense: string;
   projet_lie: string;
 };
+
+type CatConfig = {
+  value: CategorieDepense;
+  label: string;
+  abbr: string;
+  bg: string;
+  text: string;
+  dot: string;
+  border: string;
+};
+
+const CATEGORIES: CatConfig[] = [
+  { value: "mission", label: "Mission", abbr: "MIS", bg: "#eef6fb", text: "#2b668b", dot: "#3a7ca5", border: "#bdd9ea" },
+  { value: "vehicule", label: "Véhicule", abbr: "VEH", bg: "#fff7df", text: "#8b6a24", dot: "#C9A96E", border: "#f3dfa0" },
+  { value: "repas", label: "Repas", abbr: "REP", bg: "#edf7ef", text: "#1f6b3a", dot: "#3a7a50", border: "#c1d9c6" },
+  { value: "materiel", label: "Matériel", abbr: "MAT", bg: "#f5f0e8", text: "#635c54", dot: "#887f74", border: "#d0c9be" },
+  { value: "communication", label: "Communication", abbr: "COM", bg: "#f2f7f3", text: "#2b5c3c", dot: "#5d9a6e", border: "#c1d9c6" },
+  { value: "autre", label: "Autre", abbr: "AUT", bg: "#fbfaf7", text: "#635c54", dot: "#b0a898", border: "#e8e2d8" },
+];
 
 const EMPTY_FORM: FormState = {
   categorie: "",
@@ -72,7 +670,57 @@ const EMPTY_FORM: FormState = {
 
 const PER_PAGE = 10;
 
-// ─── Spinner ──────────────────────────────────────────────────────────────────
+function useBp(): Breakpoint {
+  const [bp, setBp] = useState<Breakpoint>("mobile");
+
+  useEffect(() => {
+    const onResize = () => {
+      setBp(window.innerWidth >= 1024 ? "desktop" : window.innerWidth >= 640 ? "tablet" : "mobile");
+    };
+
+    onResize();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  return bp;
+}
+
+function catCfg(cat: string): CatConfig {
+  return CATEGORIES.find((c) => c.value === cat) ?? CATEGORIES[CATEGORIES.length - 1];
+}
+
+function Icon({
+  paths,
+  size = 16,
+  stroke = "currentColor",
+  width = 1.7,
+}: {
+  paths: string | string[];
+  size?: number;
+  stroke?: string;
+  width?: number;
+}) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={width} strokeLinecap="round" strokeLinejoin="round">
+      {Array.isArray(paths) ? paths.map((path, index) => <path key={index} d={path} />) : <path d={paths} />}
+    </svg>
+  );
+}
+
+const I = {
+  search: "M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z",
+  plus: "M12 5v14M5 12h14",
+  x: "M18 6L6 18M6 6l12 12",
+  chevronLeft: "M15 18l-6-6 6-6",
+  chevronRight: "M9 18l6-6-6-6",
+  chevronDown: "M6 9l6 6 6-6",
+  file: ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6"],
+  edit: ["M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5", "M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"],
+  trash: ["M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7", "M10 11v6M14 11v6M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3M4 7h16"],
+  paperclip: "M15.172 7l-6.586 6.586a2 2 0 1 0 2.828 2.828l6.414-6.586a4 4 0 0 0-5.656-5.656l-6.415 6.585a6 6 0 1 0 8.486 8.486L20.5 13",
+  project: ["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z", "M14 2v6h6", "M8 13h8M8 17h5"],
+};
 
 function Spinner() {
   return (
@@ -83,182 +731,213 @@ function Spinner() {
   );
 }
 
-// ─── DepenseForm ──────────────────────────────────────────────────────────────
+function formatDateShort(date: string) {
+  return new Date(`${date}T00:00:00`).toLocaleDateString("fr-DZ", {
+    day: "2-digit",
+    month: "short",
+  });
+}
+
+function projectLabel(project?: SoumissionOption) {
+  if (!project) return null;
+  return `${project.numero_offre} - ${project.titre_projet}`;
+}
+
+function CategoryBadge({ category }: { category: CategorieDepense }) {
+  const cat = catCfg(category);
+
+  return (
+    <span
+      className="depenses-category"
+      style={{
+        background: cat.bg,
+        color: cat.text,
+        border: `1px solid ${cat.border}`,
+      }}
+    >
+      <span className="depenses-dot" style={{ background: cat.dot }} />
+      {cat.abbr}
+    </span>
+  );
+}
+
+function ExpenseActions({
+  hasReceipt,
+  deleting,
+  onReceipt,
+  onEdit,
+  onDelete,
+}: {
+  hasReceipt: boolean;
+  deleting: boolean;
+  onReceipt: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="depenses-actions">
+      {hasReceipt && (
+        <button className="depenses-icon-btn" type="button" onClick={onReceipt} title="Voir justificatif">
+          <Icon paths={I.paperclip} size={14} />
+        </button>
+      )}
+      <button className="depenses-icon-btn" type="button" onClick={onEdit} title="Modifier">
+        <Icon paths={I.edit} size={14} />
+      </button>
+      <button className="depenses-icon-btn danger" type="button" onClick={onDelete} disabled={deleting} title="Supprimer">
+        {deleting ? <Spinner /> : <Icon paths={I.trash} size={14} />}
+      </button>
+    </div>
+  );
+}
+
+function SelectChevron() {
+  return (
+    <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", color: "#887f74", pointerEvents: "none" }}>
+      <Icon paths={I.chevronDown} size={13} />
+    </span>
+  );
+}
 
 interface DepenseFormProps {
   form: FormState;
   onChange: React.Dispatch<React.SetStateAction<FormState>>;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: (event: React.FormEvent) => void;
   onCancel: () => void;
   saving: boolean;
   photo: File | null;
-  onPhoto: (f: File | null) => void;
+  onPhoto: (file: File | null) => void;
   soumissions: SoumissionOption[];
   submitLabel: string;
 }
 
 function DepenseForm({
-  form, onChange, onSubmit, onCancel, saving,
-  photo, onPhoto, soumissions, submitLabel,
+  form,
+  onChange,
+  onSubmit,
+  onCancel,
+  saving,
+  photo,
+  onPhoto,
+  soumissions,
+  submitLabel,
 }: DepenseFormProps) {
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "10px 12px",
-    border: "1px solid #e5e7eb",
-    borderRadius: 8,
-    fontSize: 13,
-    color: "#374151",
-    background: "#fff",
-    outline: "none",
-    boxSizing: "border-box",
-  };
-  const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: 11,
-    fontWeight: 600,
-    color: "#6b7280",
-    marginBottom: 5,
-    textTransform: "uppercase",
-    letterSpacing: "0.06em",
-  };
-
   return (
-    <form onSubmit={onSubmit} style={{ padding: "16px 20px 20px" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+    <form className="depenses-form" onSubmit={onSubmit}>
+      <div className="depenses-form-grid">
         <div>
-          <label style={labelStyle}>Montant (DZD) *</label>
+          <label className="depenses-form-label">Montant (DZD) *</label>
           <input
-            type="number" min="0" step="0.01" placeholder="0,00"
+            className="depenses-form-input"
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0,00"
             value={form.montant}
-            onChange={(e) => onChange((p) => ({ ...p, montant: e.target.value }))}
+            onChange={(event) => onChange((current) => ({ ...current, montant: event.target.value }))}
             required
-            style={inputStyle}
           />
         </div>
         <div>
-          <label style={labelStyle}>Catégorie *</label>
+          <label className="depenses-form-label">Catégorie *</label>
           <div style={{ position: "relative" }}>
             <select
+              className="depenses-form-select"
               value={form.categorie}
-              onChange={(e) => onChange((p) => ({ ...p, categorie: e.target.value as CategorieDepense }))}
+              onChange={(event) => onChange((current) => ({ ...current, categorie: event.target.value as CategorieDepense }))}
               required
-              style={{ ...inputStyle, appearance: "none", paddingRight: 32, cursor: "pointer" }}
             >
               <option value="">Choisir...</option>
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
+              {CATEGORIES.map((category) => (
+                <option key={category.value} value={category.value}>
+                  {category.label}
+                </option>
               ))}
             </select>
-            <svg style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#9ca3af", pointerEvents: "none" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            <SelectChevron />
           </div>
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
+      <div className="depenses-form-grid">
         <div>
-          <label style={labelStyle}>Date</label>
+          <label className="depenses-form-label">Date</label>
           <input
+            className="depenses-form-input"
             type="date"
             value={form.date_depense}
-            onChange={(e) => onChange((p) => ({ ...p, date_depense: e.target.value }))}
-            style={{ ...inputStyle, cursor: "pointer" }}
+            onChange={(event) => onChange((current) => ({ ...current, date_depense: event.target.value }))}
           />
         </div>
         <div>
-          <label style={labelStyle}>Projet lié</label>
+          <label className="depenses-form-label">Projet lié</label>
           <div style={{ position: "relative" }}>
             <select
+              className="depenses-form-select"
               value={form.projet_lie}
-              onChange={(e) => onChange((p) => ({ ...p, projet_lie: e.target.value }))}
-              style={{ ...inputStyle, appearance: "none", paddingRight: 32, cursor: "pointer" }}
+              onChange={(event) => onChange((current) => ({ ...current, projet_lie: event.target.value }))}
             >
               <option value="">Aucun</option>
-              {soumissions.map((s) => (
-                <option key={s.id} value={s.id}>{s.numero_offre} — {s.titre_projet}</option>
+              {soumissions.map((soumission) => (
+                <option key={soumission.id} value={soumission.id}>
+                  {soumission.numero_offre} - {soumission.titre_projet}
+                </option>
               ))}
             </select>
-            <svg style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#9ca3af", pointerEvents: "none" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+            <SelectChevron />
           </div>
         </div>
       </div>
 
       <div style={{ marginBottom: 12 }}>
-        <label style={labelStyle}>Description</label>
+        <label className="depenses-form-label">Description</label>
         <input
-          type="text" placeholder="Notes optionnelles..."
+          className="depenses-form-input"
+          type="text"
+          placeholder="Notes optionnelles..."
           value={form.description}
-          onChange={(e) => onChange((p) => ({ ...p, description: e.target.value }))}
-          style={inputStyle}
+          onChange={(event) => onChange((current) => ({ ...current, description: event.target.value }))}
         />
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <label style={labelStyle}>Justificatif</label>
-        <div
-          onClick={() => fileRef.current?.click()}
-          style={{ display: "flex", alignItems: "center", gap: 10, minHeight: 40, padding: "8px 12px", border: "1px dashed #d1d5db", borderRadius: 8, cursor: "pointer" }}
-        >
-          <svg style={{ width: 14, height: 14, color: "#9ca3af", flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-          </svg>
-          <span style={{ fontSize: 12, color: "#9ca3af", flex: 1 }}>{photo ? photo.name : "Photo ou fichier (optionnel)"}</span>
+      <div>
+        <label className="depenses-form-label">Justificatif</label>
+        <div className="depenses-file" onClick={() => fileRef.current?.click()} role="button" tabIndex={0}>
+          <Icon paths={I.paperclip} size={15} stroke="#a8874e" />
+          <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 12 }}>
+            {photo ? photo.name : "Photo ou fichier (optionnel)"}
+          </span>
           {photo && (
-            <button type="button" onClick={(e) => { e.stopPropagation(); onPhoto(null); }} style={{ border: "none", background: "none", cursor: "pointer", color: "#9ca3af", padding: 0 }}>
-              <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onPhoto(null);
+              }}
+              style={{ border: 0, background: "transparent", color: "#887f74", cursor: "pointer", padding: 0, display: "flex" }}
+              aria-label="Retirer le fichier"
+            >
+              <Icon paths={I.x} size={14} />
             </button>
           )}
         </div>
-        <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => onPhoto(e.target.files?.[0] ?? null)} />
+        <input ref={fileRef} type="file" accept="image/*" hidden onChange={(event) => onPhoto(event.target.files?.[0] ?? null)} />
       </div>
 
-      <div style={{ display: "flex", gap: 8 }}>
-        <motion.button
-          type="submit"
-          disabled={saving}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          style={{ flex: 1, height: 40, borderRadius: 8, border: "none", background: "#1a2e1e", color: "#fff", fontSize: 13, fontWeight: 600, cursor: saving ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: saving ? 0.75 : 1 }}
-        >
+      <div className="depenses-form-actions">
+        <motion.button className="depenses-submit" type="submit" disabled={saving} whileTap={saving ? undefined : { scale: 0.97 }}>
           {saving && <Spinner />}
           {submitLabel}
         </motion.button>
-        <button
-          type="button"
-          onClick={onCancel}
-          style={{ padding: "0 16px", height: 40, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: "#6b7280", fontSize: 13, fontWeight: 500, cursor: "pointer" }}
-        >
+        <button className="depenses-cancel" type="button" onClick={onCancel}>
           Annuler
         </button>
       </div>
     </form>
   );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
-const TH: React.CSSProperties = {
-  textAlign: "left",
-  padding: "10px 16px",
-  fontSize: 11,
-  fontWeight: 600,
-  color: "#6b7280",
-  textTransform: "uppercase",
-  letterSpacing: "0.06em",
-  whiteSpace: "nowrap",
-  background: "#fafafa",
-  position: "sticky",
-  top: 0,
-  zIndex: 1,
-  borderBottom: "1px solid #eaecef",
-};
 
 export default function DepensesPage() {
   const bp = useBp();
@@ -284,81 +963,82 @@ export default function DepensesPage() {
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState<CategorieDepense | "">("");
 
-  // ── Load ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) setUserId(user.id);
     });
+
     Promise.all([
-      fetch("/api/depenses").then((r) => r.json()),
-      fetch("/api/soumissions").then((r) => r.json()),
-    ]).then(([depData, souData]) => {
-      setDepenses(depData.data ?? []);
+      fetch("/api/depenses").then((response) => response.json()),
+      fetch("/api/soumissions").then((response) => response.json()),
+    ]).then(([depenseData, soumissionData]) => {
+      setDepenses(depenseData.data ?? []);
       setSoumissions(
-        (souData.data as Array<{ id: string; titre_projet: string; numero_offre: string }> ?? []).map((s) => ({
-          id: s.id,
-          titre_projet: s.titre_projet,
-          numero_offre: s.numero_offre,
+        ((soumissionData.data as Array<{ id: string; titre_projet: string; numero_offre: string }>) ?? []).map((soumission) => ({
+          id: soumission.id,
+          titre_projet: soumission.titre_projet,
+          numero_offre: soumission.numero_offre,
         }))
       );
       setLoading(false);
     });
   }, []);
 
-  // ── Stats ─────────────────────────────────────────────────────────────────
   const currentMonth = useMemo(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   }, []);
 
   const thisMonth = useMemo(
-    () => depenses.filter((d) => d.date_depense.startsWith(currentMonth)),
-    [depenses, currentMonth]
+    () => depenses.filter((depense) => depense.date_depense.startsWith(currentMonth)),
+    [currentMonth, depenses]
   );
 
   const totalThisMonth = useMemo(
-    () => thisMonth.reduce((s, d) => s + Number(d.montant), 0),
+    () => thisMonth.reduce((sum, depense) => sum + Number(depense.montant), 0),
     [thisMonth]
   );
 
   const byCat = useMemo(
     () =>
-      CATEGORIES.map((c) => ({
-        ...c,
+      CATEGORIES.map((category) => ({
+        ...category,
         total: thisMonth
-          .filter((d) => d.categorie === c.value)
-          .reduce((s, d) => s + Number(d.montant), 0),
-      })).filter((c) => c.total > 0),
+          .filter((depense) => depense.categorie === category.value)
+          .reduce((sum, depense) => sum + Number(depense.montant), 0),
+      }))
+        .filter((category) => category.total > 0)
+        .sort((a, b) => b.total - a.total),
     [thisMonth]
   );
 
-  // ── Filtered & Paginated ──────────────────────────────────────────────────
   const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    return depenses.filter((d) => {
-      if (catFilter && d.categorie !== catFilter) return false;
-      if (q) {
-        const proj = soumissions.find((s) => s.id === d.projet_lie);
-        return (
-          d.description?.toLowerCase().includes(q) ||
-          d.categorie.includes(q) ||
-          proj?.titre_projet.toLowerCase().includes(q) ||
-          proj?.numero_offre.toLowerCase().includes(q)
-        );
-      }
-      return true;
+    const query = search.trim().toLowerCase();
+
+    return depenses.filter((depense) => {
+      if (catFilter && depense.categorie !== catFilter) return false;
+      if (!query) return true;
+
+      const project = soumissions.find((soumission) => soumission.id === depense.projet_lie);
+      return (
+        depense.description?.toLowerCase().includes(query) ||
+        depense.categorie.toLowerCase().includes(query) ||
+        project?.titre_projet.toLowerCase().includes(query) ||
+        project?.numero_offre.toLowerCase().includes(query)
+      );
     });
-  }, [depenses, search, catFilter, soumissions]);
+  }, [catFilter, depenses, search, soumissions]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   useEffect(() => setPage(1), [search, catFilter]);
+  useEffect(() => setPage((current) => Math.min(current, totalPages)), [totalPages]);
 
-  // ── Storage upload ────────────────────────────────────────────────────────
   async function uploadPhoto(file: File, depenseId: string): Promise<string | null> {
     if (!userId) return null;
+
     const supabase = createSupabaseBrowserClient();
     const ext = file.name.split(".").pop() ?? "jpg";
     const path = `${userId}/${depenseId}.${ext}`;
@@ -367,12 +1047,12 @@ export default function DepensesPage() {
     return path;
   }
 
-  // ── Add ───────────────────────────────────────────────────────────────────
-  async function handleAdd(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleAdd(event: React.FormEvent) {
+    event.preventDefault();
     if (!form.categorie || !form.montant) return;
+
     setSaving(true);
-    const res = await fetch("/api/depenses", {
+    const response = await fetch("/api/depenses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -383,8 +1063,9 @@ export default function DepensesPage() {
         projet_lie: form.projet_lie || null,
       }),
     });
-    const json = await res.json();
-    if (res.ok && json.data) {
+    const json = await response.json();
+
+    if (response.ok && json.data) {
       const created = json.data as Depense;
       if (photo) {
         const path = await uploadPhoto(photo, created.id);
@@ -397,31 +1078,32 @@ export default function DepensesPage() {
           created.justificatif_url = path;
         }
       }
-      setDepenses((prev) => [created, ...prev]);
+      setDepenses((current) => [created, ...current]);
       setForm(EMPTY_FORM);
       setPhoto(null);
       setShowForm(false);
     }
+
     setSaving(false);
   }
 
-  // ── Edit ──────────────────────────────────────────────────────────────────
-  function openEdit(d: Depense) {
-    setEditId(d.id);
+  function openEdit(depense: Depense) {
+    setEditId(depense.id);
     setEditForm({
-      categorie: d.categorie,
-      montant: String(d.montant),
-      description: d.description ?? "",
-      date_depense: d.date_depense,
-      projet_lie: d.projet_lie ?? "",
+      categorie: depense.categorie,
+      montant: String(depense.montant),
+      description: depense.description ?? "",
+      date_depense: depense.date_depense,
+      projet_lie: depense.projet_lie ?? "",
     });
     setEditPhoto(null);
     setShowForm(false);
   }
 
-  async function handleEdit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleEdit(event: React.FormEvent) {
+    event.preventDefault();
     if (!editId || !editForm.categorie || !editForm.montant) return;
+
     setEditSaving(true);
     const payload: Record<string, unknown> = {
       categorie: editForm.categorie,
@@ -430,515 +1112,392 @@ export default function DepensesPage() {
       date_depense: editForm.date_depense || null,
       projet_lie: editForm.projet_lie || null,
     };
+
     if (editPhoto) {
       const path = await uploadPhoto(editPhoto, editId);
       if (path) payload.justificatif_url = path;
     }
-    const res = await fetch(`/api/depenses/${editId}`, {
+
+    const response = await fetch(`/api/depenses/${editId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const json = await res.json();
-    if (res.ok) {
-      setDepenses((prev) =>
-        prev.map((d) => (d.id === editId ? { ...d, ...(json.data as Depense) } : d))
-      );
+    const json = await response.json();
+
+    if (response.ok) {
+      setDepenses((current) => current.map((depense) => (depense.id === editId ? { ...depense, ...(json.data as Depense) } : depense)));
       setEditId(null);
       setEditPhoto(null);
     }
+
     setEditSaving(false);
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────────
   async function handleDelete(id: string) {
     if (!confirm("Supprimer cette dépense définitivement ?")) return;
+
     setDeletingId(id);
-    const res = await fetch(`/api/depenses/${id}`, { method: "DELETE" });
-    if (res.ok) setDepenses((prev) => prev.filter((d) => d.id !== id));
+    const response = await fetch(`/api/depenses/${id}`, { method: "DELETE" });
+    if (response.ok) setDepenses((current) => current.filter((depense) => depense.id !== id));
     setDeletingId(null);
   }
 
-  // ── Signed URL ────────────────────────────────────────────────────────────
   async function viewJustificatif(path: string) {
     const supabase = createSupabaseBrowserClient();
     const { data } = await supabase.storage.from("justificatifs").createSignedUrl(path, 3600);
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   }
 
-  // ── Loading ───────────────────────────────────────────────────────────────
+  const monthLabel = new Date().toLocaleDateString("fr-DZ", { month: "long", year: "numeric" });
+  const linkedCount = depenses.filter((depense) => depense.projet_lie).length;
+  const receiptCount = thisMonth.filter((depense) => depense.justificatif_url).length;
+  const missingReceipts = Math.max(0, thisMonth.length - receiptCount);
+
   if (loading) {
     return (
-      <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: 12 }}>
-        <div style={{ height: 44, background: "#fff", borderRadius: 10, animation: "pulse 1.5s ease-in-out infinite", border: "1px solid #eaecef" }} />
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-          {[1, 2, 3].map((i) => (
-            <div key={i} style={{ height: 72, background: "#fff", borderRadius: 12, animation: "pulse 1.5s ease-in-out infinite", border: "1px solid #eaecef" }} />
-          ))}
+      <>
+        <style jsx global>{CSS}</style>
+        <div className="depenses-page" style={{ padding: 24, gap: 12 }}>
+          <div className="dep-sk" style={{ height: 78, borderRadius: 16, border: "1px solid #e8e2d8", background: "#fffdfa" }} />
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
+            {[1, 2, 3].map((item) => (
+              <div key={item} className="dep-sk" style={{ height: 92, borderRadius: 16, border: "1px solid #e8e2d8", background: "#ffffff" }} />
+            ))}
+          </div>
+          <div className="dep-sk" style={{ flex: 1, borderRadius: 16, border: "1px solid #e8e2d8", background: "#ffffff" }} />
         </div>
-        {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} style={{ height: 48, background: "#fff", borderRadius: 10, animation: "pulse 1.5s ease-in-out infinite", border: "1px solid #eaecef" }} />
-        ))}
-      </div>
+      </>
     );
   }
 
-  const px = isDesktop ? 28 : 16;
-  const monthLabel = new Date().toLocaleDateString("fr-DZ", { month: "long", year: "numeric" });
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#f4f5f7" }}>
-
-      {/* ── HEADER ─────────────────────────────────────────────────────────── */}
-      <div style={{ padding: `${isDesktop ? 24 : 20}px ${px}px 0`, flexShrink: 0 }}>
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}
-        >
-          <h1 style={{ fontSize: isDesktop ? 26 : 22, fontWeight: 700, color: "#0f1923", letterSpacing: "-0.5px", margin: 0 }}>
-            Dépenses
-          </h1>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => { setShowForm((v) => !v); setEditId(null); }}
-            style={{ background: "#1a2e1e", color: "#fff", borderRadius: 9999, padding: "0 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, height: 36, border: "none", flexShrink: 0 }}
-          >
-            <span style={{ fontSize: 16, lineHeight: 1 }}>{showForm ? "×" : "+"}</span>
-            {isDesktop && <span>Nouvelle dépense</span>}
-          </motion.button>
-        </motion.div>
-
-        {/* Stat cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.06 }}
-          style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}
-        >
-          {/* Total ce mois */}
-          <div style={{ background: "#fff", border: "1px solid #eaecef", borderRadius: 12, padding: isDesktop ? "16px 20px" : "12px 14px", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#9ca3af", marginBottom: 8 }}>
-              Total {monthLabel}
+    <>
+      <style jsx global>{CSS}</style>
+      <div className="depenses-page">
+        <header className="depenses-header">
+          <motion.div className="depenses-header-top" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
+            <div>
+              <div className="depenses-kicker">Finance</div>
+              <h1 className="depenses-title">Dépenses</h1>
+              <p className="depenses-subtitle">
+                {thisMonth.length} dépense{thisMonth.length !== 1 ? "s" : ""} ce mois-ci
+                {totalThisMonth > 0 ? ` - ${formatMontant(totalThisMonth)} DZD` : ""}
+              </p>
             </div>
-            <div style={{ fontSize: isDesktop ? 21 : 15, fontWeight: 700, color: "#0f1923", lineHeight: 1.2, letterSpacing: "-0.5px" }}>
-              {formatMontant(totalThisMonth)}
-              <span style={{ fontSize: 11, fontWeight: 400, color: "#9ca3af", marginLeft: 4 }}>DZD</span>
-            </div>
-            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>
-              {thisMonth.length} dépense{thisMonth.length !== 1 ? "s" : ""}
-            </div>
-          </div>
-
-          {/* Dépenses au total */}
-          <div style={{ background: "#fff", border: "1px solid #eaecef", borderRadius: 12, padding: isDesktop ? "16px 20px" : "12px 14px", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#9ca3af", marginBottom: 8 }}>
-              Total enregistrées
-            </div>
-            <div style={{ fontSize: isDesktop ? 21 : 15, fontWeight: 700, color: "#0f1923", lineHeight: 1.2, letterSpacing: "-0.5px" }}>
-              {depenses.length}
-              <span style={{ fontSize: 13, fontWeight: 400, color: "#9ca3af", marginLeft: 6 }}>dépenses</span>
-            </div>
-            <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4 }}>
-              {depenses.filter(d => d.projet_lie).length} liée{depenses.filter(d => d.projet_lie).length !== 1 ? "s" : ""} à un projet
-            </div>
-          </div>
-
-          {/* Justificatifs */}
-          {(() => {
-            const avecRecu = thisMonth.filter(d => d.justificatif_url).length;
-            const total = thisMonth.length;
-            const complet = total > 0 && avecRecu === total;
-            return (
-              <div style={{ background: "#fff", border: "1px solid #eaecef", borderRadius: 12, padding: isDesktop ? "16px 20px" : "12px 14px", boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: "#9ca3af", marginBottom: 8 }}>
-                  Justificatifs
-                </div>
-                <div style={{ fontSize: isDesktop ? 21 : 15, fontWeight: 700, color: "#0f1923", lineHeight: 1.2, letterSpacing: "-0.5px" }}>
-                  {avecRecu}
-                  <span style={{ fontSize: 13, fontWeight: 400, color: "#9ca3af", marginLeft: 2 }}>/ {total}</span>
-                </div>
-                <div style={{ fontSize: 11, marginTop: 4, color: complet ? "#16a34a" : total === 0 ? "#9ca3af" : "#f59e0b", fontWeight: complet ? 600 : 400 }}>
-                  {total === 0 ? "ce mois" : complet ? "✓ Tous fournis" : `${total - avecRecu} manquant${total - avecRecu > 1 ? "s" : ""}`}
-                </div>
-              </div>
-            );
-          })()}
-        </motion.div>
-      </div>
-
-      {/* ── ADD FORM ─────────────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showForm && (
-          <motion.div
-            key="add-form"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            style={{ overflow: "hidden", flexShrink: 0 }}
-          >
-            <div style={{ padding: `0 ${px}px 8px` }}>
-              <div style={{ background: "#fff", border: "1px solid #eaecef", borderRadius: 12, overflow: "hidden", boxShadow: "0 1px 4px rgba(0,0,0,.06)" }}>
-                <div style={{ padding: "13px 20px", background: "#fafafa", borderBottom: "1px solid #eaecef", fontSize: 13, fontWeight: 600, color: "#374151" }}>
-                  Nouvelle dépense
-                </div>
-                <DepenseForm
-                  form={form} onChange={setForm} onSubmit={handleAdd}
-                  onCancel={() => { setShowForm(false); setForm(EMPTY_FORM); setPhoto(null); }}
-                  saving={saving} photo={photo} onPhoto={setPhoto}
-                  soumissions={soumissions} submitLabel="Enregistrer"
-                />
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── CONTENT (scrollable) ─────────────────────────────────────────────── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, padding: `0 ${px}px`, paddingBottom: 20 }}>
-
-        {/* Filter bar */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 10, flexShrink: 0 }}>
-          <div style={{ position: "relative", flex: 1 }}>
-            <svg style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", width: 14, height: 14, color: "#9ca3af", pointerEvents: "none" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Rechercher une dépense..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ width: "100%", paddingLeft: 32, paddingRight: 12, height: 36, border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: "#374151", background: "#fff", outline: "none", boxSizing: "border-box" }}
-            />
-          </div>
-          <div style={{ position: "relative" }}>
-            <select
-              value={catFilter}
-              onChange={(e) => setCatFilter(e.target.value as CategorieDepense | "")}
-              style={{ height: 36, border: "1px solid #e5e7eb", borderRadius: 8, fontSize: 13, color: catFilter ? "#374151" : "#9ca3af", background: "#fff", paddingLeft: 10, paddingRight: 28, outline: "none", cursor: "pointer", appearance: "none" }}
+            <motion.button
+              className="depenses-add-btn"
+              type="button"
+              whileTap={{ scale: 0.97 }}
+              onClick={() => {
+                setShowForm((open) => !open);
+                setEditId(null);
+              }}
+              aria-label={showForm ? "Fermer le formulaire" : "Nouvelle dépense"}
             >
-              <option value="">Toutes catégories</option>
-              {CATEGORIES.map((c) => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
-            <svg style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 12, height: 12, color: "#9ca3af", pointerEvents: "none" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
+              <Icon paths={showForm ? I.x : I.plus} size={17} />
+              {isDesktop && <span>Nouvelle dépense</span>}
+            </motion.button>
+          </motion.div>
+
+          <motion.div className="depenses-stats" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+            <article className="depenses-stat">
+              <div className="depenses-stat-label">Total {monthLabel}</div>
+              <div className="depenses-stat-value">
+                {formatMontant(totalThisMonth)}
+                <small>DZD</small>
+              </div>
+              <div className="depenses-stat-note">
+                {byCat[0] ? `${byCat[0].label} en catégorie principale` : "Aucune catégorie ce mois"}
+              </div>
+            </article>
+            <article className="depenses-stat">
+              <div className="depenses-stat-label">Total enregistrées</div>
+              <div className="depenses-stat-value">
+                {depenses.length}
+                <small>dépenses</small>
+              </div>
+              <div className="depenses-stat-note">
+                {linkedCount} liée{linkedCount !== 1 ? "s" : ""} à un projet
+              </div>
+            </article>
+            <article className="depenses-stat">
+              <div className="depenses-stat-label">Justificatifs</div>
+              <div className="depenses-stat-value">
+                {receiptCount}
+                <small>/ {thisMonth.length}</small>
+              </div>
+              <div className="depenses-stat-note" style={{ color: missingReceipts === 0 && thisMonth.length > 0 ? "#3a7a50" : missingReceipts > 0 ? "#a8874e" : "#887f74" }}>
+                {thisMonth.length === 0 ? "À vérifier plus tard" : missingReceipts === 0 ? "Tous fournis" : `${missingReceipts} manquant${missingReceipts > 1 ? "s" : ""}`}
+              </div>
+            </article>
+          </motion.div>
+        </header>
+
+        <AnimatePresence>
+          {showForm && (
+            <motion.div
+              key="add-form"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.22 }}
+              style={{ overflow: "hidden", flexShrink: 0, borderBottom: "1px solid #e8e2d8", background: "#fbfaf7" }}
+            >
+              <div style={{ padding: "12px clamp(16px, 3vw, 40px)" }}>
+                <div style={{ border: "1px solid #e8e2d8", borderRadius: 16, overflow: "hidden", background: "#ffffff", boxShadow: "0 16px 40px rgba(26,46,30,.07)" }}>
+                  <div className="depenses-edit-title">Nouvelle dépense</div>
+                  <DepenseForm
+                    form={form}
+                    onChange={setForm}
+                    onSubmit={handleAdd}
+                    onCancel={() => {
+                      setShowForm(false);
+                      setForm(EMPTY_FORM);
+                      setPhoto(null);
+                    }}
+                    saving={saving}
+                    photo={photo}
+                    onPhoto={setPhoto}
+                    soumissions={soumissions}
+                    submitLabel="Enregistrer"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <main className="depenses-content">
+          <div className="depenses-tools">
+            <div className="depenses-field">
+              <Icon paths={I.search} size={15} />
+              <input
+                className="depenses-input"
+                type="text"
+                placeholder="Rechercher une dépense..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+            <div style={{ position: "relative" }}>
+              <select className="depenses-select" value={catFilter} onChange={(event) => setCatFilter(event.target.value as CategorieDepense | "")}>
+                <option value="">Toutes catégories</option>
+                {CATEGORIES.map((category) => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
+              </select>
+              <SelectChevron />
+            </div>
           </div>
-        </div>
 
-        {/* Table / Card container */}
-        <div style={{ flex: 1, overflow: "auto", background: "#fff", border: "1px solid #eaecef", borderRadius: 12, boxShadow: "0 1px 3px rgba(0,0,0,.04)" }}>
+          <section className="depenses-shell">
+            {filtered.length === 0 ? (
+              <div className="depenses-empty">
+                <div className="depenses-empty-icon">
+                  <Icon paths={I.file} size={24} />
+                </div>
+                <strong style={{ color: "#1a1714", fontSize: 15 }}>
+                  {search || catFilter ? "Aucun résultat" : "Aucune dépense enregistrée"}
+                </strong>
+                <span style={{ marginTop: 5, fontSize: 13 }}>
+                  {search || catFilter ? "Ajustez les filtres pour relancer la recherche." : "Ajoutez une dépense pour commencer le suivi."}
+                </span>
+              </div>
+            ) : isDesktop ? (
+              <div className="depenses-table-scroll">
+                <div className="depenses-table">
+                  <div className="depenses-table-head">
+                    <div className="depenses-th">Description</div>
+                    <div className="depenses-th">Projet</div>
+                    <div className="depenses-th">Date</div>
+                    <div className="depenses-th" style={{ justifyContent: "flex-end" }}>Montant</div>
+                    <div className="depenses-th" style={{ justifyContent: "flex-end" }}>Actions</div>
+                  </div>
 
-          {/* ─── DESKTOP : table ───────────────────────────────────────────── */}
-          {isDesktop && (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={TH}>Description</th>
-                  <th style={TH}>Projet</th>
-                  <th style={TH}>Date</th>
-                  <th style={{ ...TH, textAlign: "right" }}>Montant</th>
-                  <th style={{ ...TH, textAlign: "right" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
+                  <AnimatePresence>
+                    {paginated.map((depense, index) => {
+                      const project = soumissions.find((soumission) => soumission.id === depense.projet_lie);
+                      const isEditing = editId === depense.id;
+
+                      return (
+                        <React.Fragment key={depense.id}>
+                          <motion.div
+                            className="depenses-table-row"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0, x: -10 }}
+                            transition={{ delay: index * 0.02 }}
+                          >
+                            <div className="depenses-td" style={{ gap: 11 }}>
+                              <CategoryBadge category={depense.categorie} />
+                              <span className="depenses-desc">{depense.description || "Sans description"}</span>
+                            </div>
+                            <div className="depenses-td">
+                              {project ? (
+                                <span className="depenses-project">
+                                  <Icon paths={I.project} size={13} stroke="#a8874e" />
+                                  <span>{projectLabel(project)}</span>
+                                </span>
+                              ) : (
+                                <span className="depenses-muted">Aucun projet lié</span>
+                              )}
+                            </div>
+                            <div className="depenses-td">
+                              <span className="depenses-muted">{formatDateShort(depense.date_depense)}</span>
+                            </div>
+                            <div className="depenses-td">
+                              <span className="depenses-amount">
+                                {formatMontant(Number(depense.montant))}
+                                <small>DZD</small>
+                              </span>
+                            </div>
+                            <div className="depenses-td">
+                              <ExpenseActions
+                                hasReceipt={Boolean(depense.justificatif_url)}
+                                deleting={deletingId === depense.id}
+                                onReceipt={() => depense.justificatif_url && viewJustificatif(depense.justificatif_url)}
+                                onEdit={() => openEdit(depense)}
+                                onDelete={() => handleDelete(depense.id)}
+                              />
+                            </div>
+                          </motion.div>
+
+                          <AnimatePresence>
+                            {isEditing && (
+                              <motion.div className="depenses-edit-panel" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                                <div className="depenses-edit-title">Modifier la dépense</div>
+                                <DepenseForm
+                                  form={editForm}
+                                  onChange={setEditForm}
+                                  onSubmit={handleEdit}
+                                  onCancel={() => {
+                                    setEditId(null);
+                                    setEditPhoto(null);
+                                  }}
+                                  saving={editSaving}
+                                  photo={editPhoto}
+                                  onPhoto={setEditPhoto}
+                                  soumissions={soumissions}
+                                  submitLabel="Enregistrer"
+                                />
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </React.Fragment>
+                      );
+                    })}
+                  </AnimatePresence>
+
+                  {paginated.length < PER_PAGE && page === totalPages && (
+                    <div className="depenses-history-end">Fin de l&apos;historique</div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="depenses-card-list">
                 <AnimatePresence>
-                  {paginated.map((d, i) => {
-                    const cat = catCfg(d.categorie);
-                    const projet = soumissions.find((s) => s.id === d.projet_lie);
-                    const isEditing = editId === d.id;
+                  {paginated.map((depense, index) => {
+                    const project = soumissions.find((soumission) => soumission.id === depense.projet_lie);
+                    const isEditing = editId === depense.id;
 
                     return (
-                      <React.Fragment key={d.id}>
-                        <motion.tr
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0, x: -10 }}
-                          transition={{ delay: i * 0.02 }}
-                          style={{ borderBottom: "1px solid #f0f2f5", transition: "background 0.1s, box-shadow 0.1s" }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.background = "#f9fafb";
-                            e.currentTarget.style.boxShadow = "inset 3px 0 0 #1a2e1e";
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.background = "transparent";
-                            e.currentTarget.style.boxShadow = "none";
-                          }}
-                        >
-                          {/* Description */}
-                          <td style={{ padding: "13px 16px" }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                              <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 5, background: cat.bg, color: cat.text, border: `1px solid ${cat.dot}40`, flexShrink: 0, letterSpacing: "0.04em" }}>
-                                {cat.abbr}
-                              </span>
-                              <span style={{ fontSize: 13, color: d.description ? "#374151" : "#9ca3af", fontStyle: d.description ? "normal" : "italic", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 220 }}>
-                                {d.description || "—"}
-                              </span>
+                      <motion.article
+                        key={depense.id}
+                        className="depenses-card"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: -12 }}
+                        transition={{ delay: index * 0.03 }}
+                      >
+                        {!isEditing ? (
+                          <div className="depenses-card-body">
+                            <div className="depenses-card-top">
+                              <CategoryBadge category={depense.categorie} />
+                              <span className="depenses-muted">{formatDateShort(depense.date_depense)}</span>
                             </div>
-                          </td>
 
-                          {/* Projet */}
-                          <td style={{ padding: "13px 16px" }}>
-                            {projet ? (
-                              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                <svg style={{ width: 12, height: 12, color: "#9ca3af", flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span style={{ fontSize: 12, color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 }}>
-                                  {projet.numero_offre} — {projet.titre_projet}
-                                </span>
-                              </div>
-                            ) : (
-                              <span style={{ color: "#d1d5db", fontSize: 13 }}>—</span>
-                            )}
-                          </td>
-
-                          {/* Date */}
-                          <td style={{ padding: "13px 16px" }}>
-                            <span style={{ fontSize: 13, color: "#6b7280" }}>
-                              {new Date(d.date_depense + "T00:00:00").toLocaleDateString("fr-DZ", { day: "2-digit", month: "short" })}
-                            </span>
-                          </td>
-
-                          {/* Montant */}
-                          <td style={{ padding: "13px 16px", textAlign: "right" }}>
-                            <span style={{ fontSize: 14, fontWeight: 700, color: "#0f1923" }}>{formatMontant(Number(d.montant))}</span>
-                            <span style={{ fontSize: 11, color: "#9ca3af", marginLeft: 3 }}>DZD</span>
-                          </td>
-
-                          {/* Actions */}
-                          <td style={{ padding: "10px 16px", textAlign: "right" }}>
-                            <div style={{ display: "inline-flex", gap: 4, alignItems: "center" }}>
-                              {d.justificatif_url && (
-                                <button
-                                  onClick={() => viewJustificatif(d.justificatif_url!)}
-                                  title="Voir justificatif"
-                                  style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}
-                                >
-                                  <svg style={{ width: 13, height: 13 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                  </svg>
-                                </button>
-                              )}
-                              <button
-                                onClick={() => openEdit(d)}
-                                title="Modifier"
-                                style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}
-                              >
-                                <svg style={{ width: 13, height: 13 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => handleDelete(d.id)}
-                                disabled={deletingId === d.id}
-                                title="Supprimer"
-                                style={{ width: 32, height: 32, borderRadius: 7, border: "1px solid #fee2e2", background: "#fff", cursor: deletingId === d.id ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444", opacity: deletingId === d.id ? 0.6 : 1 }}
-                              >
-                                {deletingId === d.id ? <Spinner /> : (
-                                  <svg style={{ width: 13, height: 13 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
+                            <div className="depenses-card-top" style={{ alignItems: "flex-start", marginTop: 10 }}>
+                              <div style={{ minWidth: 0 }}>
+                                <p className="depenses-card-title">{depense.description || "Sans description"}</p>
+                                {project ? (
+                                  <span className="depenses-project">
+                                    <Icon paths={I.project} size={13} stroke="#a8874e" />
+                                    <span>{projectLabel(project)}</span>
+                                  </span>
+                                ) : (
+                                  <span className="depenses-muted">Aucun projet lié</span>
                                 )}
-                              </button>
+                              </div>
+                              <span className="depenses-amount" style={{ width: "auto", flexShrink: 0 }}>
+                                {formatMontant(Number(depense.montant))}
+                                <small>DZD</small>
+                              </span>
                             </div>
-                          </td>
-                        </motion.tr>
 
-                        {/* Inline edit row */}
-                        <AnimatePresence>
-                          {isEditing && (
-                            <motion.tr
-                              key={`edit-${d.id}`}
-                              initial={{ opacity: 0 }}
-                              animate={{ opacity: 1 }}
-                              exit={{ opacity: 0 }}
-                            >
-                              <td colSpan={5} style={{ padding: 0, background: "#f8fafc", borderBottom: "1px solid #eaecef" }}>
-                                <div style={{ padding: "10px 16px", background: "#f0f2f5", fontSize: 12, fontWeight: 600, color: "#374151", borderBottom: "1px solid #e5e7eb" }}>
-                                  Modifier la dépense
-                                </div>
-                                <DepenseForm
-                                  form={editForm} onChange={setEditForm} onSubmit={handleEdit}
-                                  onCancel={() => { setEditId(null); setEditPhoto(null); }}
-                                  saving={editSaving} photo={editPhoto} onPhoto={setEditPhoto}
-                                  soumissions={soumissions} submitLabel="Enregistrer"
-                                />
-                              </td>
-                            </motion.tr>
-                          )}
-                        </AnimatePresence>
-                      </React.Fragment>
+                            <div className="depenses-card-actions">
+                              <ExpenseActions
+                                hasReceipt={Boolean(depense.justificatif_url)}
+                                deleting={deletingId === depense.id}
+                                onReceipt={() => depense.justificatif_url && viewJustificatif(depense.justificatif_url)}
+                                onEdit={() => openEdit(depense)}
+                                onDelete={() => handleDelete(depense.id)}
+                              />
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="depenses-edit-title">Modifier la dépense</div>
+                            <DepenseForm
+                              form={editForm}
+                              onChange={setEditForm}
+                              onSubmit={handleEdit}
+                              onCancel={() => {
+                                setEditId(null);
+                                setEditPhoto(null);
+                              }}
+                              saving={editSaving}
+                              photo={editPhoto}
+                              onPhoto={setEditPhoto}
+                              soumissions={soumissions}
+                              submitLabel="Enregistrer"
+                            />
+                          </div>
+                        )}
+                      </motion.article>
                     );
                   })}
                 </AnimatePresence>
-              </tbody>
-            </table>
-          )}
 
-          {/* ─── MOBILE : card list ────────────────────────────────────────── */}
-          {!isDesktop && (
-            <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
-              <AnimatePresence>
-                {paginated.map((d, i) => {
-                  const cat = catCfg(d.categorie);
-                  const projet = soumissions.find((s) => s.id === d.projet_lie);
-                  const isEditing = editId === d.id;
+                {paginated.length < PER_PAGE && page === totalPages && (
+                  <div className="depenses-history-end">Fin de l&apos;historique</div>
+                )}
+              </div>
+            )}
+          </section>
+        </main>
 
-                  return (
-                    <motion.li
-                      key={d.id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0, x: -12 }}
-                      transition={{ delay: i * 0.03 }}
-                      style={{ borderBottom: "1px solid #f0f2f5" }}
-                    >
-                      {!isEditing ? (
-                        <div style={{ padding: "14px 16px", display: "flex", alignItems: "flex-start", gap: 12 }}>
-                          {/* Category badge */}
-                          <div style={{ width: 38, height: 38, borderRadius: 9, background: cat.bg, border: `1px solid ${cat.dot}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginTop: 1 }}>
-                            <span style={{ fontSize: 9, fontWeight: 800, color: cat.text, letterSpacing: "0.05em" }}>{cat.abbr}</span>
-                          </div>
-
-                          {/* Content */}
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, marginBottom: 3 }}>
-                              <span style={{ fontSize: 14, fontWeight: 700, color: "#0f1923" }}>
-                                {formatMontant(Number(d.montant))}
-                                <span style={{ fontSize: 11, fontWeight: 400, color: "#9ca3af", marginLeft: 3 }}>DZD</span>
-                              </span>
-                              <span style={{ fontSize: 12, color: "#9ca3af", flexShrink: 0 }}>
-                                {new Date(d.date_depense + "T00:00:00").toLocaleDateString("fr-DZ", { day: "2-digit", month: "short" })}
-                              </span>
-                            </div>
-                            {d.description && (
-                              <p style={{ fontSize: 12, color: "#6b7280", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                {d.description}
-                              </p>
-                            )}
-                            {projet && (
-                              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                                <svg style={{ width: 11, height: 11, color: "#9ca3af", flexShrink: 0 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span style={{ fontSize: 11, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {projet.numero_offre} — {projet.titre_projet}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Actions */}
-                          <div style={{ display: "flex", gap: 3, flexShrink: 0 }}>
-                            {d.justificatif_url && (
-                              <button onClick={() => viewJustificatif(d.justificatif_url!)} style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}>
-                                <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                                </svg>
-                              </button>
-                            )}
-                            <button onClick={() => openEdit(d)} style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280" }}>
-                              <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button onClick={() => handleDelete(d.id)} disabled={deletingId === d.id} style={{ width: 36, height: 36, borderRadius: 8, border: "1px solid #fee2e2", background: "#fff", cursor: deletingId === d.id ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444" }}>
-                              {deletingId === d.id ? <Spinner /> : (
-                                <svg style={{ width: 14, height: 14 }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ background: "#f8fafc" }}>
-                          <div style={{ padding: "10px 16px", background: "#f0f2f5", fontSize: 12, fontWeight: 600, color: "#374151", borderBottom: "1px solid #e5e7eb" }}>
-                            Modifier la dépense
-                          </div>
-                          <DepenseForm
-                            form={editForm} onChange={setEditForm} onSubmit={handleEdit}
-                            onCancel={() => { setEditId(null); setEditPhoto(null); }}
-                            saving={editSaving} photo={editPhoto} onPhoto={setEditPhoto}
-                            soumissions={soumissions} submitLabel="Enregistrer"
-                          />
-                        </div>
-                      )}
-                    </motion.li>
-                  );
-                })}
-              </AnimatePresence>
-            </ul>
-          )}
-
-          {/* Empty state */}
-          {filtered.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              style={{ padding: "56px 24px", textAlign: "center" }}
-            >
-              <svg style={{ width: 36, height: 36, color: "#d1d5db", margin: "0 auto 12px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <p style={{ fontSize: 14, color: "#6b7280", fontWeight: 500, margin: 0 }}>
-                {search || catFilter ? "Aucun résultat" : "Aucune dépense enregistrée"}
-              </p>
-              <p style={{ fontSize: 12, color: "#9ca3af", marginTop: 4 }}>
-                {search || catFilter ? "Essayez d'autres filtres" : "Cliquez sur + pour commencer"}
-              </p>
-            </motion.div>
-          )}
-
-          {/* End of history */}
-          {filtered.length > 0 && paginated.length < PER_PAGE && page === totalPages && (
-            <div style={{ padding: "20px 24px", textAlign: "center", borderTop: "1px solid #f0f2f5" }}>
-              <svg style={{ width: 24, height: 24, color: "#e5e7eb", margin: "0 auto 6px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <p style={{ fontSize: 12, color: "#9ca3af", margin: 0 }}>Fin de l&apos;historique</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── PAGINATION ───────────────────────────────────────────────────────── */}
-      <div style={{ borderTop: "1px solid #eaecef", padding: `10px ${px}px`, display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff", flexShrink: 0 }}>
-        <span style={{ fontSize: 12, color: "#9ca3af" }}>
-          {filtered.length} dépense{filtered.length !== 1 ? "s" : ""}
-          {(search || catFilter) ? " trouvée" + (filtered.length !== 1 ? "s" : "") : ""}
-        </span>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-            style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", cursor: page <= 1 ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: page <= 1 ? 0.35 : 1 }}
-          >
-            <svg style={{ width: 12, height: 12, color: "#374151" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <span style={{ fontSize: 12, color: "#6b7280", fontWeight: 500, minWidth: 52, textAlign: "center" }}>
-            {page} / {totalPages}
+        <footer className="depenses-pagination">
+          <span className="depenses-page-count">
+            {filtered.length} dépense{filtered.length !== 1 ? "s" : ""}
+            {search || catFilter ? ` trouvée${filtered.length !== 1 ? "s" : ""}` : ""}
           </span>
-          <button
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            style={{ width: 28, height: 28, borderRadius: 6, border: "1px solid #e5e7eb", background: "#fff", cursor: page >= totalPages ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: page >= totalPages ? 0.35 : 1 }}
-          >
-            <svg style={{ width: 12, height: 12, color: "#374151" }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
+          <div className="depenses-pager">
+            <button className="depenses-page-btn" type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)} aria-label="Page précédente">
+              <Icon paths={I.chevronLeft} size={14} />
+            </button>
+            <span className="depenses-page-label">
+              {page} / {totalPages}
+            </span>
+            <button className="depenses-page-btn" type="button" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)} aria-label="Page suivante">
+              <Icon paths={I.chevronRight} size={14} />
+            </button>
+          </div>
+          <span />
+        </footer>
       </div>
-
-    </div>
+    </>
   );
 }

@@ -10,6 +10,234 @@ import { formatDateFr } from "@/lib/utils";
 const CSS = `
   @keyframes sk { 0%,100%{opacity:1} 50%{opacity:.4} }
   .sk { animation: sk 1.5s ease-in-out infinite; }
+  .clients-shell {
+    min-height: 100%;
+    background: linear-gradient(180deg, #ffffff 0%, #faf8f5 38%, #f7f2ea 100%);
+    color: #1a1714;
+    display: flex;
+    flex-direction: column;
+  }
+  .clients-header {
+    flex-shrink: 0;
+    padding: 24px clamp(16px, 3vw, 40px) 18px;
+    border-bottom: 1px solid #e8e2d8;
+    background: rgba(255,255,255,.92);
+  }
+  .clients-header-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: start;
+  }
+  .clients-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: #a8874e;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .clients-kicker::before {
+    content: "";
+    width: 28px;
+    height: 1px;
+    background: #c9a96e;
+  }
+  .clients-title {
+    margin: 0;
+    color: #1a1714;
+    font-family: var(--font-display);
+    font-size: 38px;
+    font-weight: 600;
+    line-height: 1.02;
+  }
+  .clients-subtitle {
+    margin-top: 7px;
+    color: #887f74;
+    font-size: 14px;
+  }
+  .clients-export {
+    height: 40px;
+    padding: 0 15px;
+    border-radius: 9999px;
+    border: 1px solid #d0c9be;
+    background: #ffffff;
+    color: #635c54;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 800;
+    white-space: nowrap;
+    box-shadow: 0 8px 22px rgba(26,46,30,.05);
+  }
+  .clients-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .clients-stat {
+    min-height: 76px;
+    border-radius: 14px;
+    border: 1px solid #e8e2d8;
+    background: rgba(255,255,255,.78);
+    padding: 13px 14px;
+    box-shadow: 0 14px 34px rgba(26,46,30,.05);
+  }
+  .clients-stat-label {
+    color: #887f74;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .clients-stat-value {
+    margin-top: 8px;
+    color: #1a2e1e;
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1;
+  }
+  .clients-stat-note {
+    margin-top: 5px;
+    color: #887f74;
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .clients-search-wrap {
+    position: relative;
+    margin-top: 16px;
+  }
+  .clients-search-icon,
+  .clients-clear {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .clients-search-icon {
+    left: 15px;
+    color: #887f74;
+    pointer-events: none;
+  }
+  .clients-clear {
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    border: 0;
+    border-radius: 9999px;
+    background: #f5f0e8;
+    color: #887f74;
+    cursor: pointer;
+  }
+  .clients-search {
+    width: 100%;
+    height: 44px;
+    box-sizing: border-box;
+    padding: 0 44px;
+    border-radius: 9999px;
+    border: 1px solid #d0c9be;
+    background: #ffffff;
+    color: #1a1714;
+    font-size: 14px;
+    outline: none;
+    box-shadow: 0 10px 28px rgba(26,46,30,.04);
+  }
+  .clients-search:focus {
+    border-color: #1a2e1e;
+    box-shadow: 0 0 0 4px rgba(26,46,30,.10);
+  }
+  .clients-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px clamp(16px, 3vw, 40px) 0;
+  }
+  .clients-empty {
+    min-height: 360px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 42px 20px;
+    border: 1px solid #e8e2d8;
+    border-radius: 16px;
+    background: rgba(255,255,255,.78);
+    box-shadow: 0 18px 46px rgba(26,46,30,.06);
+  }
+  .clients-empty-icon {
+    width: 62px;
+    height: 62px;
+    border-radius: 14px;
+    background: #1a2e1e;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 18px;
+  }
+  .clients-table-shell {
+    border-radius: 16px;
+    border: 1px solid #e8e2d8;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 20px 50px rgba(26,46,30,.07);
+  }
+  .clients-table-head {
+    background: #fbfaf7;
+    border-bottom: 1px solid #e8e2d8;
+  }
+  .clients-pagination {
+    flex-shrink: 0;
+    background: #fbfaf7;
+    border-top: 1px solid #e8e2d8;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+    padding: 10px clamp(16px, 3vw, 40px);
+  }
+  .clients-page-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 9999px;
+    border: 1px solid #e8e2d8;
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  @media (max-width: 767px) {
+    .clients-header {
+      padding: 18px 14px 16px;
+    }
+    .clients-header-top {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px;
+    }
+    .clients-title {
+      font-size: 30px;
+    }
+    .clients-export {
+      width: auto;
+      justify-content: center;
+      padding: 0 13px;
+    }
+    .clients-summary {
+      grid-template-columns: repeat(3, minmax(112px, 1fr));
+      overflow-x: auto;
+      padding-bottom: 2px;
+    }
+    .clients-stat { min-height: 68px; }
+    .clients-content {
+      padding: 14px 14px 0;
+    }
+  }
 `;
 
 const PAGE_SIZE = 12;
@@ -20,13 +248,13 @@ function fmtInt(n: number) {
 
 /* ── Soumissions mini-table ─────────────────────────────── */
 const SOUM_GRID = "130px 1fr 110px 60px 140px";
-const SOUM_D    = "1px solid #f0f2f5";
-const SOUM_HD   = "1px solid #eaecef";
+const SOUM_D    = "1px solid #f0ebe3";
+const SOUM_HD   = "1px solid #e8e2d8";
 
 /* ── Clients table ──────────────────────────────────────── */
 const CT_GRID = "220px 1fr 120px 130px 88px";
-const CT_D    = "1px solid #f0f2f5";
-const CT_HD   = "1px solid #eaecef";
+const CT_D    = "1px solid #f0ebe3";
+const CT_HD   = "1px solid #e8e2d8";
 
 function SoumTableRow({ s }: { s: Soumission }) {
   const [hov, setHov] = useState(false);
@@ -339,60 +567,64 @@ export default function ClientsPage() {
 
   const totalPages = Math.max(1, Math.ceil(clients.length / PAGE_SIZE));
   const paginated = clients.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const cityCount = new Set(clients.map(c => c.ville).filter(Boolean)).size;
+  const latestClient = clients[0];
 
   return (
     <>
       <style>{CSS}</style>
-      <div style={{ height: "100%", background: "#faf9f7", display: "flex", flexDirection: "column" }}>
+      <div className="clients-shell">
 
         {/* ── Header ──────────────────────────────────────── */}
-        <div style={{
-          background: "white", borderBottom: "1px solid #ededeb",
-          padding: "20px 20px 18px", flexShrink: 0,
-        }}>
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 16 }}>
+        <div className="clients-header">
+          <div className="clients-header-top">
             <div>
-              <h1 style={{ fontSize: 26, fontWeight: 800, color: "#111827", letterSpacing: "-0.7px", lineHeight: 1 }}>
-                Clients
-              </h1>
-              <p style={{ fontSize: 13, color: "#9ca3af", marginTop: 5 }}>
-                <strong style={{ color: "#374151", fontWeight: 600 }}>{clients.length}</strong>
-                {" "}client{clients.length !== 1 ? "s" : ""} enregistré{clients.length !== 1 ? "s" : ""}
+              <div className="clients-kicker">Portefeuille</div>
+              <h1 className="clients-title">Clients</h1>
+              <p className="clients-subtitle">
+                {clients.length} client{clients.length !== 1 ? "s" : ""} enregistré{clients.length !== 1 ? "s" : ""}, suivi commercial et historique des soumissions.
               </p>
             </div>
-            <a href="/api/clients/export" target="_blank" rel="noreferrer" style={{
-              display: "flex", alignItems: "center", gap: 7,
-              height: 40, padding: "0 14px",
-              borderRadius: 10, border: "1.5px solid #e5e7eb", background: "white",
-              color: "#6b7280", fontSize: 13, fontWeight: 500, textDecoration: "none",
-              whiteSpace: "nowrap",
-            }}>
+            <a href="/api/clients/export" target="_blank" rel="noreferrer" className="clients-export">
               <Ic d={I.download} z={14} />
               Export
             </a>
           </div>
 
+          <div className="clients-summary">
+            <div className="clients-stat">
+              <div className="clients-stat-label">Base clients</div>
+              <div className="clients-stat-value">{clients.length}</div>
+              <div className="clients-stat-note">contacts actifs</div>
+            </div>
+            <div className="clients-stat">
+              <div className="clients-stat-label">Présence</div>
+              <div className="clients-stat-value">{cityCount}</div>
+              <div className="clients-stat-note">ville{cityCount > 1 ? "s" : ""} couverte{cityCount > 1 ? "s" : ""}</div>
+            </div>
+            <div className="clients-stat">
+              <div className="clients-stat-label">Dernière entrée</div>
+              <div className="clients-stat-value" style={{ fontSize: 17 }}>
+                {latestClient ? latestClient.entreprise : "-"}
+              </div>
+              <div className="clients-stat-note">
+                {latestClient ? formatDateFr(latestClient.created_at) : "Aucun client"}
+              </div>
+            </div>
+          </div>
+
           {/* Search */}
-          <div style={{ position: "relative" }}>
-            <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", display: "flex", pointerEvents: "none" }}>
+          <div className="clients-search-wrap">
+            <span className="clients-search-icon">
               <Ic d={I.search} z={15} />
             </span>
             <input
               type="text" value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher par entreprise ou contact…"
-              style={{
-                width: "100%", paddingLeft: 40, paddingRight: search ? 40 : 14, height: 44,
-                border: "1.5px solid #e5e7eb", borderRadius: 10,
-                fontSize: 14, color: "#111827", background: "white", outline: "none",
-                boxSizing: "border-box",
-              }}
+              placeholder="Rechercher par entreprise ou contact..."
+              className="clients-search"
             />
             {search && (
-              <button onClick={() => setSearch("")} style={{
-                position: "absolute", right: 13, top: "50%", transform: "translateY(-50%)",
-                color: "#9ca3af", background: "none", border: "none", cursor: "pointer",
-                display: "flex", alignItems: "center", padding: 4,
-              }}>
+              <button onClick={() => setSearch("")} className="clients-clear" aria-label="Effacer la recherche">
                 <Ic d={I.x} z={14} />
               </button>
             )}
@@ -400,7 +632,7 @@ export default function ClientsPage() {
         </div>
 
         {/* ── Content ─────────────────────────────────────── */}
-        <div style={{ flex: 1, overflowY: "auto", padding: bp === "desktop" ? 0 : "16px 16px 0" }}>
+        <div className="clients-content">
           {loading ? (
             bp === "desktop" ? (
               <div style={{ margin: "16px 32px 20px", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden" }}>
@@ -420,14 +652,14 @@ export default function ClientsPage() {
               </div>
             )
           ) : clients.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "72px 24px", display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <div style={{ width: 64, height: 64, borderRadius: 20, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18 }}>
-                <Ic d={I.user} z={30} s="#9ca3af" />
+            <div className="clients-empty">
+              <div className="clients-empty-icon">
+                <Ic d={I.user} z={28} s="white" />
               </div>
-              <p style={{ fontSize: 18, fontWeight: 700, color: "#111827", letterSpacing: "-0.4px", marginBottom: 8 }}>
+              <p style={{ fontSize: 20, fontWeight: 800, color: "#1a1714", marginBottom: 8 }}>
                 Aucun client
               </p>
-              <p style={{ fontSize: 14, color: "#9ca3af", lineHeight: 1.6, maxWidth: 280 }}>
+              <p style={{ fontSize: 14, color: "#887f74", lineHeight: 1.6, maxWidth: 340 }}>
                 {search
                   ? "Aucun résultat pour cette recherche."
                   : "Les clients sont créés automatiquement lors d'une soumission."}
@@ -462,28 +694,26 @@ export default function ClientsPage() {
 
         {/* ── Pagination (desktop only) ────────────────────── */}
         {!loading && clients.length > 0 && bp === "desktop" && (
-          <div style={{
-            flexShrink: 0, background: "#faf9f7", borderTop: "1px solid #e5e7eb",
-            display: "grid", gridTemplateColumns: "1fr auto 1fr",
-            alignItems: "center", gap: 12, padding: "10px 16px",
-          }}>
-            <span style={{ fontSize: 12, color: "#9ca3af" }}>
-              <strong style={{ color: "#374151", fontWeight: 600 }}>{clients.length}</strong>
+          <div className="clients-pagination">
+            <span style={{ fontSize: 12, color: "#887f74" }}>
+              <strong style={{ color: "#1a1714", fontWeight: 800 }}>{clients.length}</strong>
               {" "}client{clients.length !== 1 ? "s" : ""}
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <motion.button whileTap={{ scale: 0.94 }}
                 onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
-                style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb", background: "white", display: "flex", alignItems: "center", justifyContent: "center", color: page <= 1 ? "#d1d5db" : "#374151", cursor: page <= 1 ? "default" : "pointer" }}
+                className="clients-page-btn"
+                style={{ color: page <= 1 ? "#d0c9be" : "#1a2e1e", cursor: page <= 1 ? "default" : "pointer" }}
               >
                 <Ic d={I.chevL} z={14} />
               </motion.button>
-              <span style={{ fontSize: 12, color: "#374151", fontWeight: 500, minWidth: 76, textAlign: "center", userSelect: "none" }}>
+              <span style={{ fontSize: 12, color: "#1a1714", fontWeight: 800, minWidth: 76, textAlign: "center", userSelect: "none" }}>
                 Page {page} / {totalPages}
               </span>
               <motion.button whileTap={{ scale: 0.94 }}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
-                style={{ width: 32, height: 32, borderRadius: 8, border: "1px solid #e5e7eb", background: "white", display: "flex", alignItems: "center", justifyContent: "center", color: page >= totalPages ? "#d1d5db" : "#374151", cursor: page >= totalPages ? "default" : "pointer" }}
+                className="clients-page-btn"
+                style={{ color: page >= totalPages ? "#d0c9be" : "#1a2e1e", cursor: page >= totalPages ? "default" : "pointer" }}
               >
                 <Ic d={I.chevR} z={14} />
               </motion.button>
@@ -525,11 +755,11 @@ export default function ClientsPage() {
                     <p style={{ fontSize: 13, color: "#6b7280" }}>Cette action est irréversible.</p>
                   </div>
                   <div style={{ padding: "0 24px 24px", display: "flex", gap: 10 }}>
-                    <button onClick={() => setDeleteConfirm(D0)} style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "1.5px solid #e5e7eb", background: "white", fontSize: 13, fontWeight: 600, color: "#6b7280", cursor: "pointer" }}>
+                    <button onClick={() => setDeleteConfirm(D0)} style={{ flex: 1, padding: "11px 0", borderRadius: 9999, border: "1.5px solid #d0c9be", background: "white", fontSize: 13, fontWeight: 700, color: "#635c54", cursor: "pointer" }}>
                       Annuler
                     </button>
                     <motion.button whileTap={{ scale: .97 }} onClick={confirmDelete} disabled={!!deletingId}
-                      style={{ flex: 1, padding: "11px 0", borderRadius: 10, border: "none", background: "#dc2626", fontSize: 13, fontWeight: 600, color: "white", cursor: "pointer", opacity: deletingId ? .5 : 1 }}
+                      style={{ flex: 1, padding: "11px 0", borderRadius: 9999, border: "none", background: "#c44a3a", fontSize: 13, fontWeight: 700, color: "white", cursor: "pointer", opacity: deletingId ? .5 : 1 }}
                     >
                       {deletingId ? "Suppression…" : "Supprimer"}
                     </motion.button>
@@ -563,17 +793,17 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
       style={{
         background: "white", borderRadius: 16, overflow: "hidden",
         position: "relative",
-        border: `1px solid ${isExpanded ? "#1a2e1e22" : "#ededeb"}`,
+        border: `1px solid ${isExpanded ? "#c9a96e" : "#e8e2d8"}`,
         boxShadow: isExpanded
-          ? "0 6px 24px rgba(26,46,30,0.09)"
-          : "0 1px 4px rgba(0,0,0,0.05)",
+          ? "0 14px 34px rgba(26,46,30,0.11)"
+          : "0 10px 28px rgba(26,46,30,0.05)",
         transition: "border-color 0.18s, box-shadow 0.18s",
       }}
     >
       {/* Left accent bar */}
       <div style={{
         position: "absolute", left: 0, top: 0, bottom: 0,
-        width: 3, background: "#1a2e1e",
+        width: 3, background: "#C9A96E",
         opacity: isExpanded ? 1 : 0,
         transition: "opacity 0.18s",
         borderRadius: "16px 0 0 16px",
@@ -589,7 +819,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
           display: "flex", alignItems: "center", gap: 12,
           padding: "13px 12px 13px 16px",
           cursor: "pointer",
-          background: hov && !isExpanded ? "#fafafa" : "white",
+          background: hov && !isExpanded ? "#fffdfa" : "white",
           transition: "background 0.12s",
         }}
       >
@@ -608,7 +838,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
             fontSize: 14.5, fontWeight: 700,
-            color: isExpanded ? "#1a2e1e" : "#111827",
+            color: isExpanded ? "#1a2e1e" : "#1a1714",
             letterSpacing: "-0.35px", lineHeight: 1.25,
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             transition: "color 0.18s",
@@ -628,7 +858,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
               <span style={{
                 display: "inline-flex", alignItems: "center", gap: 3,
                 fontSize: 10.5, color: "#6b7280", fontWeight: 500,
-                background: "#f3f4f6", borderRadius: 5, padding: "2px 7px",
+                background: "#f5f0e8", borderRadius: 9999, padding: "2px 8px",
               }}>
                 <Ic d={I.mapPin} z={9} s="#9ca3af" />
                 {client.ville}
@@ -637,8 +867,8 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
             <span style={{
               display: "inline-flex", alignItems: "center", gap: 3,
               fontSize: 10.5, color: "#9ca3af",
-              background: "#f9fafb", border: "1px solid #f0f0ee",
-              borderRadius: 5, padding: "2px 7px",
+              background: "#fbfaf7", border: "1px solid #e8e2d8",
+              borderRadius: 9999, padding: "2px 8px",
             }}>
               <Ic d={I.calendar} z={9} s="#c4c8cd" />
               {formatDateFr(client.created_at)}
@@ -652,9 +882,9 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
             title="Supprimer le client"
             onClick={e => onDelete(client, e)}
             style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: hov ? "#fff1f2" : "#f8fafc",
-              border: `1px solid ${hov ? "#fecdd3" : "#e5e7eb"}`,
+              width: 32, height: 32, borderRadius: 9999,
+              background: hov ? "#fff2ed" : "#fbfaf7",
+              border: `1px solid ${hov ? "#f0b9ad" : "#e8e2d8"}`,
               display: "flex", alignItems: "center", justifyContent: "center",
               color: hov ? "#e11d48" : "#9ca3af",
               cursor: "pointer", transition: "all 0.15s",
@@ -667,9 +897,9 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.22 }}
             style={{
-              width: 32, height: 32, borderRadius: 8,
+              width: 32, height: 32, borderRadius: 9999,
               background: isExpanded ? "#1a2e1e" : "#f8fafc",
-              border: `1px solid ${isExpanded ? "#1a2e1e" : "#e5e7eb"}`,
+              border: `1px solid ${isExpanded ? "#1a2e1e" : "#e8e2d8"}`,
               display: "flex", alignItems: "center", justifyContent: "center",
               transition: "background 0.2s, border-color 0.2s",
             }}
@@ -748,9 +978,9 @@ function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, onTogg
         style={{
           display: "grid", gridTemplateColumns: CT_GRID,
           minHeight: 64, alignItems: "stretch",
-          background: hov || isExpanded ? "#fafafa" : "white",
-          boxShadow: hov || isExpanded ? "inset 3px 0 0 #1a2e1e" : "inset 3px 0 0 transparent",
-          borderBottom: "1px solid #f1f5f9",
+          background: hov || isExpanded ? "#fffdfa" : "white",
+          boxShadow: hov || isExpanded ? "inset 3px 0 0 #C9A96E" : "inset 3px 0 0 transparent",
+          borderBottom: "1px solid #f0ebe3",
           cursor: "pointer",
           transition: "background 0.12s, box-shadow 0.12s",
         }}
@@ -759,7 +989,7 @@ function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, onTogg
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 16px", borderRight: CT_D, minWidth: 0 }}>
           <Avatar name={client.entreprise} size={36} />
           <span style={{
-            fontSize: 13.5, fontWeight: 700, color: isExpanded ? "#1a2e1e" : "#111827",
+            fontSize: 13.5, fontWeight: 800, color: isExpanded ? "#1a2e1e" : "#1a1714",
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             transition: "color 0.15s",
           }}>
@@ -768,7 +998,7 @@ function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, onTogg
         </div>
         {/* Contact */}
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", padding: "0 16px", borderRight: CT_D, minWidth: 0 }}>
-          <span style={{ fontSize: 13, color: "#111827", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <span style={{ fontSize: 13, color: "#1a1714", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
             {client.titre} {client.nom_contact}
           </span>
           {client.poste && (
@@ -780,8 +1010,8 @@ function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, onTogg
         {/* Ville */}
         <div style={{ display: "flex", alignItems: "center", padding: "0 16px", borderRight: CT_D }}>
           {client.ville ? (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12.5, color: "#6b7280" }}>
-              <Ic d={I.mapPin} z={11} s="#9ca3af" />
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12.5, color: "#635c54" }}>
+              <Ic d={I.mapPin} z={11} s="#a8874e" />
               {client.ville}
             </span>
           ) : (
@@ -790,7 +1020,7 @@ function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, onTogg
         </div>
         {/* Client depuis */}
         <div style={{ display: "flex", alignItems: "center", padding: "0 16px", borderRight: CT_D }}>
-          <span style={{ fontSize: 12.5, color: "#6b7280" }}>
+          <span style={{ fontSize: 12.5, color: "#635c54" }}>
             {formatDateFr(client.created_at)}
           </span>
         </div>
@@ -800,9 +1030,9 @@ function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, onTogg
             title="Supprimer le client"
             onClick={e => onDelete(client, e)}
             style={{
-              width: 32, height: 32, borderRadius: 8,
-              background: hov ? "#fff1f2" : "#f8fafc",
-              border: `1px solid ${hov ? "#fecdd3" : "#e5e7eb"}`,
+              width: 32, height: 32, borderRadius: 9999,
+              background: hov ? "#fff2ed" : "#fbfaf7",
+              border: `1px solid ${hov ? "#f0b9ad" : "#e8e2d8"}`,
               display: "flex", alignItems: "center", justifyContent: "center",
               color: hov ? "#e11d48" : "#9ca3af",
               cursor: "pointer", transition: "all 0.15s",
@@ -884,12 +1114,12 @@ function ClientsTable({ clients, expandedId, soumMap, loadingS, onToggle, onDele
   ];
 
   return (
-    <div style={{ margin: "16px 32px 20px", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden", background: "white" }}>
+    <div className="clients-table-shell">
       {/* Sticky header */}
       <div style={{
         display: "grid", gridTemplateColumns: CT_GRID,
         height: 44, alignItems: "stretch",
-        background: "#fafafa", borderBottom: "1.5px solid #e5e7eb",
+        background: "#fbfaf7", borderBottom: "1px solid #e8e2d8",
         position: "sticky", top: 0, zIndex: 2,
       }}>
         {headers.map(({ label, justify }, i) => (
