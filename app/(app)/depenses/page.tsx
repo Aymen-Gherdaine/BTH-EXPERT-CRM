@@ -413,6 +413,13 @@ const CSS = `
     padding-top: 12px;
     border-top: 1px solid #f0ebe3;
   }
+  .depenses-card-amount-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+  }
   .depenses-empty {
     min-height: 340px;
     display: flex;
@@ -563,14 +570,32 @@ const CSS = `
     color: #635c54;
   }
   @media (max-width: 767px) {
+    .depenses-page {
+      height: auto;
+      min-height: 100%;
+      overflow: visible;
+    }
     .depenses-header {
-      padding: 18px 14px 14px;
+      padding: 13px 14px 12px;
+    }
+    .depenses-header-top {
+      gap: 10px;
+      align-items: center;
+    }
+    .depenses-kicker {
+      margin-bottom: 4px;
+      font-size: 10px;
+      gap: 8px;
+    }
+    .depenses-kicker::before {
+      width: 20px;
     }
     .depenses-title {
-      font-size: 30px;
+      font-size: 26px;
     }
     .depenses-subtitle {
-      font-size: 13px;
+      margin-top: 3px;
+      font-size: 12px;
     }
     .depenses-add-btn {
       width: 42px;
@@ -579,24 +604,51 @@ const CSS = `
       box-shadow: 0 12px 28px rgba(26,46,30,.18);
     }
     .depenses-stats {
-      grid-template-columns: repeat(3, minmax(164px, 1fr));
-      overflow-x: auto;
-      gap: 10px;
-      padding-bottom: 2px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      overflow: visible;
+      gap: 6px;
+      margin-top: 11px;
+      padding-bottom: 0;
     }
     .depenses-stat {
-      min-height: 78px;
-      padding: 13px 14px;
+      min-height: 58px;
+      border-radius: 12px;
+      padding: 8px 9px;
+      box-shadow: 0 8px 20px rgba(26,46,30,.04);
+    }
+    .depenses-stat::after {
+      display: none;
+    }
+    .depenses-stat-label {
+      font-size: 8px;
+      letter-spacing: .05em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .depenses-stat-value {
-      font-size: 20px;
+      margin-top: 6px;
+      font-size: 15px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .depenses-stat-value small {
+      display: none;
+    }
+    .depenses-stat-note {
+      display: none;
     }
     .depenses-content {
-      padding: 14px 14px 12px;
+      flex: none;
+      display: block;
+      min-height: auto;
+      padding: 12px 12px 10px;
     }
     .depenses-tools {
       grid-template-columns: 1fr;
-      gap: 8px;
+      gap: 7px;
+      margin-bottom: 10px;
     }
     .depenses-input,
     .depenses-select {
@@ -605,10 +657,56 @@ const CSS = `
     }
     .depenses-shell {
       border-radius: 16px;
+      overflow: visible;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
     }
     .depenses-card-list {
-      padding: 12px;
+      height: auto;
+      overflow: visible;
+      padding: 0;
       gap: 10px;
+    }
+    .depenses-card {
+      border-radius: 14px;
+      box-shadow: 0 10px 26px rgba(26,46,30,.06);
+    }
+    .depenses-card-body {
+      padding: 13px 13px 12px;
+    }
+    .depenses-card-title {
+      margin: 8px 0 5px;
+      font-size: 14px;
+      line-height: 1.3;
+    }
+    .depenses-card-amount-row {
+      margin-top: 9px;
+      align-items: center;
+    }
+    .depenses-card .depenses-amount {
+      width: auto;
+      max-width: 58%;
+      font-size: 17px;
+      line-height: 1.05;
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .depenses-card .depenses-amount small {
+      display: block;
+      margin-left: 0;
+      margin-top: 2px;
+      font-size: 9px;
+    }
+    .depenses-card-actions {
+      margin-top: 10px;
+      padding-top: 10px;
+    }
+    .depenses-icon-btn {
+      width: 34px;
+      height: 34px;
     }
     .depenses-form {
       padding: 14px;
@@ -617,9 +715,22 @@ const CSS = `
       grid-template-columns: 1fr;
     }
     .depenses-pagination {
-      padding: 9px 14px;
+      grid-template-columns: 1fr auto;
+      padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+      background: rgba(251,250,247,.94);
     }
     .depenses-page-count {
+      font-size: 12px;
+    }
+    .depenses-pagination > span:last-child {
+      display: none;
+    }
+    .depenses-page-btn {
+      width: 32px;
+      height: 32px;
+    }
+    .depenses-page-label {
+      min-width: 52px;
       font-size: 12px;
     }
   }
@@ -736,6 +847,10 @@ function formatDateShort(date: string) {
     day: "2-digit",
     month: "short",
   });
+}
+
+function formatMontantCompact(amount: number) {
+  return Math.round(amount).toLocaleString("fr-DZ");
 }
 
 function projectLabel(project?: SoumissionOption) {
@@ -1182,7 +1297,7 @@ export default function DepensesPage() {
               <h1 className="depenses-title">Dépenses</h1>
               <p className="depenses-subtitle">
                 {thisMonth.length} dépense{thisMonth.length !== 1 ? "s" : ""} ce mois-ci
-                {totalThisMonth > 0 ? ` - ${formatMontant(totalThisMonth)} DZD` : ""}
+                {isDesktop && totalThisMonth > 0 ? ` - ${formatMontant(totalThisMonth)} DZD` : ""}
               </p>
             </div>
             <motion.button
@@ -1204,7 +1319,7 @@ export default function DepensesPage() {
             <article className="depenses-stat">
               <div className="depenses-stat-label">Total {monthLabel}</div>
               <div className="depenses-stat-value">
-                {formatMontant(totalThisMonth)}
+                {isDesktop ? formatMontant(totalThisMonth) : formatMontantCompact(totalThisMonth)}
                 <small>DZD</small>
               </div>
               <div className="depenses-stat-note">
@@ -1419,7 +1534,15 @@ export default function DepensesPage() {
                               <span className="depenses-muted">{formatDateShort(depense.date_depense)}</span>
                             </div>
 
-                            <div className="depenses-card-top" style={{ alignItems: "flex-start", marginTop: 10 }}>
+                            <div className="depenses-card-amount-row">
+                              <span className="depenses-muted">Montant</span>
+                              <span className="depenses-amount">
+                                {formatMontant(Number(depense.montant))}
+                                <small>DZD</small>
+                              </span>
+                            </div>
+
+                            <div style={{ marginTop: 8, minWidth: 0 }}>
                               <div style={{ minWidth: 0 }}>
                                 <p className="depenses-card-title">{depense.description || "Sans description"}</p>
                                 {project ? (
@@ -1431,10 +1554,6 @@ export default function DepensesPage() {
                                   <span className="depenses-muted">Aucun projet lié</span>
                                 )}
                               </div>
-                              <span className="depenses-amount" style={{ width: "auto", flexShrink: 0 }}>
-                                {formatMontant(Number(depense.montant))}
-                                <small>DZD</small>
-                              </span>
                             </div>
 
                             <div className="depenses-card-actions">
