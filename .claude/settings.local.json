@@ -24,7 +24,8 @@
       "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\Precision\\\\OneDrive\\\\Desktop\\\\Projets-Dev\\\\BTH-Expert-CRM\" -Recurse -Directory -ErrorAction SilentlyContinue)",
       "Bash(Select-Object -First 30 FullName)",
       "Bash(python skills/ui-ux-pro-max/scripts/search.py \"enterprise SaaS CRM table dashboard premium dark\" --design-system -p \"BTH Hub\" -f markdown)",
-      "Bash(python \"C:\\\\Users\\\\Precision\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"table row hover animation data grid\" --domain ux -n 5)"
+      "Bash(python \"C:\\\\Users\\\\Precision\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"table row hover animation data grid\" --domain ux -n 5)",
+      "Bash(npm install *)"
     ]
   }
 }
