@@ -32,8 +32,11 @@ const ICONS = {
   wallet:  ["M21 4H3a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z", "M1 10h22"],
   chart:   ["M18 20v-10", "M12 20V4", "M6 20v-6"],
   admin:   ["M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"],
-  chevron: "M18 15l-6-6-6 6",
-  x:       "M18 6 6 18M6 6l12 12",
+  chevron:  "M18 15l-6-6-6 6",
+  x:        "M18 6 6 18M6 6l12 12",
+  user:     ["M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2", "M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"],
+  settings: ["M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16z", "M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z", "M12 2v2", "M12 20v2", "M4.93 4.93l1.41 1.41", "M17.66 17.66l1.41 1.41", "M2 12h2", "M20 12h2", "M4.93 19.07l1.41-1.41", "M17.66 6.34l1.41-1.41"],
+  logout:   ["M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4", "M16 17l5-5-5-5", "M21 12H9"],
 };
 
 // ─── Nav config ──────────────────────────────────────────────────────────────
@@ -97,8 +100,13 @@ function SidebarInner({
         setDropdownOpen(false);
       }
     };
+    const hKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDropdownOpen(false); };
     document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
+    document.addEventListener("keydown", hKey);
+    return () => {
+      document.removeEventListener("mousedown", h);
+      document.removeEventListener("keydown", hKey);
+    };
   }, [dropdownOpen]);
 
   async function handleSignOut() {
@@ -172,26 +180,26 @@ function SidebarInner({
       </nav>
 
       {/* User zone */}
-      <div className="border-t border-bth-hairline p-2 relative flex-shrink-0" ref={profileRef}>
-        {/* Dropdown — opens upward */}
+      <div className="border-t border-bth-hairline relative flex-shrink-0" ref={profileRef}>
+        {/* Dropdown — opens upward, origin bottom-left */}
         <AnimatePresence>
           {dropdownOpen && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 6 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 6 }}
-              transition={{ duration: 0.15 }}
-              className="absolute left-2 right-2 bottom-full mb-2 bg-white border border-bth-n-200
-                         rounded-bth-lg shadow-[var(--bth-shadow-md)] overflow-hidden z-50"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              style={{ transformOrigin: "bottom left", position: "absolute", bottom: "calc(100% + 8px)", left: 12, width: 224 }}
+              className="bg-white border border-bth-n-200 rounded-bth-lg shadow-[var(--bth-shadow-lg)] overflow-hidden z-50"
             >
-              {/* User info */}
+              {/* User info — 40px avatar, non-clickable */}
               <div className="flex items-center gap-[10px] px-4 py-3.5 border-b border-bth-hairline">
-                <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden">
+                <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden">
                   {avatarUrl ? (
-                    <Image src={avatarUrl} alt={name} width={32} height={32}
+                    <Image src={avatarUrl} alt={name} width={40} height={40}
                       className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[11px] font-semibold">
+                    <div className="w-10 h-10 rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[13px] font-semibold">
                       {initials}
                     </div>
                   )}
@@ -202,27 +210,37 @@ function SidebarInner({
                 </div>
               </div>
 
-              {/* Nav links */}
+              {/* Nav links with icons */}
               <div className="p-1.5">
                 {[
-                  { href: "/profil",     label: "Mon profil"  },
-                  { href: "/parametres", label: "Paramètres"  },
-                ].map(({ href, label }) => (
+                  { href: "/profil",     label: "Mon profil",  icon: "user"     as const },
+                  { href: "/parametres", label: "Paramètres",  icon: "settings" as const },
+                ].map(({ href, label, icon }) => (
                   <Link key={href} href={href}
                     onClick={() => { setDropdownOpen(false); onNavClick?.(); }}
-                    className="flex items-center px-[10px] py-[9px] rounded-bth-sm text-[13px]
+                    className="flex items-center gap-[10px] px-[10px] py-[9px] rounded-bth-sm text-[13px]
                                font-medium text-bth-n-700 hover:bg-bth-n-50 transition-colors duration-100 no-underline">
+                    <span className="text-bth-n-400 flex-shrink-0">
+                      <Ic d={ICONS[icon]} size={15} sw={1.8} />
+                    </span>
                     {label}
                   </Link>
                 ))}
               </div>
 
-              <div className="border-t border-bth-hairline p-1.5">
+              <div className="border-t border-bth-hairline my-1" />
+
+              <div className="p-1.5">
                 <button
                   onClick={handleSignOut}
-                  className="w-full flex items-center px-[10px] py-[9px] rounded-bth-sm text-[13px]
-                             font-medium text-bth-error hover:bg-bth-n-50 transition-colors duration-100 text-left bth-focus"
+                  className="w-full flex items-center gap-[10px] px-[10px] py-[9px] rounded-bth-sm text-[13px]
+                             font-medium text-bth-error transition-colors duration-100 text-left bth-focus"
+                  onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(196,74,58,0.06)"; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "transparent"; }}
                 >
+                  <span className="text-bth-error flex-shrink-0">
+                    <Ic d={ICONS.logout} size={15} sw={1.8} />
+                  </span>
                   Se déconnecter
                 </button>
               </div>
@@ -230,35 +248,39 @@ function SidebarInner({
           )}
         </AnimatePresence>
 
-        {/* Trigger button */}
+        {/* Trigger button — 64px zone */}
         {user ? (
           <button
             onClick={() => setDropdownOpen(v => !v)}
-            className="w-full flex items-center gap-[10px] p-2 rounded-bth-sm
+            className="w-full flex items-center gap-3 px-4 py-[15px]
                        hover:bg-bth-n-50 transition-colors duration-100 bth-focus"
           >
-            <div className="w-8 h-8 rounded-full flex-shrink-0 overflow-hidden">
-              {avatarUrl ? (
-                <Image src={avatarUrl} alt={name} width={32} height={32}
-                  className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[11px] font-semibold">
-                  {initials}
-                </div>
-              )}
+            {/* 34px avatar with online status dot */}
+            <div className="relative flex-shrink-0">
+              <div className="w-[34px] h-[34px] rounded-full overflow-hidden">
+                {avatarUrl ? (
+                  <Image src={avatarUrl} alt={name} width={34} height={34}
+                    className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-[34px] h-[34px] rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[13px] font-semibold">
+                    {initials}
+                  </div>
+                )}
+              </div>
+              <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-bth-success border-2 border-white" />
             </div>
             <div className="flex-1 min-w-0 text-left">
-              <div className="text-[13px] font-medium text-bth-n-900 truncate">{name}</div>
+              <div className="text-[13px] font-medium text-bth-green-800 truncate">{name}</div>
               <div className="text-[11px] text-bth-n-500">{ROLE_LABEL[role]}</div>
             </div>
-            <div className={`text-bth-n-400 transition-transform duration-150 flex-shrink-0 ${dropdownOpen ? "rotate-180" : ""}`}>
+            <div className={`text-bth-n-400 transition-transform duration-200 flex-shrink-0 ${dropdownOpen ? "rotate-180" : ""}`}>
               <Ic d={ICONS.chevron} size={14} sw={2} />
             </div>
           </button>
         ) : (
           /* Loading skeleton */
-          <div className="flex items-center gap-[10px] p-2">
-            <div className="w-8 h-8 rounded-full bg-bth-n-100 animate-pulse flex-shrink-0" />
+          <div className="flex items-center gap-3 px-4 py-[15px]">
+            <div className="w-[34px] h-[34px] rounded-full bg-bth-n-100 animate-pulse flex-shrink-0" />
             <div className="flex-1 space-y-1.5">
               <div className="h-[10px] bg-bth-n-100 rounded animate-pulse w-[70%]" />
               <div className="h-2 bg-bth-n-100 rounded animate-pulse w-[50%]" />
