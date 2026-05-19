@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import useSWR from "swr";
 import { Client, Soumission, StatutSoumission } from "@/types";
 import { formatDateFr } from "@/lib/utils";
 
@@ -537,6 +538,8 @@ interface ClientWithSoumissions extends Client {
   soumissions?: Soumission[];
 }
 
+type ApiListResponse<T> = { data?: T[] };
+
 /* ── Status config ──────────────────────────────────────── */
 type StCfg = { dot: string; bgBadge: string; textBadge: string; border: string; accentBar: string };
 const ST: Record<StatutSoumission, StCfg> = {
@@ -633,9 +636,8 @@ function useBp() {
 ══════════════════════════════════════════════════════════ */
 export default function ClientsPage() {
   const bp = useBp();
-  const [clients, setClients] = useState<ClientWithSoumissions[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [soumMap, setSoumMap] = useState<Record<string, Soumission[]>>({});
@@ -643,20 +645,19 @@ export default function ClientsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteState>(D0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    const p = search ? `?q=${encodeURIComponent(search)}` : "";
-    const res = await fetch(`/api/clients${p}`);
-    const json = await res.json();
-    setClients(json.data ?? []);
-    setPage(1);
-    setLoading(false);
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(t);
   }, [search]);
 
-  useEffect(() => {
-    const t = setTimeout(load, 300);
-    return () => clearTimeout(t);
-  }, [load]);
+  useEffect(() => { setPage(1); }, [debouncedSearch]);
+
+  const clientsUrl = debouncedSearch ? `/api/clients?q=${encodeURIComponent(debouncedSearch)}` : "/api/clients";
+  const { data: clientsRes, isLoading: clientsLoading, mutate: mutateClients } =
+    useSWR<ApiListResponse<ClientWithSoumissions>>(clientsUrl);
+
+  const clients = clientsRes?.data ?? [];
+  const loading = clientsLoading && !clientsRes;
 
   async function toggleExpand(id: string) {
     if (expandedId === id) { setExpandedId(null); return; }
@@ -677,7 +678,10 @@ export default function ClientsPage() {
   async function confirmDelete() {
     setDeletingId(deleteConfirm.id);
     await fetch(`/api/clients/${deleteConfirm.id}`, { method: "DELETE" });
-    setClients(prev => prev.filter(c => c.id !== deleteConfirm.id));
+    mutateClients(
+      current => ({ data: (current?.data ?? []).filter(c => c.id !== deleteConfirm.id) }),
+      { revalidate: false }
+    );
     if (expandedId === deleteConfirm.id) setExpandedId(null);
     setDeletingId(null);
     setDeleteConfirm(D0);
