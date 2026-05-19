@@ -12,7 +12,7 @@
 DESIGN.md              ← ce fichier (racine du projet)
 CLAUDE.md              ← instructions Claude Code (résumé des règles design inclus)
 app/globals.css        ← tous les tokens CSS (@theme --color-bth-*, :root --bth-ease-*)
-app/layout.tsx         ← import des fonts (Space Grotesk, Playfair Display, Lora)
+app/layout.tsx         ← import de la font Inter
 ```
 
 ---
@@ -22,10 +22,8 @@ app/layout.tsx         ← import des fonts (Space Grotesk, Playfair Display, Lo
 - Next.js App Router + TypeScript strict
 - Tailwind CSS v4 — tokens via `@theme` dans `globals.css`
 - Framer Motion pour les animations
-- Polices chargées dans `app/layout.tsx` via `next/font/google`
-  - `Space Grotesk` (subsets: latin, weights: 300 400 500 600 700)
-  - `Playfair Display` (subsets: latin, weights: 400 500 600 700, italic: 400 500)
-  - `Lora` (subsets: latin, weights: 400 500, italic: 400)
+- Police chargée dans `app/layout.tsx` via `next/font/google`
+  - `Inter` (subsets: latin, weights: 300 400 500 600 700 800)
 
 ---
 
@@ -119,15 +117,13 @@ Utiliser directement bg-bth-n-900 / text-bth-n-900 dans Tailwind.
 ## Typographie
 
 ### Familles
-- **Space Grotesk** — TOUT l'UI Hub : titres, labels, boutons, inputs, tableaux, navigation
-- **Playfair Display** — titres display uniquement (hero sections, titres de page majeurs)
-- **Lora** — uniquement corps de texte dense (aperçus de soumission, texte éditorial)
-- Jamais Inter, Roboto, ou la police système par défaut
+- **Inter** — TOUT l'UI Hub : titres, labels, boutons, inputs, tableaux, navigation, aperçus et textes éditoriaux
+- Jamais d'autre police nommée dans le CRM
 
 ### Échelle (principe Linear — tracking négatif sur grandes tailles)
 ```
 Token          Size  Weight  Line-H  Tracking  Usage
-display-xl     40px  700     1.10    -1.0px    Titres de page (Playfair ou Space Grotesk)
+display-xl     40px  700     1.10    -1.0px    Titres de page (Inter)
 display-lg     32px  600     1.15    -0.6px    Titres de section
 headline       24px  600     1.20    -0.4px    Card titles
 title          20px  500     1.25    -0.2px    Sous-titres
@@ -288,7 +284,7 @@ className="bg-bth-surface-2 border border-bth-hairline-strong rounded-bth-lg p-6
 ### Navigation Top Nav
 ```
 height: 56px · bg-white · border-b border-bth-hairline · px-6
-Logo: Space Grotesk 600 · text-[13px] · tracking-[0.15em] · text-bth-green-800
+Logo: Inter 600 · text-[13px] · tracking-[0.15em] · text-bth-green-800
 Links: text-[13px] · text-bth-n-500 · hover:text-bth-n-900
 Active: text-bth-n-900 · font-medium
 ```
@@ -310,7 +306,7 @@ section-label: text-[9px] · font-semibold · tracking-[0.25em] · uppercase · 
 ```
 thead:
   bg-bth-n-200 · border-t-2 border-bth-green-800 · border-b border-bth-n-300
-  th: Space Grotesk 600 · text-[11px] · tracking-[0.06em] · uppercase · text-bth-green-800
+  th: Inter 600 · text-[11px] · tracking-[0.06em] · uppercase · text-bth-green-800
       px-4 py-2.5
 
 tbody tr: border-b border-bth-hairline · hover:bg-bth-n-50 · transition 100ms
@@ -383,7 +379,7 @@ className="animate-pulse bg-gradient-to-r from-bth-n-100 via-bth-n-200 to-bth-n-
 - Jamais `border-radius: 9999px` sur les boutons Hub
 - Jamais `transition: all`
 - Jamais font-size < 11px
-- Jamais Inter ou Roboto
+- Jamais d'autre police nommée dans le CRM
 - Jamais weight 800+ ou weight 500 absent du ladder
 
 ---

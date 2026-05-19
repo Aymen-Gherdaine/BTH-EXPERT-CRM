@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useEffect, useState, useTransition } from "react";
 import type { UserRole } from "@/types";
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
@@ -51,12 +51,25 @@ const SHEET_ITEMS: NavItem[] = [
 
 export default function BottomNav({ role }: { role: UserRole }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   const primaryItems = PRIMARY.filter(i => i.roles.includes(role));
   const sheetItems = SHEET_ITEMS.filter(i => i.roles.includes(role));
 
-  useEffect(() => { setSheetOpen(false); }, [pathname]);
+  useEffect(() => {
+    setPendingHref(null);
+    setSheetOpen(false);
+  }, [pathname]);
+
+  const handleClick = (href: string) => {
+    setPendingHref(href);
+    startTransition(() => {
+      router.push(href);
+    });
+  };
 
   useEffect(() => {
     if (!sheetOpen) return;
@@ -73,9 +86,20 @@ export default function BottomNav({ role }: { role: UserRole }) {
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         {primaryItems.map(({ href, label, icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
+          const active = pathname === href || pathname.startsWith(href + "/") || pendingHref === href;
           return (
-            <Link key={href} href={href} className="flex-1 no-underline">
+            <Link
+              key={href}
+              href={href}
+              onClick={(event) => {
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                event.preventDefault();
+                handleClick(href);
+              }}
+              aria-current={active ? "page" : undefined}
+              aria-busy={isPending && pendingHref === href ? true : undefined}
+              className="flex-1 no-underline"
+            >
               <motion.div
                 whileTap={{ scale: 0.92 }}
                 className={[
@@ -160,11 +184,22 @@ export default function BottomNav({ role }: { role: UserRole }) {
               {sheetItems.length > 0 && (
                 <div className="px-4">
                   {sheetItems.map(({ href, label, icon }, idx) => {
-                    const active = pathname === href || pathname.startsWith(href + "/");
+                    const active = pathname === href || pathname.startsWith(href + "/") || pendingHref === href;
                     const isLast = idx === sheetItems.length - 1;
                     return (
-                      <Link key={href} href={href} onClick={() => setSheetOpen(false)}
-                        className="no-underline block">
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={(event) => {
+                          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                          event.preventDefault();
+                          handleClick(href);
+                          setSheetOpen(false);
+                        }}
+                        aria-current={active ? "page" : undefined}
+                        aria-busy={isPending && pendingHref === href ? true : undefined}
+                        className="no-underline block"
+                      >
                         <motion.div
                           whileTap={{ backgroundColor: "#f5f0e8" }}
                           className={[

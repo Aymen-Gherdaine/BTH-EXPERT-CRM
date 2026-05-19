@@ -22,9 +22,9 @@
   --color-bg-section:    #f5f0e8;
 
   /* ── Fonts (Tailwind v4 : --font-* sans suffixe -family) ── */
-  --font-sans:    'Space Grotesk', system-ui, sans-serif;
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-body:    'Lora', Georgia, serif;
+  --font-sans:    var(--font-inter);
+  --font-display: var(--font-inter);
+  --font-body:    var(--font-inter);
 
   /* ── Surfaces Hub ── */
   --color-bth-canvas:          #faf8f5;
@@ -136,8 +136,8 @@
 ───────────────────────────────────────── */
 @layer base {
   html {
-    font-family: 'Space Grotesk', system-ui, sans-serif;
-    font-feature-settings: "ss01";
+    font-family: var(--font-inter);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
     overflow-x: hidden;
   }
 
@@ -169,6 +169,19 @@
 
   *::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(180deg, #1f4429 0%, #a8874e 100%);
+  }
+
+  @media (max-width: 767px) {
+    * {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    *::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+      display: none;
+    }
   }
 }
 

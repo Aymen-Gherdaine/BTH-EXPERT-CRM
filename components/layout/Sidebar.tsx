@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -91,6 +91,8 @@ function SidebarInner({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -101,6 +103,10 @@ function SidebarInner({
   const initials = name
     ? name.trim().split(/\s+/).map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
     : user ? getInitials(user) : "";
+
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -124,6 +130,13 @@ function SidebarInner({
     router.refresh();
   }
 
+  const handleClick = (href: string) => {
+    setPendingHref(href);
+    startTransition(() => {
+      router.push(href);
+    });
+  };
+
   return (
     <>
       {/* Logo zone — 64px, bg-white */}
@@ -131,14 +144,15 @@ function SidebarInner({
         className="flex items-center gap-[10px] px-4 bg-white border-b border-bth-hairline flex-shrink-0"
         style={{ height: 64 }}
       >
-        <span className="w-8 h-8 rounded-bth-md bg-bth-green-800 text-white flex items-center justify-center flex-shrink-0 shadow-[0_8px_18px_rgba(26,46,30,.14)]">
-          <Ic d={ICONS.leaf} size={16} sw={1.9} />
+        <span className="w-8 h-8 rounded-bth-md flex items-center justify-center flex-shrink-0 shadow-[0_8px_18px_rgba(26,46,30,.10)]"
+          style={{ background: "#edf5ef", border: "1px solid #90bb9a" }}>
+          <Ic d={ICONS.leaf} size={18} sw={2.35} stroke="#1a2e1e" />
         </span>
         <div>
-          <div className="text-bth-green-800 font-semibold text-[14px] leading-none">
+          <div className="text-bth-green-800 font-semibold text-[13px] leading-none">
             BTH Hub
           </div>
-          <div className="text-bth-n-500 font-normal text-[11px] mt-0.5">
+          <div className="text-bth-n-500 font-normal text-[10.5px] mt-0.5">
             BTH Expert
           </div>
         </div>
@@ -162,17 +176,29 @@ function SidebarInner({
           return (
             <div key={group}>
               {/* Section label */}
-              <div className="text-[9px] font-semibold text-bth-n-400 tracking-[0.28em] uppercase px-4 pt-5 pb-1.5">
+              <div className="text-[8.5px] font-semibold text-bth-n-400 tracking-[0.24em] uppercase px-4 pt-5 pb-1.5">
                 {group}
               </div>
 
               {/* Items */}
               {items.map(({ href, label, icon }) => {
-                const active = pathname === href || pathname.startsWith(href + "/");
+                const active = pathname === href || pathname.startsWith(href + "/") || pendingHref === href;
                 return (
-                  <Link key={href} href={href} onClick={onNavClick} className="block no-underline mx-2">
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                      event.preventDefault();
+                      handleClick(href);
+                      onNavClick?.();
+                    }}
+                    aria-current={active ? "page" : undefined}
+                    aria-busy={isPending && pendingHref === href ? true : undefined}
+                    className="block no-underline mx-2"
+                  >
                     <div className={[
-                      "flex items-center gap-[10px] py-2 rounded-bth-sm text-[13px]",
+                      "flex items-center gap-[10px] py-2 rounded-bth-sm text-[12.5px]",
                       active
                         ? "bg-bth-green-50 text-bth-green-800 font-semibold border-l-2 border-bth-gold-500 pl-[10px] pr-3"
                         : "text-bth-green-800 font-normal px-3 hover:bg-bth-n-100 transition-colors duration-100",
@@ -227,7 +253,14 @@ function SidebarInner({
                   { href: "/parametres", label: "Paramètres",  icon: "settings" as const },
                 ].map(({ href, label, icon }) => (
                   <Link key={href} href={href}
-                    onClick={() => { setDropdownOpen(false); onNavClick?.(); }}
+                    onClick={(event) => {
+                      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
+                      event.preventDefault();
+                      handleClick(href);
+                      setDropdownOpen(false);
+                      onNavClick?.();
+                    }}
+                    aria-busy={isPending && pendingHref === href ? true : undefined}
                     className="flex items-center gap-[10px] px-[10px] py-[9px] rounded-bth-sm text-[13px]
                                font-medium text-bth-n-700 hover:bg-bth-n-50 transition-colors duration-100 no-underline">
                     <span className="text-bth-n-400 flex-shrink-0">
