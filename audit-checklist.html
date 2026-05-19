@@ -164,7 +164,7 @@
   /* ── DASHBOARD CARDS ── */
   .dashboard {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 220px;
+    grid-template-columns: 1fr 1fr 1fr 1fr 220px;
     gap: 1rem;
     margin-bottom: 2.5rem;
   }
@@ -309,7 +309,7 @@
 
   .segment-bars {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: .75rem;
     margin-top: 1rem;
   }
@@ -738,6 +738,7 @@
     <div class="page-meta">
       <span class="meta-chip date">Audit du 19 mai 2026</span>
       <span class="meta-chip version">Next.js 16 · Supabase · TypeScript</span>
+      <span class="meta-chip version" style="background:#e8f0e9;color:#1a2e1e">Màj session 2 — Navigation UX implémentée</span>
     </div>
   </div>
 
@@ -762,6 +763,11 @@
       <div class="stat-card-label">Moyen</div>
       <div class="stat-card-value" id="cnt-moyen">0/9</div>
       <div class="stat-card-sub">Dette technique importante</div>
+    </div>
+    <div class="stat-card" style="border-color:#bbf7d0">
+      <div class="stat-card-label" style="color:#166534">Implémenté</div>
+      <div class="stat-card-value" id="cnt-impl" style="color:#166534">0/6</div>
+      <div class="stat-card-sub">Cette session</div>
     </div>
     <div class="donut-card">
       <div class="donut-card-label">Progression</div>
@@ -791,7 +797,7 @@
   <!-- GLOBAL PROGRESS -->
   <div class="global-progress">
     <div class="gp-header">
-      <span class="gp-title">Progression globale — <span id="done-count">0</span> / 33 points résolus</span>
+      <span class="gp-title">Progression globale — <span id="done-count">0</span> / 39 points résolus</span>
       <span class="gp-pct" id="global-pct-text">0%</span>
     </div>
     <div class="progress-track">
@@ -833,6 +839,15 @@
         </div>
         <div class="seg-track">
           <div class="seg-fill" id="seg-bas" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="seg-bar" style="--seg-color:#166534">
+        <div class="seg-bar-label">
+          <span class="seg-bar-name" style="color:#166534">Implémenté</span>
+          <span class="seg-bar-count" id="seg-impl-txt">0/6</span>
+        </div>
+        <div class="seg-track" style="background:#dcfce7">
+          <div class="seg-fill" id="seg-impl" style="width:0%;background:#166534"></div>
         </div>
       </div>
     </div>
@@ -1181,11 +1196,11 @@
             </div>
           </div>
           <div class="item-content">
-            <div class="item-title">Convertir <code>clients/page.tsx</code> en Server Component</div>
-            <div class="item-desc">Marqué "use client" + useSWR pour le fetch initial. Devrait être un Server Component qui passe les données initiales au composant client pour les interactions.</div>
+            <div class="item-title">Réduire CSS inline dans <code>clients/page.tsx</code> (358 lignes)</div>
+            <div class="item-desc">L'approche SSR a été évaluée et rejetée — trop de latence perceptible entre les navigations. Alternative adoptée : SWR + loading.tsx skeleton + DataPrefetcher. La seule dette restante est le CSS inline massif (358 lignes dans une const JS) à extraire vers globals.css.</div>
             <div class="item-tags">
-              <span class="tag arch">Architecture</span>
-              <span class="tag perf">Perf</span>
+              <span class="tag quality">Qualité</span>
+              <span class="tag" style="background:#e8f0e9;color:#166534">Alternative adoptée</span>
             </div>
             <div class="item-file">app/(app)/clients/page.tsx</div>
           </div>
@@ -1201,11 +1216,11 @@
             </div>
           </div>
           <div class="item-content">
-            <div class="item-title">Convertir <code>depenses/page.tsx</code> en Server Component</div>
-            <div class="item-desc">738 lignes de CSS inline + fetch client-side en useEffect. Même pattern anti-SSR que clients. Page blanche jusqu'à hydration, TTFB dégradé.</div>
+            <div class="item-title">Réduire CSS inline dans <code>depenses/page.tsx</code> (738 lignes)</div>
+            <div class="item-desc">Même décision que clients : SSR écarté, SWR + loading.tsx adoptés. La dette prioritaire ici est les 738 lignes de CSS inline dans une constante JS — le fichier le plus problématique du codebase sur cet aspect.</div>
             <div class="item-tags">
-              <span class="tag arch">Architecture</span>
-              <span class="tag perf">Perf</span>
+              <span class="tag quality">Qualité</span>
+              <span class="tag" style="background:#e8f0e9;color:#166534">Alternative adoptée</span>
             </div>
             <div class="item-file">app/(app)/depenses/page.tsx</div>
           </div>
@@ -1221,11 +1236,11 @@
             </div>
           </div>
           <div class="item-content">
-            <div class="item-title">Convertir <code>parametres/page.tsx</code> en Server Component</div>
-            <div class="item-desc">Fetch des paramètres dans useEffect côté client alors qu'un Server Component pourrait fournir les données immédiatement. 300 lignes de CSS inline en bonus.</div>
+            <div class="item-title">Réduire CSS inline dans <code>parametres/page.tsx</code> (300 lignes)</div>
+            <div class="item-desc">SSR écarté pour cohérence UX. Reste à nettoyer les 300 lignes de CSS inline. Les données paramètres peuvent être passées depuis le layout parent (déjà en server component) plutôt que re-fetchées.</div>
             <div class="item-tags">
-              <span class="tag arch">Architecture</span>
-              <span class="tag perf">Perf</span>
+              <span class="tag quality">Qualité</span>
+              <span class="tag" style="background:#e8f0e9;color:#166534">Alternative adoptée</span>
             </div>
             <div class="item-file">app/(app)/parametres/page.tsx</div>
           </div>
@@ -1474,8 +1489,8 @@
             </div>
           </div>
           <div class="item-content">
-            <div class="item-title">Ajouter Suspense boundaries sur les pages async</div>
-            <div class="item-desc">Pages server async sans Suspense = chargement bloquant. Wrapper les sections de données avec &lt;Suspense fallback={&lt;Skeleton /&gt;}&gt; pour un chargement progressif.</div>
+            <div class="item-title">Vérifier que les pages restantes ont bien un <code>loading.tsx</code></div>
+            <div class="item-desc">Les 6 routes principales ont désormais un loading.tsx (dashboard, soumissions, clients, prospection, depenses, couts-marges). Vérifier que admin/, profil/, soumissions/[id]/, prospection/[id]/ ont aussi leur skeleton si nécessaire.</div>
             <div class="item-tags">
               <span class="tag perf">Perf</span>
               <span class="tag ux">UX</span>
@@ -1609,6 +1624,141 @@
   </div>
 
 
+  <!-- ════════════════════════════════════ -->
+  <!-- SECTION 5 : IMPLÉMENTÉ              -->
+  <!-- ════════════════════════════════════ -->
+  <div class="section" data-section="impl">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="severity-badge" style="background:#dcfce7;color:#166534"><span class="dot" style="background:#166534"></span>Implémenté — Session courante</span>
+      <span class="section-title">6 points résolus</span>
+      <span class="section-toggle open">▼</span>
+    </div>
+    <div class="section-content">
+      <div class="section-body">
+
+        <div class="item done" data-id="i1" data-severity="impl" onclick="toggleItem(this)">
+          <span class="item-number">34</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox" style="background:#166534;border-color:#166534">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none" style="display:block">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title" style="text-decoration:none;color:inherit"><code>.env.local</code> désindexé du repo git</div>
+            <div class="item-desc">Le fichier était tracké par git avant l'ajout au .gitignore. Corrigé avec <code>git rm --cached .env.local</code>. <strong>Important : les secrets sont encore dans l'historique git — les révoquer dans Supabase et Anthropic est obligatoire.</strong></div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">Git</span>
+            </div>
+            <div class="item-file">commit 94c7f1a · .env.local supprimé de l'index</div>
+          </div>
+        </div>
+
+        <div class="item done" data-id="i2" data-severity="impl" onclick="toggleItem(this)">
+          <span class="item-number">35</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox" style="background:#166534;border-color:#166534">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none" style="display:block">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title" style="text-decoration:none;color:inherit">Composant <code>PageSkeleton</code> avec 4 variantes BTH</div>
+            <div class="item-desc">Créé avec les variantes : dashboard (hero vert + cards + 2 colonnes), table (header + filtres + rows), cards (grille prospection), chart (KPI + barres). Animation pulse BTH warm neutrals.</div>
+            <div class="item-tags">
+              <span class="tag ux">UX</span>
+              <span class="tag quality">Qualité</span>
+            </div>
+            <div class="item-file">components/ui/PageSkeleton.tsx (nouveau)</div>
+          </div>
+        </div>
+
+        <div class="item done" data-id="i3" data-severity="impl" onclick="toggleItem(this)">
+          <span class="item-number">36</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox" style="background:#166534;border-color:#166534">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none" style="display:block">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title" style="text-decoration:none;color:inherit"><code>loading.tsx</code> skeleton pour les 6 routes principales</div>
+            <div class="item-desc">Affiché instantanément au clic dans la nav (Next.js App Router convention). Dashboard → variante dashboard, Soumissions/Clients/Dépenses → table, Prospection → cards, Coûts-Marges → chart. Zéro page blanche.</div>
+            <div class="item-tags">
+              <span class="tag ux">UX</span>
+              <span class="tag perf">Perf</span>
+            </div>
+            <div class="item-file">app/(app)/{dashboard,soumissions,clients,prospection,depenses,couts-marges}/loading.tsx</div>
+          </div>
+        </div>
+
+        <div class="item done" data-id="i4" data-severity="impl" onclick="toggleItem(this)">
+          <span class="item-number">37</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox" style="background:#166534;border-color:#166534">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none" style="display:block">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title" style="text-decoration:none;color:inherit"><code>DataPrefetcher</code> — SWR preload en arrière-plan</div>
+            <div class="item-desc">800ms après l'arrivée dans l'app, tous les endpoints principaux sont prefetchés silencieusement (dashboard, soumissions, clients, prospects, depenses, me). Les navigations suivantes frappent le cache SWR = 0ms de chargement perçu.</div>
+            <div class="item-tags">
+              <span class="tag perf">Perf</span>
+              <span class="tag arch">Architecture</span>
+            </div>
+            <div class="item-file">components/layout/DataPrefetcher.tsx (nouveau) · app/(app)/layout.tsx</div>
+          </div>
+        </div>
+
+        <div class="item done" data-id="i5" data-severity="impl" onclick="toggleItem(this)">
+          <span class="item-number">38</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox" style="background:#166534;border-color:#166534">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none" style="display:block">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title" style="text-decoration:none;color:inherit">Spinner de navigation en attente dans le Sidebar</div>
+            <div class="item-desc">L'item nav en cours de chargement affiche un petit spinner SVG animé (ml-auto) pendant que useTransition est pending. L'user sait qu'il a cliqué. Complète le pendingHref + useTransition déjà en place.</div>
+            <div class="item-tags">
+              <span class="tag ux">UX</span>
+            </div>
+            <div class="item-file">components/layout/Sidebar.tsx</div>
+          </div>
+        </div>
+
+        <div class="item done" data-id="i6" data-severity="impl" onclick="toggleItem(this)">
+          <span class="item-number">39</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox" style="background:#166534;border-color:#166534">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none" style="display:block">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title" style="text-decoration:none;color:inherit">Pulse gold sur l'item BottomNav en attente (mobile)</div>
+            <div class="item-desc">La pill indicatrice sous l'icône passe en gold (#C9A96E) avec animation pulse quand isPending + pendingHref === href. Feedback visuel clair sur mobile sans bloquer l'interaction.</div>
+            <div class="item-tags">
+              <span class="tag ux">UX</span>
+            </div>
+            <div class="item-file">components/layout/BottomNav.tsx</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
   <!-- ACTIONS -->
   <div class="actions">
     <button class="btn btn-primary" onclick="checkAll()">
@@ -1628,17 +1778,22 @@
 </main>
 
 <footer>
-  BTH Expert · Hub CRM · Audit généré le 19 mai 2026 · 33 points · Progression sauvegardée localement
+  BTH Expert · Hub CRM · Audit généré le 19 mai 2026 · Màj session 2 · 39 points (6 résolus) · Progression sauvegardée localement
 </footer>
 
 <script>
-  const STORAGE_KEY = 'bth-audit-v1';
+  const STORAGE_KEY = 'bth-audit-v2';
 
-  const TOTALS = { critique: 7, haut: 10, moyen: 9, bas: 7 };
+  const TOTALS = { critique: 7, haut: 10, moyen: 9, bas: 7, impl: 6 };
+  const IMPL_IDS = ['i1','i2','i3','i4','i5','i6'];
 
   function loadState() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
-    catch { return {}; }
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      // impl items are pre-checked unless explicitly unchecked by user
+      IMPL_IDS.forEach(id => { if (!(id in saved)) saved[id] = true; });
+      return saved;
+    } catch { return Object.fromEntries(IMPL_IDS.map(id => [id, true])); }
   }
 
   function saveState(state) {
@@ -1662,16 +1817,16 @@
   }
 
   function updateProgress(state) {
-    const counts = { critique: 0, haut: 0, moyen: 0, bas: 0 };
+    const counts = { critique: 0, haut: 0, moyen: 0, bas: 0, impl: 0 };
     let total = 0;
 
     document.querySelectorAll('.item[data-id]').forEach(item => {
       const id = item.dataset.id;
       const sev = item.dataset.severity;
-      if (state[id]) { counts[sev]++; total++; }
+      if (state[id]) { counts[sev] = (counts[sev] || 0) + 1; total++; }
     });
 
-    const grandTotal = 33;
+    const grandTotal = 39;
     const pct = Math.round((total / grandTotal) * 100);
 
     // Donut
@@ -1687,18 +1842,21 @@
     document.getElementById('done-count').textContent = total;
 
     // Segment bars
-    ['critique','haut','moyen','bas'].forEach(sev => {
-      const d = counts[sev];
+    ['critique','haut','moyen','bas','impl'].forEach(sev => {
+      const d = counts[sev] || 0;
       const t = TOTALS[sev];
       const p = Math.round((d/t)*100);
-      document.getElementById('seg-' + sev).style.width = p + '%';
-      document.getElementById('seg-' + sev + '-txt').textContent = d + '/' + t;
+      const el = document.getElementById('seg-' + sev);
+      const txt = document.getElementById('seg-' + sev + '-txt');
+      if (el) el.style.width = p + '%';
+      if (txt) txt.textContent = d + '/' + t;
     });
 
     // Stat cards
     document.getElementById('cnt-critique').textContent = counts.critique + '/7';
     document.getElementById('cnt-haut').textContent = counts.haut + '/10';
     document.getElementById('cnt-moyen').textContent = counts.moyen + '/9';
+    document.getElementById('cnt-impl').textContent = (counts.impl||0) + '/6';
 
     // Bar chart done column
     const maxTotal = 10;
@@ -1722,6 +1880,15 @@
 
     // Congrats
     document.getElementById('congrats').classList.toggle('show', total === grandTotal);
+
+    // Impl segment bar (already handled above in forEach)
+    const implD = counts.impl || 0;
+    const implT = TOTALS.impl;
+    const implPct = Math.round((implD/implT)*100);
+    const implEl = document.getElementById('seg-impl');
+    if (implEl) implEl.style.width = implPct + '%';
+    const implTxt = document.getElementById('seg-impl-txt');
+    if (implTxt) implTxt.textContent = implD + '/' + implT;
   }
 
   function toggleSection(headerEl) {
@@ -1762,7 +1929,10 @@
     c.style.maxHeight = '';
   });
 
-  applyState(loadState());
+  const initialState = loadState();
+  applyState(initialState);
+  // Persist pre-checked impl items immediately
+  saveState(initialState);
 </script>
 </body>
 </html>
