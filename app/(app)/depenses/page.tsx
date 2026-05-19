@@ -49,7 +49,7 @@ const CSS = `
   .depenses-title {
     margin: 0;
     font-family: var(--font-display);
-    font-size: 34px;
+    font-size: 28px;
     line-height: 1.04;
     font-weight: 600;
     color: #1a1714;
@@ -115,7 +115,7 @@ const CSS = `
     color: #0b1620;
     font-size: 24px;
     line-height: 1;
-    font-weight: 900;
+    font-weight: 750;
     font-variant-numeric: tabular-nums;
   }
   .depenses-stat-value small {
@@ -271,7 +271,7 @@ const CSS = `
     padding: 5px 9px;
     border-radius: 9999px;
     font-size: 10px;
-    font-weight: 900;
+    font-weight: 700;
     letter-spacing: .04em;
   }
   .depenses-dot {
@@ -311,7 +311,7 @@ const CSS = `
     text-align: right;
     color: #0b1620;
     font-size: 15px;
-    font-weight: 900;
+    font-weight: 750;
     font-variant-numeric: tabular-nums;
   }
   .depenses-amount small {

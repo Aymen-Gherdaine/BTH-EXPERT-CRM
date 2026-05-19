@@ -38,7 +38,7 @@ Une faille de sécurité sur ce projet = données clients exposées.
 
 > ⚠️ Après toute génération via frontend-design ou /ui-ux-pro-max :
 > remplacer systématiquement les couleurs générées par les tokens --bth-*,
-> Inter/Roboto par Space Grotesk, et tout gris froid par les warm neutrals bth-n-*.
+> garder Inter comme police unique du CRM, et tout gris froid par les warm neutrals bth-n-*.
 
 ---
 
@@ -68,10 +68,10 @@ Une faille de sécurité sur ce projet = données clients exposées.
 - Gold `bth-gold-500` scarce : max 8 usages par page
 
 **Typographie**
-- Font UI : Space Grotesk partout dans le Hub
-- Font display/editorial : Playfair Display (titres de page seulement)
-- Font body dense : Lora (aperçus de soumission seulement)
-- Jamais Inter, Roboto, ou system-ui par défaut
+- Font UI : Inter partout dans le Hub
+- Font display/editorial : Inter
+- Font body dense : Inter
+- Jamais d'autre police nommée dans le CRM
 
 **Montants DZD — règle absolue**
 ```tsx

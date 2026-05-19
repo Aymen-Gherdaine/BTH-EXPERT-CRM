@@ -65,20 +65,20 @@ const CSS = `
     background: rgba(255,255,255,.13);
     border: 1px solid rgba(255,255,255,.12);
     color: #ffffff;
-    font-size: 13px;
-    font-weight: 900;
+    font-size: 12px;
+    font-weight: 700;
     flex-shrink: 0;
   }
   .dash-role {
     color: rgba(255,255,255,.42);
     font-size: 10px;
-    font-weight: 800;
+    font-weight: 650;
   }
   .dash-user-name {
     margin-top: 3px;
     color: rgba(255,255,255,.82);
     font-size: 13px;
-    font-weight: 700;
+    font-weight: 650;
   }
   .dash-date-chip {
     height: 34px;
@@ -90,8 +90,8 @@ const CSS = `
     border: 1px solid rgba(201,169,110,.34);
     background: rgba(255,255,255,.08);
     color: rgba(255,255,255,.75);
-    font-size: 12px;
-    font-weight: 800;
+    font-size: 11.5px;
+    font-weight: 650;
     white-space: nowrap;
   }
   .dash-title-row {
@@ -107,8 +107,8 @@ const CSS = `
     gap: 10px;
     margin-bottom: 8px;
     color: #c9a96e;
-    font-size: 11px;
-    font-weight: 800;
+    font-size: 10.5px;
+    font-weight: 650;
   }
   .dash-eyebrow::before {
     content: "";
@@ -119,15 +119,15 @@ const CSS = `
   .dash-title {
     margin: 0;
     font-family: var(--font-display);
-    font-size: 38px;
-    line-height: 1.02;
+    font-size: 32px;
+    line-height: 1.06;
     font-weight: 600;
     color: #ffffff;
   }
   .dash-subtitle {
     margin-top: 8px;
     color: rgba(255,255,255,.58);
-    font-size: 14px;
+    font-size: 13px;
   }
   .dash-actions {
     display: flex;
@@ -159,35 +159,35 @@ const CSS = `
   .dash-section-kicker,
   .dash-kpi-label {
     color: #887f74;
-    font-size: 11px;
-    font-weight: 800;
+    font-size: 10.5px;
+    font-weight: 650;
   }
   .dash-panel-title {
     margin-top: 7px;
     color: #1a1714;
     font-family: var(--font-display);
-    font-size: 28px;
+    font-size: 22px;
     font-weight: 600;
     line-height: 1.08;
   }
   .dash-panel-value {
     margin-top: 15px;
     color: #1a2e1e;
-    font-size: 34px;
-    font-weight: 900;
+    font-size: 28px;
+    font-weight: 750;
     line-height: 1;
   }
   .dash-panel-value.is-danger {
     color: #c44a3a;
   }
   .dash-panel-value small {
-    font-size: 13px;
-    font-weight: 900;
+    font-size: 11px;
+    font-weight: 700;
   }
   .dash-panel-note {
     margin-top: 8px;
     color: #887f74;
-    font-size: 13px;
+    font-size: 12.5px;
     line-height: 1.45;
   }
   .dash-chart {
@@ -207,8 +207,8 @@ const CSS = `
   }
   .dash-chart-label {
     color: #635c54;
-    font-size: 12px;
-    font-weight: 800;
+    font-size: 11.5px;
+    font-weight: 650;
   }
   .dash-chart-track {
     height: 8px;
@@ -222,8 +222,8 @@ const CSS = `
   }
   .dash-chart-value {
     color: #45403a;
-    font-size: 11px;
-    font-weight: 900;
+    font-size: 10.5px;
+    font-weight: 700;
     white-space: nowrap;
   }
   .dash-kpi-grid {
@@ -232,7 +232,7 @@ const CSS = `
     gap: 10px;
   }
   .dash-kpi {
-    min-height: 106px;
+    min-height: 96px;
     border-radius: 16px;
     padding: 15px;
     border: 1px solid #e8e2d8;
@@ -256,14 +256,14 @@ const CSS = `
   .dash-kpi-value {
     margin-top: 14px;
     color: #1a1714;
-    font-size: 22px;
-    font-weight: 900;
+    font-size: 18px;
+    font-weight: 750;
     line-height: 1;
   }
   .dash-kpi-sub {
     margin-top: 6px;
     color: #887f74;
-    font-size: 12px;
+    font-size: 11.5px;
   }
   .dash-grid {
     display: grid;
@@ -290,16 +290,16 @@ const CSS = `
   }
   .dash-card-title {
     color: #1a1714;
-    font-size: 14px;
-    font-weight: 900;
+    font-size: 13px;
+    font-weight: 700;
   }
   .dash-card-link {
     display: inline-flex;
     align-items: center;
     gap: 5px;
     color: #1a2e1e;
-    font-size: 12px;
-    font-weight: 800;
+    font-size: 11.5px;
+    font-weight: 650;
     text-decoration: none;
   }
   .dash-row {
@@ -321,8 +321,8 @@ const CSS = `
   }
   .dash-row-title {
     color: #1a1714;
-    font-size: 13px;
-    font-weight: 800;
+    font-size: 12.5px;
+    font-weight: 650;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -350,7 +350,7 @@ const CSS = `
     border-radius: 9999px;
     border: 1px solid transparent;
     font-size: 11px;
-    font-weight: 900;
+    font-weight: 700;
     white-space: nowrap;
   }
   .dash-empty {
@@ -360,8 +360,8 @@ const CSS = `
     padding: 24px;
     color: #887f74;
     text-align: center;
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 12px;
+    font-weight: 650;
   }
   .dash-finance-strip {
     display: grid;
@@ -376,14 +376,14 @@ const CSS = `
   }
   .dash-finance-label {
     color: #887f74;
-    font-size: 11px;
-    font-weight: 800;
+    font-size: 10.5px;
+    font-weight: 650;
   }
   .dash-finance-value {
     margin-top: 8px;
     color: #1a1714;
-    font-size: 18px;
-    font-weight: 900;
+    font-size: 15px;
+    font-weight: 750;
   }
   @media (max-width: 1023px) {
     .dash-executive,
@@ -403,7 +403,7 @@ const CSS = `
       justify-self: start;
     }
     .dash-title {
-      font-size: 30px;
+      font-size: 26px;
     }
     .dash-actions {
       justify-content: stretch;
@@ -426,10 +426,10 @@ const CSS = `
       min-width: 178px;
     }
     .dash-panel-title {
-      font-size: 25px;
+      font-size: 20px;
     }
     .dash-panel-value {
-      font-size: 30px;
+      font-size: 25px;
     }
     .dash-chart-row {
       grid-template-columns: 1fr;

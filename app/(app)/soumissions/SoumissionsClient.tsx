@@ -24,8 +24,107 @@ const CSS = `
   .submission-table-scroll::-webkit-scrollbar-track { background:#f5f0e8; }
   .submission-table-scroll::-webkit-scrollbar-thumb { background:#C9A96E; border-radius:9999px; }
   @media (max-width: 639px) {
+    .submission-page-shell { min-height: 100%; height: auto !important; }
+    .submission-hero { padding: 16px 14px 14px !important; }
+    .submission-hero-top { align-items: flex-start !important; gap: 12px !important; }
+    .submission-hero-actions { flex-shrink: 0; }
+    .submission-title { font-size: 23px !important; line-height: 1.08 !important; }
+    .submission-kpis {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      overflow: visible;
+      gap: 10px !important;
+      padding: 2px 0 4px;
+    }
+    .submission-kpi {
+      min-height: 72px;
+      border-radius: 12px !important;
+      padding: 11px 12px !important;
+      display: grid !important;
+      grid-template-columns: 16px minmax(0, 1fr);
+      align-content: center;
+      align-items: start !important;
+      column-gap: 7px !important;
+      row-gap: 7px;
+      min-width: 0;
+    }
+    .submission-kpi:first-child { grid-column: 1 / -1; }
+    .submission-kpi svg { margin-top: 1px; }
+    .submission-kpi-label {
+      display: block;
+      font-size: 11px !important;
+      line-height: 1.25;
+      white-space: normal;
+    }
+    .submission-kpi-value {
+      grid-column: 1 / -1;
+      display: block;
+      margin-top: 0;
+      font-size: 12.5px !important;
+      line-height: 1.25;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .submission-tools {
+      padding: 10px 14px 12px !important;
+      gap: 8px !important;
+      align-items: stretch !important;
+    }
+    .submission-search { flex-basis: 100%; min-width: 0 !important; order: 1; }
+    .submission-filter-wrap { order: 2; }
     .submission-card-grid { gap: 12px !important; padding: 14px 14px 18px !important; }
-    .submission-pager { padding: 10px 14px !important; }
+    .submission-card {
+      border-radius: 10px !important;
+      box-shadow: 0 12px 30px rgba(26,46,30,.07) !important;
+    }
+    .submission-card-body { padding: 16px 14px 15px !important; }
+    .submission-card-head { margin-bottom: 14px !important; }
+    .submission-card-title {
+      font-size: 14.5px !important;
+      line-height: 1.32 !important;
+      letter-spacing: 0 !important;
+      margin-bottom: 9px !important;
+    }
+    .submission-card-desc {
+      font-size: 13px !important;
+      line-height: 1.5 !important;
+      color: #6b6258 !important;
+      margin-bottom: 12px !important;
+    }
+    .submission-sector {
+      max-width: 100%;
+      padding: 4px 10px !important;
+      font-size: 11px !important;
+      line-height: 1.25 !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .submission-card-meta {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center !important;
+      gap: 10px !important;
+      padding-top: 13px;
+      border-top: 1px solid #f0ebe3;
+    }
+    .submission-card-client { min-width: 0; }
+    .submission-card-client-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .submission-card-total { text-align: right !important; margin-top: 0 !important; width: auto !important; }
+    .submission-card-total-row { justify-content: flex-end !important; white-space: nowrap; }
+    .submission-card-total-value { font-size: 15.5px !important; }
+    .submission-card-currency { font-size: 9.5px !important; }
+    .submission-pager { padding: 10px 14px calc(12px + env(safe-area-inset-bottom)) !important; }
+    .submission-detail-body { padding: 18px 16px calc(28px + env(safe-area-inset-bottom)) !important; }
+    .submission-status-actions { flex-direction: column; }
+    .submission-budget-row { display: grid !important; grid-template-columns: 18px minmax(0, 1fr); gap: 8px !important; }
+    .submission-budget-amount { grid-column: 2; justify-self: start; }
+    .submission-modal-actions { flex-direction: column-reverse; }
   }
 `;
 
@@ -154,7 +253,7 @@ function FilterDropdown({ active, set, counts }: {
   const [open, setOpen] = useState(false);
   const opts: StatutSoumission[] = ["Brouillon", "Envoyée", "Acceptée", "Refusée"];
   return (
-    <div style={{ position: "relative" }}>
+    <div className="submission-filter-wrap" style={{ position: "relative" }}>
       <motion.button whileTap={{ scale: .96 }} onClick={() => setOpen(o => !o)} style={{
         height: 36, padding: "0 13px", borderRadius: 9999,
         border: `1.5px solid ${active ? "#1a2e1e" : "#e5e7eb"}`,
@@ -178,7 +277,7 @@ function FilterDropdown({ active, set, counts }: {
               exit={{ opacity: 0, y: -4, scale: .97 }}
               transition={{ duration: .15 }}
               style={{
-                position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 50,
+                position: "absolute", top: "calc(100% + 6px)", right: 0, zIndex: 50,
                 background: "white", borderRadius: 12, border: "1px solid #e5e7eb",
                 boxShadow: "0 8px 32px rgba(0,0,0,.10)", minWidth: 190, padding: 6,
               }}>
@@ -295,13 +394,13 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
         <div style={{ height: 3, background: c.accent, flexShrink: 0 }} />
 
         {/* Body */}
-        <div style={{ padding: "16px", flex: 1, display: "flex", flexDirection: "column" }}>
+        <div className="submission-card-body" style={{ padding: "16px", flex: 1, display: "flex", flexDirection: "column" }}>
 
           {/* Badge + Ref */}
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 12 }}>
+          <div className="submission-card-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 12 }}>
             <StatusBadge st={o.statut} />
             <span style={{
-              fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              fontFamily: "var(--font-inter)",
               fontSize: 10.5, color: "#887f74", letterSpacing: 0,
             }}>
               {o.numero_offre}
@@ -309,7 +408,7 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
           </div>
 
           {/* Titre */}
-          <h3 style={{
+          <h3 className="submission-card-title" style={{
             fontSize: 15, fontWeight: 700, color: "#101c12",
             letterSpacing: 0, lineHeight: 1.35, marginBottom: 8,
           }}>
@@ -318,7 +417,7 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
 
           {/* Description */}
           {o.description_projet && (
-            <p style={{
+            <p className="submission-card-desc" style={{
               fontSize: 12.5, color: "#635c54", lineHeight: 1.55, marginBottom: 12,
               display: "-webkit-box",
               WebkitLineClamp: 2,
@@ -332,7 +431,7 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
           {/* Secteur tag */}
           {o.secteur_activite && (
             <div style={{ marginBottom: 14 }}>
-              <span style={{
+              <span className="submission-sector" style={{
                 display: "inline-block", padding: "3px 10px", borderRadius: 9999,
                 background: "#f5f0e8", color: "#635c54",
                 fontSize: 11, fontWeight: 500,
@@ -345,29 +444,30 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
           <div style={{ flex: 1 }} />
 
           {/* Client row + montant */}
-          <div style={{
+          <div className="submission-card-meta" style={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
             marginBottom: pct > 0 ? 14 : 0,
+            gap: 12, flexWrap: "wrap",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+            <div className="submission-card-client" style={{ display: "flex", alignItems: "center", gap: 9 }}>
               <Avatar name={o._cn} size={28} />
               <div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{o._cn}</p>
+                <p className="submission-card-client-name" style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>{o._cn}</p>
                 {o.delai_jours > 0 && (
                   <p style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{o.delai_jours} j de délai</p>
                 )}
               </div>
             </div>
             {isAdmin && o.total_ttc > 0 && (
-              <div style={{ textAlign: "right" }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 3, justifyContent: "flex-end" }}>
-                  <span style={{
-                    fontVariantNumeric: "tabular-nums", fontSize: 16, fontWeight: 800,
+              <div className="submission-card-total" style={{ textAlign: "right" }}>
+                <div className="submission-card-total-row" style={{ display: "flex", alignItems: "baseline", gap: 3, justifyContent: "flex-end" }}>
+                  <span className="submission-card-total-value" style={{
+                    fontVariantNumeric: "tabular-nums", fontSize: 14.5, fontWeight: 750,
                     color: "#101c12", letterSpacing: 0,
                   }}>
                     {fmtInt(o.total_ttc)}
                   </span>
-                  <span style={{ fontSize: 10, color: "#9ca3af" }}>DZD</span>
+                  <span className="submission-card-currency" style={{ fontSize: 10, color: "#9ca3af" }}>DZD</span>
                 </div>
                 {pct > 0 && (
                   <p style={{ fontSize: 10, color: "#16a34a", fontWeight: 600, marginTop: 1 }}>
@@ -480,7 +580,7 @@ function PremiumTableRow({
 
       {/* Ref + date */}
       <div style={{ display: "flex", flexDirection: "column", justifyContent: "center", paddingLeft: 4, paddingRight: 8, borderRight: D }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: "#1a2e1e", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", letterSpacing: 0 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: "#1a2e1e", fontFamily: "var(--font-inter)", letterSpacing: 0 }}>
           {o.numero_offre}
         </p>
         <p style={{ fontSize: 10.5, color: "#887f74", marginTop: 2, fontWeight: 400 }}>
@@ -785,7 +885,7 @@ function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, onDelet
   );
 
   const body = (
-    <div className="sc" style={{ flex: 1, overflowY: "auto", padding: "20px 22px 40px" }}>
+    <div className="sc submission-detail-body" style={{ flex: 1, overflowY: "auto", padding: "20px 22px 40px" }}>
       {loading || !o ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {sk(72)}{sk(180)}{sk(120)}{sk(140)}
@@ -796,7 +896,7 @@ function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, onDelet
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
             <div style={{ flex: 1, paddingRight: 10, minWidth: 0 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <span style={{ fontFamily: "ui-monospace, monospace", fontSize: 11, color: "#9ca3af", letterSpacing: "0.05em" }}>{o.numero_offre}</span>
+                <span style={{ fontFamily: "var(--font-inter)", fontSize: 11, color: "#9ca3af", letterSpacing: "0.05em" }}>{o.numero_offre}</span>
                 <StatusBadge st={o.statut} sm />
               </div>
               <p style={{ fontWeight: 700, fontSize: 17, color: "#111827", letterSpacing: 0, lineHeight: 1.3, marginBottom: 10 }}>
@@ -825,7 +925,7 @@ function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, onDelet
               <p style={{ fontSize: 10.5, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>
                 Changer le statut
               </p>
-              <div style={{ display: "flex", gap: 7 }}>
+              <div className="submission-status-actions" style={{ display: "flex", gap: 7 }}>
                 {next.map(s => {
                   const ns = ST[s];
                   return (
@@ -902,7 +1002,7 @@ function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, onDelet
             {(o.lignes_budget ?? []).length === 0 ? (
               <div style={{ padding: 16, fontSize: 13, color: "#9ca3af", textAlign: "center" }}>Aucune ligne</div>
             ) : (o.lignes_budget ?? []).map((l: LigneBudget, i: number) => (
-              <div key={l.id ?? i} style={{
+              <div key={l.id ?? i} className="submission-budget-row" style={{
                 display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 16px",
                 background: i % 2 === 0 ? "white" : "#f6f6f4",
                 borderBottom: i < (o.lignes_budget?.length ?? 0) - 1 ? "1px solid #f3f4f6" : "none",
@@ -910,7 +1010,7 @@ function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, onDelet
                 <span style={{ fontSize: 11, color: "#9ca3af", marginTop: 2, flexShrink: 0, width: 14, fontWeight: 600 }}>{l.numero}</span>
                 <p style={{ flex: 1, fontSize: 13, color: "#111827", lineHeight: 1.5 }}>{l.designation}</p>
                 {isAdmin && (
-                  <span style={{ fontVariantNumeric: "tabular-nums", fontSize: 12.5, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
+                  <span className="submission-budget-amount" style={{ fontVariantNumeric: "tabular-nums", fontSize: 12.5, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
                     {formatMontant(l.prix_unitaire * l.quantite)}
                   </span>
                 )}
@@ -976,7 +1076,7 @@ function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, onDelet
       <motion.div
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 320 }}
-        style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 201, background: "white", borderRadius: "20px 20px 0 0", maxHeight: "90%", display: "flex", flexDirection: "column" }}
+        style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 201, background: "white", borderRadius: "20px 20px 0 0", maxHeight: "min(90dvh, 760px)", display: "flex", flexDirection: "column" }}
       >
         <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e5e7eb", margin: "12px auto 0", flexShrink: 0 }} />
         {body}
@@ -1014,7 +1114,7 @@ export default function SoumissionsClient() {
     localStorage.setItem("soum-view", v);
   }
 
-  const PER_PAGE = view === "cards" ? 9 : 12;
+  const PER_PAGE = !isDesktop ? 6 : view === "cards" ? 9 : 12;
 
   const [soumissions, setSoumissions] = useState<Soumission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1137,22 +1237,22 @@ export default function SoumissionsClient() {
   const handleDuplicate = (s: SoumissionView) => router.push(`/soumissions/${s.id}?duplicate=1`);
   const toggleSel = (id: string) => setSelected(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
 
-  const px = isDesktop ? 32 : 20;
+  const px = isDesktop ? 32 : 14;
 
   return (
     <>
       <style>{CSS}</style>
-      <div style={{ display: "flex", flexDirection: "column", height: "100%", background: "#faf9f7" }}>
+      <div className="submission-page-shell" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#faf9f7" }}>
 
         {/* ── Hero ─────────────────────────────────────────────── */}
-        <div style={{
+        <div className="submission-hero" style={{
           background: "white", borderBottom: "1px solid #ededeb",
           padding: `24px ${px}px 20px`, flexShrink: 0,
         }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: isAdmin ? 16 : 0 }}>
+          <div className="submission-hero-top" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: isAdmin ? 16 : 0 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <h1 style={{
-                fontWeight: 800, fontSize: isDesktop ? 30 : 24, color: "#111827",
+              <h1 className="submission-title" style={{
+                fontWeight: 700, fontSize: isDesktop ? 25 : 22, color: "#111827",
                 letterSpacing: 0, lineHeight: 1,
               }}>
                 Soumissions
@@ -1168,7 +1268,7 @@ export default function SoumissionsClient() {
               </span>
             </div>
 
-            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div className="submission-hero-actions" style={{ display: "flex", gap: 8, alignItems: "center" }}>
               {isAdmin && (
                 <a href="/api/soumissions/export" target="_blank" rel="noreferrer">
                   <motion.button whileTap={{ scale: .94 }} style={{
@@ -1199,20 +1299,20 @@ export default function SoumissionsClient() {
 
           {/* KPI chips (admin) */}
           {isAdmin && (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div className="submission-kpis" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {[
                 { label: "Total TTC",  value: `${fmtInt(totalTTC)} DZD`,   icon: I.wallet },
                 { label: "Acceptées",  value: String(nbAccepted),            icon: I.check },
                 { label: "Versements", value: `${fmtInt(totalVerse)} DZD`,  icon: I.trend },
               ].map(chip => (
-                <div key={chip.label} style={{
+                <div key={chip.label} className="submission-kpi" style={{
                   display: "flex", alignItems: "center", gap: 6,
                   padding: "6px 13px", borderRadius: 9999,
                   background: "#f3f4f6", border: "1px solid #ededeb",
                 }}>
                   <Ic d={chip.icon} z={13} s="#6b7280" />
-                  <span style={{ fontSize: 11.5, color: "#6b7280" }}>{chip.label}</span>
-                  <span style={{ fontSize: 12.5, color: "#111827", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
+                  <span className="submission-kpi-label" style={{ fontSize: 11.5, color: "#6b7280" }}>{chip.label}</span>
+                  <span className="submission-kpi-value" style={{ fontSize: 12.5, color: "#111827", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
                     {chip.value}
                   </span>
                 </div>
@@ -1222,13 +1322,13 @@ export default function SoumissionsClient() {
         </div>
 
         {/* ── Filter + view toggle bar ──────────────────────────── */}
-        <div style={{
+        <div className="submission-tools" style={{
           background: "white", borderBottom: "1px solid #ededeb",
           padding: `12px ${px}px`,
           display: "flex", alignItems: "center", gap: 10, flexShrink: 0, flexWrap: "wrap",
         }}>
           {/* Search */}
-          <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
+          <div className="submission-search" style={{ position: "relative", flex: 1, minWidth: 200 }}>
             <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", display: "flex", pointerEvents: "none" }}>
               <Ic d={I.search} z={14} />
             </span>
@@ -1284,7 +1384,7 @@ export default function SoumissionsClient() {
               <div style={{ width: 64, height: 64, borderRadius: 20, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
                 <Ic d={I.file} z={32} s="#9ca3af" />
               </div>
-              <p style={{ fontWeight: 800, fontSize: 18, color: "#111827", marginBottom: 8, letterSpacing: 0 }}>Aucune soumission</p>
+              <p style={{ fontWeight: 700, fontSize: 16, color: "#111827", marginBottom: 8, letterSpacing: 0 }}>Aucune soumission</p>
               <p style={{ fontSize: 14, color: "#9ca3af", marginBottom: 24 }}>
                 {q || filtre ? "Aucun résultat pour ces critères." : "Créez votre première soumission."}
               </p>
@@ -1373,7 +1473,7 @@ export default function SoumissionsClient() {
                       Cette action est <strong>irréversible</strong>. La soumission et ses lignes budgétaires seront définitivement supprimées.
                     </p>
                   </div>
-                  <div style={{ padding: "0 24px 24px", display: "flex", gap: 10 }}>
+                  <div className="submission-modal-actions" style={{ padding: "0 24px 24px", display: "flex", gap: 10 }}>
                     <button onClick={() => setDeleteConfirm(D0)} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1.5px solid #e5e7eb", background: "white", fontSize: 13, fontWeight: 600, color: "#6b7280", cursor: "pointer" }}>
                       Annuler
                     </button>
@@ -1413,7 +1513,7 @@ export default function SoumissionsClient() {
                     />
                     <p style={{ fontSize: 11.5, color: "#9ca3af", marginBottom: 20 }}>Acompte ou paiement partiel reçu du client.</p>
                   </div>
-                  <div style={{ padding: "0 24px 24px", display: "flex", gap: 10 }}>
+                  <div className="submission-modal-actions" style={{ padding: "0 24px 24px", display: "flex", gap: 10 }}>
                     <button onClick={() => setVersement(V0)} style={{ flex: 1, padding: "10px 0", borderRadius: 10, border: "1.5px solid #e5e7eb", background: "white", fontSize: 13, fontWeight: 600, color: "#6b7280", cursor: "pointer" }}>
                       Annuler
                     </button>
