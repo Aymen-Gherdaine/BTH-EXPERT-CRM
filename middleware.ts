@@ -1,8 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 
-const PUBLIC_ROUTES  = ["/login", "/auth/callback", "/auth/set-password"];
+const PUBLIC_ROUTES = ["/login", "/auth/callback", "/auth/set-password"];
 const ADMIN_PREFIXES = ["/admin/", "/couts-marges"];
+const SETTINGS_PREFIX = "/parametres";
 
 export async function middleware(request: NextRequest) {
   const { supabase, response } = createMiddlewareClient(request);
@@ -25,16 +26,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(dashboardUrl);
   }
 
-  // Admin-only route protection (defense-in-depth — layout also checks)
   const isAdminRoute = ADMIN_PREFIXES.some((p) => pathname.startsWith(p));
-  if (user && isAdminRoute) {
+  const isSettingsRoute = pathname.startsWith(SETTINGS_PREFIX);
+
+  if (user && (isAdminRoute || isSettingsRoute)) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .single<{ role: string }>();
 
-    if (profile?.role !== "admin") {
+    const role = profile?.role;
+    const canAccess = isAdminRoute
+      ? role === "admin"
+      : role === "admin" || role === "charge_projet";
+
+    if (!canAccess) {
       const redirect = request.nextUrl.clone();
       redirect.pathname = "/dashboard";
       return NextResponse.redirect(redirect);
