@@ -20,7 +20,7 @@ export function DataPrefetcher() {
   useEffect(() => {
     // Delay slightly so initial page render gets full priority.
     const t = setTimeout(() => {
-      API_ROUTES.forEach((url) => preload(url, fetcher));
+      API_ROUTES.forEach((url) => preload<unknown>(url, fetcher));
     }, 800);
     return () => clearTimeout(t);
   }, []);

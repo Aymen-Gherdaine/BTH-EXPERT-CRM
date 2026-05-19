@@ -123,10 +123,12 @@ export default function BottomNav({ role }: { role: UserRole }) {
                   <span className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-bth-green-800" />
                 )}
                 {isPending && pendingHref === href && (
-                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-bth-gold-500"
-                    style={{ animation: "bth-pill-pulse .8s ease-in-out infinite" }} />
+                  <motion.span
+                    animate={{ opacity: [1, 0.35, 1] }}
+                    transition={{ duration: 0.8, ease: "easeInOut", repeat: Infinity }}
+                    className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-bth-gold-500"
+                  />
                 )}
-                <style>{"@keyframes bth-pill-pulse{0%,100%{opacity:1}50%{opacity:.35}}"}</style>
                 <Ic d={ICONS[icon]} size={22} sw={active ? 2 : 1.6} />
                 <span className={`text-[10px] leading-none ${active ? "font-semibold" : "font-medium"}`}>
                   {label}
