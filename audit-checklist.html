@@ -1,0 +1,1768 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BTH Expert — Audit CRM · Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bth-green-900: #0f1d12;
+    --bth-green-800: #1a2e1e;
+    --bth-green-700: #223826;
+    --bth-green-600: #2e4d33;
+    --bth-green-100: #e8f0e9;
+    --bth-gold-500: #C9A96E;
+    --bth-gold-400: #d4b87e;
+    --bth-gold-100: #f5edd9;
+    --bth-n-900: #1c1a17;
+    --bth-n-700: #3d3a35;
+    --bth-n-500: #6b6760;
+    --bth-n-300: #b0aba2;
+    --bth-n-100: #e8e2d8;
+    --bth-n-50:  #f5f0e8;
+    --canvas:    #faf8f5;
+    --surface-1: #ffffff;
+    --surface-2: #f5f0e8;
+    --surface-3: #e8e2d8;
+    --red-600:   #c0392b;
+    --red-100:   #fdf2f0;
+    --orange-600:#d35400;
+    --orange-100:#fef4ec;
+    --yellow-600:#b7860b;
+    --yellow-100:#fefbe8;
+    --blue-600:  #2563eb;
+    --blue-100:  #eff6ff;
+    --green-600: #166534;
+    --green-100: #f0fdf4;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--canvas);
+    color: var(--bth-n-900);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--bth-green-800);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 3px rgba(0,0,0,.3);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+  }
+
+  .logo-mark {
+    width: 36px;
+    height: 36px;
+    background: var(--bth-gold-500);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: .85rem;
+    color: var(--bth-green-800);
+    letter-spacing: -.5px;
+    flex-shrink: 0;
+  }
+
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+
+  .logo-text span:first-child {
+    font-size: .65rem;
+    font-weight: 500;
+    color: var(--bth-n-300);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+
+  .logo-text span:last-child {
+    font-size: .95rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -.2px;
+  }
+
+  .header-badge {
+    background: rgba(201,169,110,.15);
+    border: 1px solid rgba(201,169,110,.3);
+    color: var(--bth-gold-400);
+    font-size: .7rem;
+    font-weight: 600;
+    padding: .25rem .75rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* ── MAIN ── */
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+
+  /* ── PAGE TITLE ── */
+  .page-header {
+    margin-bottom: 2.5rem;
+  }
+
+  .page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--bth-green-800);
+    letter-spacing: -.5px;
+    line-height: 1.2;
+  }
+
+  .page-header p {
+    font-size: .9rem;
+    color: var(--bth-n-500);
+    margin-top: .4rem;
+  }
+
+  .page-meta {
+    display: flex;
+    gap: .75rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .meta-chip {
+    font-size: .72rem;
+    font-weight: 600;
+    padding: .25rem .65rem;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+
+  .meta-chip.date { background: var(--bth-n-100); color: var(--bth-n-700); }
+  .meta-chip.version { background: var(--bth-green-100); color: var(--bth-green-700); }
+
+  /* ── DASHBOARD CARDS ── */
+  .dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 220px;
+    gap: 1rem;
+    margin-bottom: 2.5rem;
+  }
+
+  @media (max-width: 900px) {
+    .dashboard { grid-template-columns: 1fr 1fr; }
+  }
+
+  .stat-card {
+    background: var(--surface-1);
+    border: 1px solid var(--bth-n-100);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .stat-card-label {
+    font-size: .7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--bth-n-500);
+    margin-bottom: .5rem;
+  }
+
+  .stat-card-value {
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .stat-card-sub {
+    font-size: .75rem;
+    color: var(--bth-n-500);
+    margin-top: .25rem;
+  }
+
+  .stat-card.critique .stat-card-value { color: var(--red-600); }
+  .stat-card.haut .stat-card-value { color: var(--orange-600); }
+  .stat-card.moyen .stat-card-value { color: var(--yellow-600); }
+
+  /* ── DONUT CHART ── */
+  .donut-card {
+    background: var(--surface-1);
+    border: 1px solid var(--bth-n-100);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+  }
+
+  .donut-wrap {
+    position: relative;
+    width: 110px;
+    height: 110px;
+  }
+
+  .donut-wrap svg {
+    transform: rotate(-90deg);
+  }
+
+  .donut-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .donut-pct {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--bth-green-800);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+
+  .donut-label {
+    font-size: .6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--bth-n-500);
+  }
+
+  .donut-card-label {
+    font-size: .7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--bth-n-500);
+  }
+
+  /* ── GLOBAL PROGRESS BAR ── */
+  .global-progress {
+    background: var(--surface-1);
+    border: 1px solid var(--bth-n-100);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .gp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .gp-title {
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--bth-n-700);
+  }
+
+  .gp-pct {
+    font-size: .85rem;
+    font-weight: 700;
+    color: var(--bth-green-800);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .progress-track {
+    height: 8px;
+    background: var(--bth-n-100);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--bth-green-700), var(--bth-gold-500));
+    transition: width .5s cubic-bezier(.4,0,.2,1);
+  }
+
+  .segment-bars {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .75rem;
+    margin-top: 1rem;
+  }
+
+  .seg-bar { }
+
+  .seg-bar-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: .35rem;
+  }
+
+  .seg-bar-name {
+    font-size: .7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+
+  .seg-bar-count {
+    font-size: .7rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--bth-n-500);
+  }
+
+  .seg-track {
+    height: 5px;
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .seg-fill {
+    height: 100%;
+    border-radius: 99px;
+    transition: width .5s cubic-bezier(.4,0,.2,1);
+  }
+
+  .seg-bar.critique .seg-bar-name { color: var(--red-600); }
+  .seg-bar.critique .seg-track { background: var(--red-100); }
+  .seg-bar.critique .seg-fill { background: var(--red-600); }
+
+  .seg-bar.haut .seg-bar-name { color: var(--orange-600); }
+  .seg-bar.haut .seg-track { background: var(--orange-100); }
+  .seg-bar.haut .seg-fill { background: var(--orange-600); }
+
+  .seg-bar.moyen .seg-bar-name { color: var(--yellow-600); }
+  .seg-bar.moyen .seg-track { background: var(--yellow-100); }
+  .seg-bar.moyen .seg-fill { background: var(--yellow-600); }
+
+  .seg-bar.bas .seg-bar-name { color: var(--blue-600); }
+  .seg-bar.bas .seg-track { background: var(--blue-100); }
+  .seg-bar.bas .seg-fill { background: var(--blue-600); }
+
+  /* ── SECTIONS ── */
+  .section {
+    margin-bottom: 1.5rem;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    margin-bottom: .75rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .severity-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .72rem;
+    font-weight: 700;
+    padding: .3rem .75rem;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+
+  .severity-badge .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  .severity-badge.critique { background: var(--red-100); color: var(--red-600); }
+  .severity-badge.critique .dot { background: var(--red-600); }
+  .severity-badge.haut { background: var(--orange-100); color: var(--orange-600); }
+  .severity-badge.haut .dot { background: var(--orange-600); }
+  .severity-badge.moyen { background: var(--yellow-100); color: var(--yellow-600); }
+  .severity-badge.moyen .dot { background: var(--yellow-600); }
+  .severity-badge.bas { background: var(--blue-100); color: var(--blue-600); }
+  .severity-badge.bas .dot { background: var(--blue-600); }
+
+  .section-title {
+    font-size: .95rem;
+    font-weight: 700;
+    color: var(--bth-n-700);
+  }
+
+  .section-toggle {
+    margin-left: auto;
+    font-size: .75rem;
+    color: var(--bth-n-300);
+    transition: transform .2s;
+  }
+
+  .section-toggle.open { transform: rotate(180deg); }
+
+  .section-body {
+    background: var(--surface-1);
+    border: 1px solid var(--bth-n-100);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  /* ── CHECKLIST ITEM ── */
+  .item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--bth-n-100);
+    transition: background .15s;
+    cursor: pointer;
+  }
+
+  .item:last-child { border-bottom: none; }
+
+  .item:hover { background: var(--surface-2); }
+
+  .item.done {
+    background: var(--green-100);
+    opacity: .75;
+  }
+
+  .item.done:hover { background: #dcfce7; }
+
+  .checkbox-wrap {
+    flex-shrink: 0;
+    margin-top: .1rem;
+  }
+
+  .checkbox {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--bth-n-300);
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color .15s, background .15s;
+    flex-shrink: 0;
+  }
+
+  .item.done .checkbox {
+    background: var(--green-600);
+    border-color: var(--green-600);
+  }
+
+  .checkmark {
+    display: none;
+    width: 12px;
+    height: 12px;
+  }
+
+  .item.done .checkmark { display: block; }
+
+  .item-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .item-title {
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--bth-n-900);
+    line-height: 1.3;
+    transition: color .15s;
+  }
+
+  .item.done .item-title {
+    text-decoration: line-through;
+    color: var(--bth-n-500);
+  }
+
+  .item-desc {
+    font-size: .78rem;
+    color: var(--bth-n-500);
+    margin-top: .2rem;
+    line-height: 1.45;
+  }
+
+  .item-tags {
+    display: flex;
+    gap: .4rem;
+    margin-top: .4rem;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    font-size: .65rem;
+    font-weight: 600;
+    padding: .15rem .5rem;
+    border-radius: 4px;
+    background: var(--bth-n-100);
+    color: var(--bth-n-700);
+    text-transform: uppercase;
+    letter-spacing: .3px;
+  }
+
+  .tag.security { background: #fde8e8; color: var(--red-600); }
+  .tag.arch { background: #e0ecff; color: var(--blue-600); }
+  .tag.perf { background: #fef9e7; color: var(--yellow-600); }
+  .tag.quality { background: var(--bth-green-100); color: var(--bth-green-700); }
+  .tag.ux { background: #fce4ff; color: #7c3aed; }
+
+  .item-file {
+    font-size: .7rem;
+    color: var(--bth-n-400, #9a9590);
+    margin-top: .3rem;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    opacity: .8;
+  }
+
+  .item-number {
+    flex-shrink: 0;
+    font-size: .68rem;
+    font-weight: 700;
+    color: var(--bth-n-300);
+    font-variant-numeric: tabular-nums;
+    padding-top: .15rem;
+    min-width: 1.5rem;
+    text-align: right;
+  }
+
+  /* ── RESET BTN ── */
+  .actions {
+    display: flex;
+    gap: .75rem;
+    margin-top: 2.5rem;
+    justify-content: center;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .65rem 1.25rem;
+    border-radius: 8px;
+    font-size: .8rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: transform .15s, opacity .15s;
+    font-family: inherit;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn-primary {
+    background: var(--bth-green-800);
+    color: #fff;
+  }
+
+  .btn-primary:hover { opacity: .9; }
+
+  .btn-ghost {
+    background: var(--surface-2);
+    color: var(--bth-n-700);
+    border: 1px solid var(--bth-n-100);
+  }
+
+  .btn-ghost:hover { background: var(--surface-3); }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 2rem;
+    font-size: .72rem;
+    color: var(--bth-n-300);
+    border-top: 1px solid var(--bth-n-100);
+    margin-top: 3rem;
+  }
+
+  /* ── CONFETTI text ── */
+  .congrats {
+    display: none;
+    text-align: center;
+    padding: 2rem;
+    background: var(--green-100);
+    border: 1px solid #bbf7d0;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--green-600);
+  }
+
+  .congrats.show { display: block; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: var(--surface-2); }
+  ::-webkit-scrollbar-thumb { background: var(--bth-gold-500); border-radius: 99px; }
+
+  /* ── SECTION COLLAPSE ── */
+  .section-content {
+    overflow: hidden;
+    transition: max-height .3s ease;
+  }
+
+  /* ── BAR CHART ── */
+  .bar-chart-section {
+    background: var(--surface-1);
+    border: 1px solid var(--bth-n-100);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .bar-chart-title {
+    font-size: .8rem;
+    font-weight: 700;
+    color: var(--bth-n-700);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 1.25rem;
+  }
+
+  .bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: .5rem;
+    height: 120px;
+  }
+
+  .bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .35rem;
+    height: 100%;
+    justify-content: flex-end;
+  }
+
+  .bar-val {
+    font-size: .7rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bar-rect-wrap {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .bar-rect {
+    width: 100%;
+    border-radius: 6px 6px 0 0;
+    min-height: 4px;
+    transition: height .5s cubic-bezier(.4,0,.2,1);
+  }
+
+  .bar-col-label {
+    font-size: .65rem;
+    font-weight: 600;
+    text-align: center;
+    color: var(--bth-n-500);
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+  }
+
+  .bar-col.critique .bar-val { color: var(--red-600); }
+  .bar-col.critique .bar-rect { background: var(--red-600); }
+  .bar-col.haut .bar-val { color: var(--orange-600); }
+  .bar-col.haut .bar-rect { background: var(--orange-600); }
+  .bar-col.moyen .bar-val { color: var(--yellow-600); }
+  .bar-col.moyen .bar-rect { background: var(--yellow-600); }
+  .bar-col.bas .bar-val { color: var(--blue-600); }
+  .bar-col.bas .bar-rect { background: var(--blue-600); }
+  .bar-col.done .bar-val { color: var(--green-600); }
+  .bar-col.done .bar-rect { background: var(--green-600); }
+
+  .chart-divider {
+    width: 1px;
+    background: var(--bth-n-100);
+    height: calc(100% + .5rem);
+    margin-top: -.25rem;
+  }
+
+  .bar-chart-x {
+    display: flex;
+    gap: .5rem;
+    margin-top: .5rem;
+  }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">BTH</div>
+    <div class="logo-text">
+      <span>BTH Expert</span>
+      <span>Hub CRM — Audit Technique</span>
+    </div>
+  </div>
+  <div class="header-badge">Audit v1.0</div>
+</header>
+
+<main>
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <h1>Checklist d'Audit — Code Review &amp; Sécurité</h1>
+    <p>Toutes les issues identifiées lors de l'audit complet du codebase. Coche chaque item au fur et à mesure des corrections.</p>
+    <div class="page-meta">
+      <span class="meta-chip date">Audit du 19 mai 2026</span>
+      <span class="meta-chip version">Next.js 16 · Supabase · TypeScript</span>
+    </div>
+  </div>
+
+  <!-- CONGRATS -->
+  <div class="congrats" id="congrats">
+    Tous les points sont validés — le CRM est production-ready !
+  </div>
+
+  <!-- DASHBOARD CARDS -->
+  <div class="dashboard" id="dashboard">
+    <div class="stat-card critique">
+      <div class="stat-card-label">Critique</div>
+      <div class="stat-card-value" id="cnt-critique">0/7</div>
+      <div class="stat-card-sub">Sécurité bloquante</div>
+    </div>
+    <div class="stat-card haut">
+      <div class="stat-card-label">Haut</div>
+      <div class="stat-card-value" id="cnt-haut">0/10</div>
+      <div class="stat-card-sub">À corriger avant prod</div>
+    </div>
+    <div class="stat-card moyen">
+      <div class="stat-card-label">Moyen</div>
+      <div class="stat-card-value" id="cnt-moyen">0/9</div>
+      <div class="stat-card-sub">Dette technique importante</div>
+    </div>
+    <div class="donut-card">
+      <div class="donut-card-label">Progression</div>
+      <div class="donut-wrap">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="46" fill="none" stroke="#e8e2d8" stroke-width="10"/>
+          <circle id="donut-ring" cx="55" cy="55" r="46" fill="none"
+                  stroke="url(#donutGrad)" stroke-width="10"
+                  stroke-linecap="round"
+                  stroke-dasharray="289 289"
+                  stroke-dashoffset="289"/>
+          <defs>
+            <linearGradient id="donutGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#1a2e1e"/>
+              <stop offset="100%" stop-color="#C9A96E"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div class="donut-center">
+          <span class="donut-pct" id="donut-pct">0%</span>
+          <span class="donut-label">corrigé</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GLOBAL PROGRESS -->
+  <div class="global-progress">
+    <div class="gp-header">
+      <span class="gp-title">Progression globale — <span id="done-count">0</span> / 33 points résolus</span>
+      <span class="gp-pct" id="global-pct-text">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="global-bar" style="width:0%"></div>
+    </div>
+
+    <div class="segment-bars">
+      <div class="seg-bar critique">
+        <div class="seg-bar-label">
+          <span class="seg-bar-name">Critique</span>
+          <span class="seg-bar-count" id="seg-critique-txt">0/7</span>
+        </div>
+        <div class="seg-track">
+          <div class="seg-fill" id="seg-critique" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="seg-bar haut">
+        <div class="seg-bar-label">
+          <span class="seg-bar-name">Haut</span>
+          <span class="seg-bar-count" id="seg-haut-txt">0/10</span>
+        </div>
+        <div class="seg-track">
+          <div class="seg-fill" id="seg-haut" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="seg-bar moyen">
+        <div class="seg-bar-label">
+          <span class="seg-bar-name">Moyen</span>
+          <span class="seg-bar-count" id="seg-moyen-txt">0/9</span>
+        </div>
+        <div class="seg-track">
+          <div class="seg-fill" id="seg-moyen" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="seg-bar bas">
+        <div class="seg-bar-label">
+          <span class="seg-bar-name">Bas</span>
+          <span class="seg-bar-count" id="seg-bas-txt">0/7</span>
+        </div>
+        <div class="seg-track">
+          <div class="seg-fill" id="seg-bas" style="width:0%"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BAR CHART -->
+  <div class="bar-chart-section">
+    <div class="bar-chart-title">Distribution des issues par catégorie</div>
+    <div style="display:flex; gap:.5rem; align-items:flex-end; height:140px">
+      <div class="bar-col critique">
+        <div class="bar-val" id="bc-critique-val">7</div>
+        <div class="bar-rect-wrap">
+          <div class="bar-rect" id="bc-critique" style="height:100%"></div>
+        </div>
+        <div class="bar-col-label">Critique</div>
+      </div>
+      <div class="bar-col haut">
+        <div class="bar-val" id="bc-haut-val">10</div>
+        <div class="bar-rect-wrap">
+          <div class="bar-rect" id="bc-haut" style="height:100%"></div>
+        </div>
+        <div class="bar-col-label">Haut</div>
+      </div>
+      <div class="bar-col moyen">
+        <div class="bar-val" id="bc-moyen-val">9</div>
+        <div class="bar-rect-wrap">
+          <div class="bar-rect" id="bc-moyen" style="height:87%"></div>
+        </div>
+        <div class="bar-col-label">Moyen</div>
+      </div>
+      <div class="bar-col bas">
+        <div class="bar-val" id="bc-bas-val">7</div>
+        <div class="bar-rect-wrap">
+          <div class="bar-rect" id="bc-bas" style="height:67%"></div>
+        </div>
+        <div class="bar-col-label">Bas</div>
+      </div>
+      <div style="width:1px; background:var(--bth-n-100); height:100%; margin-top:0;"></div>
+      <div class="bar-col done">
+        <div class="bar-val" id="bc-done-val">0</div>
+        <div class="bar-rect-wrap">
+          <div class="bar-rect" id="bc-done" style="height:0%"></div>
+        </div>
+        <div class="bar-col-label">Résolus</div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════ -->
+  <!-- SECTION 1 : CRITIQUE                -->
+  <!-- ════════════════════════════════════ -->
+  <div class="section" data-section="critique">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="severity-badge critique"><span class="dot"></span>Critique — Sécurité bloquante</span>
+      <span class="section-title">7 points</span>
+      <span class="section-toggle open">▼</span>
+    </div>
+    <div class="section-content">
+      <div class="section-body">
+
+        <div class="item" data-id="c1" data-severity="critique" onclick="toggleItem(this)">
+          <span class="item-number">01</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Révoquer et régénérer tous les secrets exposés dans le repo</div>
+            <div class="item-desc">Le fichier .env.local contient les vraies clés API committées : ANTHROPIC_API_KEY, SUPABASE_SERVICE_ROLE_KEY (bypass RLS total), CLOUDMERSIVE_API_KEY. Révoquer immédiatement dans les dashboards Supabase et Anthropic.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">Secrets</span>
+            </div>
+            <div class="item-file">.env.local · Supabase Dashboard · Anthropic Console</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="c2" data-severity="critique" onclick="toggleItem(this)">
+          <span class="item-number">02</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Réécrire les policies RLS de la table <code>clients</code></div>
+            <div class="item-desc">Actuellement <code>using (true)</code> pour SELECT, INSERT, UPDATE, DELETE — n'importe quel user connecté voit et modifie toutes les données. Remplacer par des conditions basées sur le rôle ou created_by.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">RLS</span>
+            </div>
+            <div class="item-file">lib/supabase-rls-policies.sql</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="c3" data-severity="critique" onclick="toggleItem(this)">
+          <span class="item-number">03</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Réécrire les policies RLS de la table <code>soumissions</code></div>
+            <div class="item-desc">Même problème : <code>using (true)</code> sur toutes les opérations. Un commercial peut lire toutes les soumissions des autres utilisateurs, les modifier, les supprimer.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">RLS</span>
+            </div>
+            <div class="item-file">lib/supabase-rls-policies.sql</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="c4" data-severity="critique" onclick="toggleItem(this)">
+          <span class="item-number">04</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Réécrire les policies RLS de la table <code>lignes_budget</code></div>
+            <div class="item-desc"><code>using (true)</code> sur toutes les opérations. N'importe qui peut modifier les lignes budget de n'importe quelle soumission d'un autre utilisateur.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">RLS</span>
+            </div>
+            <div class="item-file">lib/supabase-rls-policies.sql</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="c5" data-severity="critique" onclick="toggleItem(this)">
+          <span class="item-number">05</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter vérification d'authentification sur GET <code>/api/prospects</code></div>
+            <div class="item-desc">Le handler GET n'a aucun check d'auth. N'importe qui sans token peut lire tous les prospects. L'auth n'existe qu'au POST (ligne ~46). Déplacer <code>getUser()</code> en tête du GET.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">Auth</span>
+            </div>
+            <div class="item-file">app/api/prospects/route.ts · ligne 25</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="c6" data-severity="critique" onclick="toggleItem(this)">
+          <span class="item-number">06</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter vérification d'authentification sur GET <code>/api/clients</code></div>
+            <div class="item-desc">Même problème que /api/prospects : GET sans auth, POST avec auth. Incohérence qui expose tous les clients sans token.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">Auth</span>
+            </div>
+            <div class="item-file">app/api/clients/route.ts</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="c7" data-severity="critique" onclick="toggleItem(this)">
+          <span class="item-number">07</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Passer le bucket Supabase Storage <code>signatures</code> en privé</div>
+            <div class="item-desc">Bucket configuré avec <code>public: true</code> — les signatures scannées des gérants sont accessibles à n'importe qui avec l'URL. Changer en bucket privé avec policy authenticated-only.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">Storage</span>
+            </div>
+            <div class="item-file">lib/supabase-parametres.sql · lignes 66-87</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════ -->
+  <!-- SECTION 2 : HAUT                    -->
+  <!-- ════════════════════════════════════ -->
+  <div class="section" data-section="haut">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="severity-badge haut"><span class="dot"></span>Haut — Avant premier utilisateur réel</span>
+      <span class="section-title">10 points</span>
+      <span class="section-toggle open">▼</span>
+    </div>
+    <div class="section-content">
+      <div class="section-body">
+
+        <div class="item" data-id="h1" data-severity="haut" onclick="toggleItem(this)">
+          <span class="item-number">08</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter vérification de propriété sur PATCH <code>/api/prospects/[id]</code></div>
+            <div class="item-desc">Tout user authentifié peut modifier le prospect de n'importe qui. Ajouter <code>.eq("created_by", user.id)</code> ou vérification de rôle admin avant l'update.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">RBAC</span>
+            </div>
+            <div class="item-file">app/api/prospects/[id]/route.ts · ligne 45</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="h2" data-severity="haut" onclick="toggleItem(this)">
+          <span class="item-number">09</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter vérification de propriété sur PATCH/DELETE <code>/api/clients/[id]</code></div>
+            <div class="item-desc">Aucun filtre sur l'ownership : tout user peut modifier ou supprimer n'importe quel client. Nécessite ownership check ou rôle admin.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">RBAC</span>
+            </div>
+            <div class="item-file">app/api/clients/[id]/route.ts</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="h3" data-severity="haut" onclick="toggleItem(this)">
+          <span class="item-number">10</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter vérification de propriété sur PATCH/DELETE <code>/api/visites/[id]</code></div>
+            <div class="item-desc">Un commercial peut modifier ou supprimer les visites d'un autre commercial. Ajouter filtre <code>commercial_id = user.id</code> ou check admin.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">RBAC</span>
+            </div>
+            <div class="item-file">app/api/visites/[id]/route.ts</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="h4" data-severity="haut" onclick="toggleItem(this)">
+          <span class="item-number">11</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Restreindre la modification de la table <code>parametres</code> aux admins</div>
+            <div class="item-desc">Policy RLS <code>using (true) with check (true)</code> alors que le commentaire dit "admin uniquement en prod". N'importe qui peut changer les noms des signataires et les conditions de paiement des documents officiels.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">RLS</span>
+            </div>
+            <div class="item-file">lib/supabase-parametres.sql · lignes 49-60</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="h5" data-severity="haut" onclick="toggleItem(this)">
+          <span class="item-number">12</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Découper <code>SoumissionsClient.tsx</code> en sous-composants</div>
+            <div class="item-desc">1 557 lignes, 15+ états locaux. Extraire : SoumissionsListContainer (filtres/pagination), SoumissionsDetailPanel (vue détail), VersementModal (paiements).</div>
+            <div class="item-tags">
+              <span class="tag quality">Qualité</span>
+              <span class="tag">SRP</span>
+            </div>
+            <div class="item-file">app/(app)/soumissions/SoumissionsClient.tsx</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="h6" data-severity="haut" onclick="toggleItem(this)">
+          <span class="item-number">13</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Découper <code>StepPreview.tsx</code> en sous-composants</div>
+            <div class="item-desc">1 617 lignes, logique mélangée : formulaire, export, modal, dirty state guard. Extraire : PreviewLayout, BudgetEditor, LeaveGuard (hook), ExportBar.</div>
+            <div class="item-tags">
+              <span class="tag quality">Qualité</span>
+              <span class="tag">SRP</span>
+            </div>
+            <div class="item-file">components/forms/StepPreview.tsx</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="h7" data-severity="haut" onclick="toggleItem(this)">
+          <span class="item-number">14</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Convertir <code>clients/page.tsx</code> en Server Component</div>
+            <div class="item-desc">Marqué "use client" + useSWR pour le fetch initial. Devrait être un Server Component qui passe les données initiales au composant client pour les interactions.</div>
+            <div class="item-tags">
+              <span class="tag arch">Architecture</span>
+              <span class="tag perf">Perf</span>
+            </div>
+            <div class="item-file">app/(app)/clients/page.tsx</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="h8" data-severity="haut" onclick="toggleItem(this)">
+          <span class="item-number">15</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Convertir <code>depenses/page.tsx</code> en Server Component</div>
+            <div class="item-desc">738 lignes de CSS inline + fetch client-side en useEffect. Même pattern anti-SSR que clients. Page blanche jusqu'à hydration, TTFB dégradé.</div>
+            <div class="item-tags">
+              <span class="tag arch">Architecture</span>
+              <span class="tag perf">Perf</span>
+            </div>
+            <div class="item-file">app/(app)/depenses/page.tsx</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="h9" data-severity="haut" onclick="toggleItem(this)">
+          <span class="item-number">16</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Convertir <code>parametres/page.tsx</code> en Server Component</div>
+            <div class="item-desc">Fetch des paramètres dans useEffect côté client alors qu'un Server Component pourrait fournir les données immédiatement. 300 lignes de CSS inline en bonus.</div>
+            <div class="item-tags">
+              <span class="tag arch">Architecture</span>
+              <span class="tag perf">Perf</span>
+            </div>
+            <div class="item-file">app/(app)/parametres/page.tsx</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="h10" data-severity="haut" onclick="toggleItem(this)">
+          <span class="item-number">17</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter Error Boundaries — <code>app/error.tsx</code> et <code>app/(app)/error.tsx</code></div>
+            <div class="item-desc">Aucun fichier error.tsx dans l'app. Une erreur non catchée = écran blanc total pour l'utilisateur. Ajouter les deux niveaux d'error boundary.</div>
+            <div class="item-tags">
+              <span class="tag ux">UX</span>
+              <span class="tag arch">Architecture</span>
+            </div>
+            <div class="item-file">app/error.tsx (à créer) · app/(app)/error.tsx (à créer)</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════ -->
+  <!-- SECTION 3 : MOYEN                   -->
+  <!-- ════════════════════════════════════ -->
+  <div class="section" data-section="moyen">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="severity-badge moyen"><span class="dot"></span>Moyen — Dette technique</span>
+      <span class="section-title">9 points</span>
+      <span class="section-toggle open">▼</span>
+    </div>
+    <div class="section-content">
+      <div class="section-body">
+
+        <div class="item" data-id="m1" data-severity="moyen" onclick="toggleItem(this)">
+          <span class="item-number">18</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Convertir <code>profil/page.tsx</code> en Server Component</div>
+            <div class="item-desc">Fetch du user dans useEffect côté client. Données auth déjà disponibles server-side dans le layout parent — les passer via props au lieu de re-fetch.</div>
+            <div class="item-tags">
+              <span class="tag arch">Architecture</span>
+            </div>
+            <div class="item-file">app/(app)/profil/page.tsx</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="m2" data-severity="moyen" onclick="toggleItem(this)">
+          <span class="item-number">19</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Supprimer <code>jspdf</code> et <code>jspdf-autotable</code> de package.json</div>
+            <div class="item-desc">CLAUDE.md interdit l'usage de jspdf, mais les packages sont installés. Ils gonflent le bundle inutilement et augmentent la surface d'attaque.</div>
+            <div class="item-tags">
+              <span class="tag">Deps</span>
+              <span class="tag perf">Perf</span>
+            </div>
+            <div class="item-file">package.json</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="m3" data-severity="moyen" onclick="toggleItem(this)">
+          <span class="item-number">20</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter security headers dans <code>next.config.ts</code></div>
+            <div class="item-desc">Aucun header de sécurité configuré. Ajouter au minimum : X-Content-Type-Options: nosniff, X-Frame-Options: DENY, X-XSS-Protection, Referrer-Policy.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag arch">Architecture</span>
+            </div>
+            <div class="item-file">next.config.ts</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="m4" data-severity="moyen" onclick="toggleItem(this)">
+          <span class="item-number">21</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Supprimer <code>formatMontant()</code> dupliqué dans <code>generate-document.ts</code></div>
+            <div class="item-desc">Deux implémentations avec logique légèrement différente. La version canonique est dans utils.ts. Supprimer la copie locale et importer depuis utils.</div>
+            <div class="item-tags">
+              <span class="tag quality">Qualité</span>
+              <span class="tag">DRY</span>
+            </div>
+            <div class="item-file">lib/generate-document.ts · ligne 8 · lib/utils.ts · ligne 25</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="m5" data-severity="moyen" onclick="toggleItem(this)">
+          <span class="item-number">22</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Extraire <code>const TVA_RATE = 0.19</code> dans <code>lib/constants.ts</code></div>
+            <div class="item-desc">Le taux TVA 19% est codé en dur dans 5 endroits différents. Créer un fichier de constantes et centraliser. Si le taux change, une seule modification.</div>
+            <div class="item-tags">
+              <span class="tag quality">Qualité</span>
+              <span class="tag">DRY</span>
+            </div>
+            <div class="item-file">lib/utils.ts · lib/export-helpers.ts (×3)</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="m6" data-severity="moyen" onclick="toggleItem(this)">
+          <span class="item-number">23</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Valider la réponse IA avec Zod dans <code>lib/anthropic.ts</code></div>
+            <div class="item-desc">Regex fragile pour extraire le JSON + <code>as SoumissionAIContent</code> sans validation du schéma. Si l'IA retourne des champs manquants, ça passe silencieusement et casse en aval.</div>
+            <div class="item-tags">
+              <span class="tag quality">Qualité</span>
+              <span class="tag">Validation</span>
+            </div>
+            <div class="item-file">lib/anthropic.ts · lignes 215-223</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="m7" data-severity="moyen" onclick="toggleItem(this)">
+          <span class="item-number">24</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter validation input (email, téléphone) sur <code>/api/clients</code> et <code>/api/prospects</code></div>
+            <div class="item-desc">Aucune validation de format sur les champs texte. L'endpoint invite/route.ts valide l'email correctement — appliquer le même pattern sur tous les endpoints.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">Validation</span>
+            </div>
+            <div class="item-file">app/api/clients/route.ts · app/api/prospects/route.ts</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="m8" data-severity="moyen" onclick="toggleItem(this)">
+          <span class="item-number">25</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter feedback d'erreur UI sur les actions async qui échouent</div>
+            <div class="item-desc">Si un fetch échoue dans handleAddVisite ou autres handlers, l'état de chargement s'éteint mais l'utilisateur ne voit aucun message d'erreur. Ajouter setState d'erreur + toast.</div>
+            <div class="item-tags">
+              <span class="tag ux">UX</span>
+              <span class="tag quality">Qualité</span>
+            </div>
+            <div class="item-file">app/(app)/prospection/[id]/page.tsx · ligne ~180</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="m9" data-severity="moyen" onclick="toggleItem(this)">
+          <span class="item-number">26</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Centraliser le type <code>MeResponse</code> dans <code>types/index.ts</code></div>
+            <div class="item-desc">Deux définitions différentes du même type dans soumissions/[id]/page.tsx et DashboardClient.tsx. Source de bugs silencieux si le champ diverge.</div>
+            <div class="item-tags">
+              <span class="tag quality">Qualité</span>
+              <span class="tag">TypeScript</span>
+            </div>
+            <div class="item-file">types/index.ts · app/(app)/soumissions/[id]/page.tsx · app/(app)/dashboard/DashboardClient.tsx</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ════════════════════════════════════ -->
+  <!-- SECTION 4 : BAS                     -->
+  <!-- ════════════════════════════════════ -->
+  <div class="section" data-section="bas">
+    <div class="section-header" onclick="toggleSection(this)">
+      <span class="severity-badge bas"><span class="dot"></span>Bas — Refactor &amp; polish</span>
+      <span class="section-title">7 points</span>
+      <span class="section-toggle open">▼</span>
+    </div>
+    <div class="section-content">
+      <div class="section-body">
+
+        <div class="item" data-id="b1" data-severity="bas" onclick="toggleItem(this)">
+          <span class="item-number">27</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter Suspense boundaries sur les pages async</div>
+            <div class="item-desc">Pages server async sans Suspense = chargement bloquant. Wrapper les sections de données avec &lt;Suspense fallback={&lt;Skeleton /&gt;}&gt; pour un chargement progressif.</div>
+            <div class="item-tags">
+              <span class="tag perf">Perf</span>
+              <span class="tag ux">UX</span>
+            </div>
+            <div class="item-file">app/(app)/couts-marges/page.tsx · app/(app)/dashboard/page.tsx</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="b2" data-severity="bas" onclick="toggleItem(this)">
+          <span class="item-number">28</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter indexes BDD sur la table <code>depenses</code></div>
+            <div class="item-desc">Colonnes <code>projet_lie</code>, <code>employe_id</code>, <code>date_depense</code> non indexées. Full table scan à chaque requête filtrée. Impact croissant avec le volume.</div>
+            <div class="item-tags">
+              <span class="tag perf">Perf</span>
+              <span class="tag">BDD</span>
+            </div>
+            <div class="item-file">supabase/migrations/20260506000000_add_depenses.sql</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="b3" data-severity="bas" onclick="toggleItem(this)">
+          <span class="item-number">29</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter <code>useCallback</code> sur les handlers de <code>SoumissionsClient.tsx</code></div>
+            <div class="item-desc">15+ handlers non mémoïsés causent des re-renders inutiles des composants enfants à chaque état. Ajouter useCallback sur les fonctions passées en props.</div>
+            <div class="item-tags">
+              <span class="tag perf">Perf</span>
+              <span class="tag quality">Qualité</span>
+            </div>
+            <div class="item-file">app/(app)/soumissions/SoumissionsClient.tsx</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="b4" data-severity="bas" onclick="toggleItem(this)">
+          <span class="item-number">30</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Extraire le CSS inline des grandes pages vers des fichiers partagés</div>
+            <div class="item-desc">CSS dupliqué sur 4 pages : scrollbar styles, animations, variables de couleurs. Centraliser dans globals.css ou des modules CSS. Ex : clients (358 lignes), depenses (738 lignes), couts-marges (543 lignes).</div>
+            <div class="item-tags">
+              <span class="tag quality">Qualité</span>
+              <span class="tag">DRY</span>
+            </div>
+            <div class="item-file">app/(app)/clients/page.tsx · app/(app)/depenses/page.tsx · app/(app)/couts-marges/CoutsMargesDashboard.tsx</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="b5" data-severity="bas" onclick="toggleItem(this)">
+          <span class="item-number">31</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Remplacer les couleurs hardcodées <code>#1a2e1e</code> par les tokens BTH</div>
+            <div class="item-desc">20+ usages de <code>style={{ backgroundColor: "#1a2e1e" }}</code> et <code>style={{ color: "#1a2e1e" }}</code>. Remplacer par les classes Tailwind générées par @theme : <code>bg-bth-green-800</code>, <code>text-bth-green-800</code>.</div>
+            <div class="item-tags">
+              <span class="tag">Design System</span>
+              <span class="tag quality">Qualité</span>
+            </div>
+            <div class="item-file">components/forms/StepPreview.tsx · app/(app)/**</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="b6" data-severity="bas" onclick="toggleItem(this)">
+          <span class="item-number">32</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Rendre les signataires configurables via la table <code>parametres</code></div>
+            <div class="item-desc">Noms "Hakim Belghouini" et "Amine Lahmer" hardcodés dans StepPreview.tsx. Ils sont déjà dans la table parametres — utiliser ces données au lieu de les dupliquer dans le code.</div>
+            <div class="item-tags">
+              <span class="tag quality">Qualité</span>
+              <span class="tag">Config</span>
+            </div>
+            <div class="item-file">components/forms/StepPreview.tsx · lignes ~1480</div>
+          </div>
+        </div>
+
+        <div class="item" data-id="b7" data-severity="bas" onclick="toggleItem(this)">
+          <span class="item-number">33</span>
+          <div class="checkbox-wrap">
+            <div class="checkbox">
+              <svg class="checkmark" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+          <div class="item-content">
+            <div class="item-title">Ajouter <code>npm audit</code> au workflow et patcher les vulnérabilités connues</div>
+            <div class="item-desc">Librairies à surveiller : xlsx (exploits connus), docxtemplater/pizzip (parsing), @anthropic-ai/sdk. Intégrer npm audit dans le CI ou pré-commit hook.</div>
+            <div class="item-tags">
+              <span class="tag security">Sécurité</span>
+              <span class="tag">Deps</span>
+            </div>
+            <div class="item-file">package.json · package-lock.json</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ACTIONS -->
+  <div class="actions">
+    <button class="btn btn-primary" onclick="checkAll()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7l4 4 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Tout cocher (démo)
+    </button>
+    <button class="btn btn-ghost" onclick="resetAll()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Réinitialiser
+    </button>
+    <button class="btn btn-ghost" onclick="window.print()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="2" y="4" width="10" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/><path d="M4 4V2h6v2" stroke="currentColor" stroke-width="1.5"/><path d="M4 9h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      Imprimer / PDF
+    </button>
+  </div>
+
+</main>
+
+<footer>
+  BTH Expert · Hub CRM · Audit généré le 19 mai 2026 · 33 points · Progression sauvegardée localement
+</footer>
+
+<script>
+  const STORAGE_KEY = 'bth-audit-v1';
+
+  const TOTALS = { critique: 7, haut: 10, moyen: 9, bas: 7 };
+
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); }
+    catch { return {}; }
+  }
+
+  function saveState(state) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function toggleItem(el) {
+    const id = el.dataset.id;
+    const state = loadState();
+    state[id] = !state[id];
+    saveState(state);
+    applyState(state);
+  }
+
+  function applyState(state) {
+    document.querySelectorAll('.item[data-id]').forEach(item => {
+      const id = item.dataset.id;
+      item.classList.toggle('done', !!state[id]);
+    });
+    updateProgress(state);
+  }
+
+  function updateProgress(state) {
+    const counts = { critique: 0, haut: 0, moyen: 0, bas: 0 };
+    let total = 0;
+
+    document.querySelectorAll('.item[data-id]').forEach(item => {
+      const id = item.dataset.id;
+      const sev = item.dataset.severity;
+      if (state[id]) { counts[sev]++; total++; }
+    });
+
+    const grandTotal = 33;
+    const pct = Math.round((total / grandTotal) * 100);
+
+    // Donut
+    const circumference = 2 * Math.PI * 46;
+    const offset = circumference - (pct / 100) * circumference;
+    document.getElementById('donut-ring').setAttribute('stroke-dasharray', circumference.toFixed(1));
+    document.getElementById('donut-ring').setAttribute('stroke-dashoffset', offset.toFixed(1));
+    document.getElementById('donut-pct').textContent = pct + '%';
+
+    // Global bar
+    document.getElementById('global-bar').style.width = pct + '%';
+    document.getElementById('global-pct-text').textContent = pct + '%';
+    document.getElementById('done-count').textContent = total;
+
+    // Segment bars
+    ['critique','haut','moyen','bas'].forEach(sev => {
+      const d = counts[sev];
+      const t = TOTALS[sev];
+      const p = Math.round((d/t)*100);
+      document.getElementById('seg-' + sev).style.width = p + '%';
+      document.getElementById('seg-' + sev + '-txt').textContent = d + '/' + t;
+    });
+
+    // Stat cards
+    document.getElementById('cnt-critique').textContent = counts.critique + '/7';
+    document.getElementById('cnt-haut').textContent = counts.haut + '/10';
+    document.getElementById('cnt-moyen').textContent = counts.moyen + '/9';
+
+    // Bar chart done column
+    const maxTotal = 10;
+    const doneH = Math.round((total / grandTotal) * 100);
+    document.getElementById('bc-done').style.height = doneH + '%';
+    document.getElementById('bc-done-val').textContent = total;
+
+    // Remaining per category in bar chart
+    const remC = 7 - counts.critique;
+    const remH = 10 - counts.haut;
+    const remM = 9 - counts.moyen;
+    const remB = 7 - counts.bas;
+    document.getElementById('bc-critique').style.height = Math.round((remC/10)*100) + '%';
+    document.getElementById('bc-critique-val').textContent = remC;
+    document.getElementById('bc-haut').style.height = Math.round((remH/10)*100) + '%';
+    document.getElementById('bc-haut-val').textContent = remH;
+    document.getElementById('bc-moyen').style.height = Math.round((remM/10)*100) + '%';
+    document.getElementById('bc-moyen-val').textContent = remM;
+    document.getElementById('bc-bas').style.height = Math.round((remB/10)*100) + '%';
+    document.getElementById('bc-bas-val').textContent = remB;
+
+    // Congrats
+    document.getElementById('congrats').classList.toggle('show', total === grandTotal);
+  }
+
+  function toggleSection(headerEl) {
+    const content = headerEl.nextElementSibling;
+    const toggle = headerEl.querySelector('.section-toggle');
+    const isOpen = toggle.classList.contains('open');
+    if (isOpen) {
+      content.style.maxHeight = content.scrollHeight + 'px';
+      requestAnimationFrame(() => {
+        content.style.maxHeight = '0';
+        content.style.overflow = 'hidden';
+      });
+      toggle.classList.remove('open');
+    } else {
+      content.style.maxHeight = content.scrollHeight + 'px';
+      content.style.overflow = '';
+      toggle.classList.add('open');
+      setTimeout(() => { content.style.maxHeight = ''; }, 300);
+    }
+  }
+
+  function checkAll() {
+    const state = {};
+    document.querySelectorAll('.item[data-id]').forEach(item => {
+      state[item.dataset.id] = true;
+    });
+    saveState(state);
+    applyState(state);
+  }
+
+  function resetAll() {
+    localStorage.removeItem(STORAGE_KEY);
+    applyState({});
+  }
+
+  // Init
+  document.querySelectorAll('.section-content').forEach(c => {
+    c.style.maxHeight = '';
+  });
+
+  applyState(loadState());
+</script>
+</body>
+</html>
