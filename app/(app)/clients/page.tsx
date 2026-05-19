@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import useSWR from "swr";
-import { Client, Soumission, StatutSoumission } from "@/types";
+import { Client, Soumission, StatutSoumission, UserRole } from "@/types";
 import { formatDateFr } from "@/lib/utils";
 
 /* ── CSS global ─────────────────────────────────────────── */
@@ -12,6 +12,7 @@ const CSS = `
   @keyframes sk { 0%,100%{opacity:1} 50%{opacity:.4} }
   .sk { animation: sk 1.5s ease-in-out infinite; }
   .clients-shell {
+    height: 100%;
     min-height: 100%;
     background: linear-gradient(180deg, #ffffff 0%, #faf8f5 38%, #f7f2ea 100%);
     color: #1a1714;
@@ -155,8 +156,9 @@ const CSS = `
   }
   .clients-content {
     flex: 1;
-    overflow-y: auto;
-    padding: 18px clamp(16px, 3vw, 40px) 0;
+    min-height: 0;
+    overflow: visible;
+    padding: 18px clamp(16px, 3vw, 40px) 16px;
   }
   .clients-list {
     display: flex;
@@ -201,6 +203,9 @@ const CSS = `
   }
   .clients-pagination {
     flex-shrink: 0;
+    position: sticky;
+    bottom: 0;
+    z-index: 8;
     background: #fbfaf7;
     border-top: 1px solid #e8e2d8;
     display: grid;
@@ -222,13 +227,13 @@ const CSS = `
   @media (max-width: 767px) {
     .clients-shell {
       min-height: 100%;
+      height: auto;
+    }
+    .clients-shell.clients-has-mobile-pagination {
+      padding-bottom: calc(62px + env(safe-area-inset-bottom));
     }
     .clients-header {
       padding: 18px 14px 16px;
-      position: sticky;
-      top: 0;
-      z-index: 9;
-      box-shadow: 0 10px 28px rgba(26,46,30,.05);
     }
     .clients-header-top {
       grid-template-columns: minmax(0, 1fr) auto;
@@ -284,7 +289,7 @@ const CSS = `
       white-space: nowrap;
     }
     .clients-content {
-      padding: 14px 14px 0;
+      padding: 14px 14px 12px;
     }
     .clients-list {
       gap: 12px;
@@ -349,9 +354,11 @@ const CSS = `
     .clients-pagination {
       grid-template-columns: 1fr auto;
       padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
-      position: sticky;
-      bottom: 0;
-      z-index: 8;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: calc(56px + env(safe-area-inset-bottom));
+      z-index: 19;
       box-shadow: 0 -10px 28px rgba(26,46,30,.06);
     }
     .clients-pagination-spacer { display: none; }
@@ -375,15 +382,16 @@ const CT_GRID = "220px 1fr 120px 130px 88px";
 const CT_D    = "1px solid #f0ebe3";
 const CT_HD   = "1px solid #e8e2d8";
 
-function SoumTableRow({ s }: { s: Soumission }) {
+function SoumTableRow({ s, canSeeAmounts }: { s: Soumission; canSeeAmounts: boolean }) {
   const [hov, setHov] = useState(false);
+  const grid = canSeeAmounts ? SOUM_GRID : "130px 1fr 110px 60px";
   return (
     <Link href={`/soumissions/${s.id}`} onClick={e => e.stopPropagation()} style={{ textDecoration: "none", display: "block" }}>
       <div
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
         style={{
-          display: "grid", gridTemplateColumns: SOUM_GRID,
+          display: "grid", gridTemplateColumns: grid,
           minHeight: 52, alignItems: "stretch",
           borderBottom: "1px solid #f1f5f9",
           background: hov ? "#fafafa" : "white",
@@ -423,21 +431,22 @@ function SoumTableRow({ s }: { s: Soumission }) {
             <span style={{ fontSize: 10, fontWeight: 500, color: "#9ca3af" }}>j</span>
           </span>
         </div>
-        {/* Montant */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 14px" }}>
-          <span style={{ display: "inline-flex", alignItems: "baseline", gap: 2 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#111827", fontVariantNumeric: "tabular-nums" }}>
-              {fmtInt(s.total_ttc)}
+        {canSeeAmounts && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 14px" }}>
+            <span style={{ display: "inline-flex", alignItems: "baseline", gap: 2 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "#111827", fontVariantNumeric: "tabular-nums" }}>
+                {fmtInt(s.total_ttc)}
+              </span>
+              <span style={{ fontSize: 9.5, color: "#9ca3af", fontWeight: 500 }}>DZD</span>
             </span>
-            <span style={{ fontSize: 9.5, color: "#9ca3af", fontWeight: 500 }}>DZD</span>
-          </span>
-        </div>
+          </div>
+        )}
       </div>
     </Link>
   );
 }
 
-function SoumissionsTable({ soumissions }: { soumissions: Soumission[] }) {
+function SoumissionsTable({ soumissions, canSeeAmounts }: { soumissions: Soumission[]; canSeeAmounts: boolean }) {
   if (soumissions.length === 0) {
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
@@ -455,14 +464,16 @@ function SoumissionsTable({ soumissions }: { soumissions: Soumission[] }) {
     { label: "Titre projet", right: false },
     { label: "Statut",       right: false },
     { label: "Délai",        right: false },
-    { label: "Montant TTC",  right: true  },
+    ...(canSeeAmounts ? [{ label: "Montant TTC", right: true }] : []),
   ];
+  const grid = canSeeAmounts ? SOUM_GRID : "130px 1fr 110px 60px";
+  const minWidth = canSeeAmounts ? 530 : 390;
 
   return (
     <div style={{ borderRadius: 12, border: "1px solid #e5e7eb", overflow: "hidden", overflowX: "auto" }}>
       {/* Header */}
       <div style={{
-        display: "grid", gridTemplateColumns: SOUM_GRID, minWidth: 530,
+        display: "grid", gridTemplateColumns: grid, minWidth,
         height: 40, alignItems: "stretch",
         background: "#fafafa", borderBottom: "1.5px solid #e5e7eb",
       }}>
@@ -480,15 +491,15 @@ function SoumissionsTable({ soumissions }: { soumissions: Soumission[] }) {
         ))}
       </div>
       {/* Rows */}
-      <div style={{ minWidth: 530 }}>
-        {soumissions.map(s => <SoumTableRow key={s.id} s={s} />)}
+      <div style={{ minWidth }}>
+        {soumissions.map(s => <SoumTableRow key={s.id} s={s} canSeeAmounts={canSeeAmounts} />)}
       </div>
     </div>
   );
 }
 
 /* ── Soumissions mobile list (no horizontal scroll) ─────── */
-function SoumMobileList({ soumissions }: { soumissions: Soumission[] }) {
+function SoumMobileList({ soumissions, canSeeAmounts }: { soumissions: Soumission[]; canSeeAmounts: boolean }) {
   if (soumissions.length === 0) {
     return (
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px",
@@ -522,10 +533,12 @@ function SoumMobileList({ soumissions }: { soumissions: Soumission[] }) {
             </p>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: 11, color: "#9ca3af" }}>{formatDateFr(s.date_offre)}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#111827", fontVariantNumeric: "tabular-nums" }}>
-                {fmtInt(s.total_ttc)}{" "}
-                <span style={{ fontSize: 9.5, color: "#9ca3af", fontWeight: 500 }}>DZD</span>
-              </span>
+              {canSeeAmounts && (
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#111827", fontVariantNumeric: "tabular-nums" }}>
+                  {fmtInt(s.total_ttc)}{" "}
+                  <span style={{ fontSize: 9.5, color: "#9ca3af", fontWeight: 500 }}>DZD</span>
+                </span>
+              )}
             </div>
           </div>
         </Link>
@@ -539,6 +552,7 @@ interface ClientWithSoumissions extends Client {
 }
 
 type ApiListResponse<T> = { data?: T[] };
+type MeResponse = { role?: UserRole };
 
 /* ── Status config ──────────────────────────────────────── */
 type StCfg = { dot: string; bgBadge: string; textBadge: string; border: string; accentBar: string };
@@ -655,7 +669,10 @@ export default function ClientsPage() {
   const clientsUrl = debouncedSearch ? `/api/clients?q=${encodeURIComponent(debouncedSearch)}` : "/api/clients";
   const { data: clientsRes, isLoading: clientsLoading, mutate: mutateClients } =
     useSWR<ApiListResponse<ClientWithSoumissions>>(clientsUrl);
+  const { data: meRes } = useSWR<MeResponse>("/api/me");
 
+  const role = meRes?.role ?? null;
+  const canSeeAmounts = role === "admin" || role === "charge_projet";
   const clients = clientsRes?.data ?? [];
   const loading = clientsLoading && !clientsRes;
 
@@ -691,11 +708,12 @@ export default function ClientsPage() {
   const paginated = clients.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const cityCount = new Set(clients.map(c => c.ville).filter(Boolean)).size;
   const latestClient = clients[0];
+  const showPagination = !loading && clients.length > 0 && (bp === "desktop" || totalPages > 1);
 
   return (
     <>
       <style>{CSS}</style>
-      <div className="clients-shell">
+      <div className={`clients-shell ${showPagination && bp !== "desktop" ? "clients-has-mobile-pagination" : ""}`}>
 
         {/* ── Header ──────────────────────────────────────── */}
         <div className="clients-header">
@@ -793,6 +811,7 @@ export default function ClientsPage() {
               expandedId={expandedId}
               soumMap={soumMap}
               loadingS={loadingS}
+              canSeeAmounts={canSeeAmounts}
               onToggle={toggleExpand}
               onDelete={askDelete}
             />
@@ -805,6 +824,7 @@ export default function ClientsPage() {
                     isExpanded={expandedId === client.id}
                     soumissions={soumMap[client.id] ?? []}
                     isLoadingSoum={loadingS === client.id}
+                    canSeeAmounts={canSeeAmounts}
                     onToggle={() => toggleExpand(client.id)}
                     onDelete={askDelete}
                   />
@@ -815,7 +835,7 @@ export default function ClientsPage() {
         </div>
 
         {/* ── Pagination ────────────────────── */}
-        {!loading && clients.length > 0 && (
+        {showPagination && (
           <div className="clients-pagination">
             <span style={{ fontSize: 12, color: "#887f74" }}>
               <strong style={{ color: "#1a1714", fontWeight: 700 }}>{clients.length}</strong>
@@ -899,9 +919,10 @@ export default function ClientsPage() {
 /* ══════════════════════════════════════════════════════════
    CLIENT CARD (mobile)
 ══════════════════════════════════════════════════════════ */
-function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onToggle, onDelete }: {
+function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSeeAmounts, onToggle, onDelete }: {
   client: ClientWithSoumissions; idx: number; isExpanded: boolean;
   soumissions: Soumission[]; isLoadingSoum: boolean;
+  canSeeAmounts: boolean;
   onToggle: () => void;
   onDelete: (c: ClientWithSoumissions, e: React.MouseEvent) => void;
 }) {
@@ -1072,7 +1093,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
                   ))}
                 </div>
               ) : (
-                <SoumMobileList soumissions={soumissions} />
+                <SoumMobileList soumissions={soumissions} canSeeAmounts={canSeeAmounts} />
               )}
             </div>
           </motion.div>
@@ -1085,11 +1106,12 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
 /* ══════════════════════════════════════════════════════════
    CLIENT TABLE ROW (desktop)
 ══════════════════════════════════════════════════════════ */
-function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, onToggle, onDelete }: {
+function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, canSeeAmounts, onToggle, onDelete }: {
   client: ClientWithSoumissions;
   isExpanded: boolean;
   soumissions: Soumission[];
   isLoadingSoum: boolean;
+  canSeeAmounts: boolean;
   onToggle: () => void;
   onDelete: (c: ClientWithSoumissions, e: React.MouseEvent) => void;
 }) {
@@ -1210,7 +1232,7 @@ function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, onTogg
                   ))}
                 </div>
               ) : (
-                <SoumissionsTable soumissions={soumissions} />
+                <SoumissionsTable soumissions={soumissions} canSeeAmounts={canSeeAmounts} />
               )}
             </div>
           </motion.div>
@@ -1223,11 +1245,12 @@ function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, onTogg
 /* ══════════════════════════════════════════════════════════
    CLIENTS TABLE (desktop)
 ══════════════════════════════════════════════════════════ */
-function ClientsTable({ clients, expandedId, soumMap, loadingS, onToggle, onDelete }: {
+function ClientsTable({ clients, expandedId, soumMap, loadingS, canSeeAmounts, onToggle, onDelete }: {
   clients: ClientWithSoumissions[];
   expandedId: string | null;
   soumMap: Record<string, Soumission[]>;
   loadingS: string | null;
+  canSeeAmounts: boolean;
   onToggle: (id: string) => void;
   onDelete: (c: ClientWithSoumissions, e: React.MouseEvent) => void;
 }) {
@@ -1271,6 +1294,7 @@ function ClientsTable({ clients, expandedId, soumMap, loadingS, onToggle, onDele
             isExpanded={expandedId === client.id}
             soumissions={soumMap[client.id] ?? []}
             isLoadingSoum={loadingS === client.id}
+            canSeeAmounts={canSeeAmounts}
             onToggle={() => onToggle(client.id)}
             onDelete={onDelete}
           />

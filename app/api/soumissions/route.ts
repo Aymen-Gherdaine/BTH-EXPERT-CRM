@@ -24,6 +24,16 @@ async function getSupabase() {
   );
 }
 
+async function canManageSoumissions(supabase: Awaited<ReturnType<typeof getSupabase>>, userId: string) {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .single<{ role: string }>();
+
+  return profile?.role === "admin" || profile?.role === "charge_projet";
+}
+
 export async function GET(req: NextRequest) {
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
@@ -52,6 +62,9 @@ export async function POST(req: NextRequest) {
     const supabase = await getSupabase();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    if (!(await canManageSoumissions(supabase, user.id))) {
+      return NextResponse.json({ error: "Action réservée aux administrateurs et chargés de projet" }, { status: 403 });
+    }
 
     const body: { formData: FormDataComplete; contexte: { section_1: string; section_1_1: string } } = await req.json();
     const { formData, contexte } = body;

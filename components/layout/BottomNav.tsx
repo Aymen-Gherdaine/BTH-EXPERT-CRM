@@ -47,6 +47,17 @@ const SHEET_ITEMS: NavItem[] = [
   { href: "/admin/utilisateurs", label: "Utilisateurs",   icon: "admin",  roles: ["admin"] },
 ];
 
+const COMMERCIAL_PRIMARY: NavItem[] = [
+  { href: "/dashboard",    label: "Accueil",     icon: "home",   roles: ["commercial"] },
+  { href: "/prospection",  label: "Prospection", icon: "map",    roles: ["commercial"] },
+  { href: "/depenses",     label: "Dépenses",    icon: "wallet", roles: ["commercial"] },
+  { href: "/clients",      label: "Clients",     icon: "users",  roles: ["commercial"] },
+];
+
+const COMMERCIAL_SHEET_ITEMS: NavItem[] = [
+  { href: "/soumissions", label: "Soumissions", icon: "docs", roles: ["commercial"] },
+];
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function BottomNav({ role }: { role: UserRole }) {
@@ -56,8 +67,8 @@ export default function BottomNav({ role }: { role: UserRole }) {
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  const primaryItems = PRIMARY.filter(i => i.roles.includes(role));
-  const sheetItems = SHEET_ITEMS.filter(i => i.roles.includes(role));
+  const primaryItems = (role === "commercial" ? COMMERCIAL_PRIMARY : PRIMARY).filter(i => i.roles.includes(role));
+  const sheetItems = (role === "commercial" ? COMMERCIAL_SHEET_ITEMS : SHEET_ITEMS).filter(i => i.roles.includes(role));
 
   useEffect(() => {
     setPendingHref(null);
