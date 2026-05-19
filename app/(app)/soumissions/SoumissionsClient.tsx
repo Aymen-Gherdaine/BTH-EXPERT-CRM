@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, Dispatch, SetStateAction } from "reac
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import useSWR from "swr";
 import { Soumission, StatutSoumission, LigneBudget, UserRole } from "@/types";
 import { formatMontant, formatDateFr } from "@/lib/utils";
 
@@ -243,6 +244,8 @@ function Avatar({ name, size = 32 }: { name: string; size?: number }) {
 
 /* ── SoumissionView ─────────────────────────────────────────── */
 type SoumissionView = Soumission & { _cn: string; _contact: string };
+type ApiListResponse<T> = { data?: T[] };
+type MeResponse = { role?: UserRole };
 
 /* ── FilterDropdown ─────────────────────────────────────────── */
 function FilterDropdown({ active, set, counts }: {
@@ -1100,7 +1103,11 @@ export default function SoumissionsClient() {
   const bp = useBp();
   const isDesktop = bp === "desktop";
 
-  const [role, setRole] = useState<UserRole>("admin");
+  const { data: soumissionsRes, isLoading: soumissionsLoading, mutate: mutateSoumissions } =
+    useSWR<ApiListResponse<Soumission>>("/api/soumissions");
+  const { data: meRes, isLoading: meLoading } = useSWR<MeResponse>("/api/me");
+
+  const role = meRes?.role ?? "admin";
   const isAdmin = role === "admin" || role === "charge_projet";
 
   /* View toggle — persisted in localStorage */
@@ -1116,8 +1123,8 @@ export default function SoumissionsClient() {
 
   const PER_PAGE = !isDesktop ? 6 : view === "cards" ? 9 : 12;
 
-  const [soumissions, setSoumissions] = useState<Soumission[]>([]);
-  const [loading, setLoading] = useState(true);
+  const soumissions = soumissionsRes?.data ?? [];
+  const loading = (soumissionsLoading && !soumissionsRes) || (meLoading && !meRes);
   const [q, setQ] = useState("");
   const [filtre, setFiltre] = useState<StatutSoumission | null>(null);
   const [page, setPage] = useState(1);
@@ -1137,22 +1144,6 @@ export default function SoumissionsClient() {
     _contact: s.client ? `${s.client.titre} ${s.client.nom_contact}` : "—",
   }), []);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [res, meRes] = await Promise.all([
-        fetch("/api/soumissions"),
-        fetch("/api/me"),
-      ]);
-      const [json, me] = await Promise.all([res.json(), meRes.json()]);
-      if (me.role) setRole(me.role);
-      setSoumissions(json.data ?? []);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
   useEffect(() => { setPage(1); }, [filtre, q, view]);
 
   const filtered: SoumissionView[] = soumissions.filter(s => {
@@ -1176,6 +1167,13 @@ export default function SoumissionsClient() {
   const nbAccepted = soumissions.filter(o => o.statut === "Acceptée").length;
   const totalVerse = soumissions.reduce((s, o) => s + (o.versement_recu ?? 0), 0);
 
+  const updateSoumissions = useCallback((updater: (items: Soumission[]) => Soumission[]) => {
+    mutateSoumissions(
+      current => ({ data: updater(current?.data ?? []) }),
+      { revalidate: false }
+    );
+  }, [mutateSoumissions]);
+
   async function openDetail(o: SoumissionView) {
     setSelId(o.id);
     setSelDetail(o);
@@ -1194,7 +1192,7 @@ export default function SoumissionsClient() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ statut }),
     });
-    setSoumissions(prev => prev.map(s => s.id === id ? { ...s, statut } : s));
+    updateSoumissions(prev => prev.map(s => s.id === id ? { ...s, statut } : s));
     if (selDetail?.id === id) setSelDetail(prev => prev ? { ...prev, statut } : null);
     if (statut === "Acceptée") {
       const s = soumissions.find(x => x.id === id);
@@ -1215,7 +1213,7 @@ export default function SoumissionsClient() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ versement_recu: montant }),
     });
-    setSoumissions(prev => prev.map(s => s.id === versement.id ? { ...s, versement_recu: montant } : s));
+    updateSoumissions(prev => prev.map(s => s.id === versement.id ? { ...s, versement_recu: montant } : s));
     if (selDetail?.id === versement.id) setSelDetail(prev => prev ? { ...prev, versement_recu: montant } : null);
     setSavingVersement(false);
     setVersement(V0);
@@ -1228,7 +1226,7 @@ export default function SoumissionsClient() {
   async function confirmDelete() {
     setDeletingId(deleteConfirm.id);
     await fetch(`/api/soumissions/${deleteConfirm.id}`, { method: "DELETE" });
-    setSoumissions(prev => prev.filter(s => s.id !== deleteConfirm.id));
+    updateSoumissions(prev => prev.filter(s => s.id !== deleteConfirm.id));
     if (selId === deleteConfirm.id) closeDetail();
     setDeletingId(null);
     setDeleteConfirm(D0);
