@@ -187,6 +187,7 @@ function SidebarInner({
                   <Link
                     key={href}
                     href={href}
+                    onMouseEnter={() => router.prefetch(href)}
                     onClick={(event) => {
                       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                       event.preventDefault();
@@ -253,6 +254,7 @@ function SidebarInner({
                   { href: "/parametres", label: "Paramètres",  icon: "settings" as const },
                 ].map(({ href, label, icon }) => (
                   <Link key={href} href={href}
+                    onMouseEnter={() => router.prefetch(href)}
                     onClick={(event) => {
                       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                       event.preventDefault();
