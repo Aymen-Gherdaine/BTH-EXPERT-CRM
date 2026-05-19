@@ -4,11 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
+import useSWR from "swr";
 import { DashboardStats, Prospect, Soumission, UserRole, Visite } from "@/types";
 import { formatMontant } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 
 type OverdueProspect = Prospect & { _lastVisit: Visite };
+type ApiListResponse<T> = { data?: T[] };
+type MeResponse = {
+  role?: UserRole;
+  full_name?: string | null;
+};
 
 type StatCardProps = {
   icon: ReactNode;
@@ -622,36 +628,24 @@ export default function DashboardClient() {
   const bp = useBp();
   const isMobile = bp === "mobile";
 
-  const [role, setRole] = useState<UserRole>("admin");
-  const [userName, setUserName] = useState("");
-  const [userInitials, setUserInitials] = useState("U");
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recents, setRecents] = useState<Soumission[]>([]);
-  const [allSoumissions, setAllSoumissions] = useState<Soumission[]>([]);
-  const [prospects, setProspects] = useState<Prospect[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: meRes, isLoading: meLoading } = useSWR<MeResponse>("/api/me");
+  const { data: stats, isLoading: statsLoading } = useSWR<DashboardStats>("/api/dashboard");
+  const { data: soumRes, isLoading: soumissionsLoading } = useSWR<ApiListResponse<Soumission>>("/api/soumissions");
+  const { data: prospectsRes, isLoading: prospectsLoading } = useSWR<ApiListResponse<Prospect>>("/api/prospects?statut=actif");
 
-  useEffect(() => {
-    Promise.all([
-      fetch("/api/me").then(r => r.json()),
-      fetch("/api/dashboard").then(r => r.json()),
-      fetch("/api/soumissions").then(r => r.json()),
-      fetch("/api/prospects?statut=actif").then(r => r.json()),
-    ]).then(([meRes, statsRes, soumRes, prospectsRes]) => {
-      const fullName: string = meRes.full_name ?? "";
-      setRole(meRes.role ?? "admin");
-      setUserName(fullName || "Utilisateur");
-      setUserInitials(
-        fullName.split(" ").filter(Boolean).map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "U"
-      );
-      setStats(statsRes);
-      const all: Soumission[] = soumRes.data ?? [];
-      setAllSoumissions(all);
-      setRecents(all.slice(0, 5));
-      setProspects(prospectsRes.data ?? []);
-      setLoading(false);
-    }).catch(() => setLoading(false));
-  }, []);
+  const role = meRes?.role ?? "admin";
+  const userName = meRes?.full_name || "Utilisateur";
+  const userInitials = useMemo(
+    () => userName.split(" ").filter(Boolean).map((w: string) => w[0]).join("").toUpperCase().slice(0, 2) || "U",
+    [userName]
+  );
+  const allSoumissions = useMemo(() => soumRes?.data ?? [], [soumRes]);
+  const recents = useMemo(() => allSoumissions.slice(0, 5), [allSoumissions]);
+  const prospects = useMemo(() => prospectsRes?.data ?? [], [prospectsRes]);
+  const loading = (meLoading && !meRes)
+    || (statsLoading && !stats)
+    || (soumissionsLoading && !soumRes)
+    || (prospectsLoading && !prospectsRes);
 
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
   const firstOfMonth = useMemo(() => {
