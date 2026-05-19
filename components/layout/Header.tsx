@@ -10,10 +10,10 @@ import type { User } from "@supabase/supabase-js";
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
-function Ic({ d, size = 20, sw = 1.8 }: { d: string | string[]; size?: number; sw?: number }) {
+function Ic({ d, size = 20, sw = 1.8, stroke = "currentColor" }: { d: string | string[]; size?: number; sw?: number; stroke?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
-      stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+      stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
       {Array.isArray(d) ? d.map((p, i) => <path key={i} d={p} />) : <path d={d} />}
     </svg>
   );
@@ -122,7 +122,10 @@ export default function Header() {
 
         {/* Logo */}
         <div className="flex items-center gap-2 text-bth-green-800">
-          <Ic d={LEAF} size={18} sw={1.9} />
+          <span className="w-8 h-8 rounded-bth-md flex items-center justify-center flex-shrink-0 shadow-[0_8px_18px_rgba(26,46,30,.10)]"
+            style={{ background: "#edf5ef", border: "1px solid #90bb9a" }}>
+            <Ic d={LEAF} size={18} sw={2.35} stroke="#1a2e1e" />
+          </span>
           <span className="font-semibold text-[15px] tracking-[0.1em]">BTH Hub</span>
         </div>
       </div>

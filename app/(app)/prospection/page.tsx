@@ -49,7 +49,7 @@ const CSS = `
     margin: 0;
     color: #1a1714;
     font-family: var(--font-display);
-    font-size: clamp(30px, 4vw, 42px);
+    font-size: clamp(26px, 3vw, 34px);
     font-weight: 600;
     line-height: 1.05;
     letter-spacing: 0;
@@ -57,7 +57,7 @@ const CSS = `
   .prospection-subtitle {
     margin-top: 8px;
     color: #887f74;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.45;
   }
   .prospection-urgent {
@@ -79,8 +79,8 @@ const CSS = `
     align-items: center;
     justify-content: center;
     gap: 8px;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 650;
     cursor: pointer;
     white-space: nowrap;
     transition: background-color var(--bth-dur-fast) var(--bth-ease-micro), border-color var(--bth-dur-fast) var(--bth-ease-micro), transform var(--bth-dur-instant) var(--bth-ease-micro);
@@ -114,7 +114,7 @@ const CSS = `
     border: 1px solid #d0c9be;
     background: #ffffff;
     color: #1a1714;
-    font-size: 14px;
+    font-size: 13px;
     outline: none;
     transition: border-color var(--bth-dur-fast) var(--bth-ease-micro), box-shadow var(--bth-dur-fast) var(--bth-ease-micro), background-color var(--bth-dur-fast) var(--bth-ease-micro);
   }
@@ -139,7 +139,7 @@ const CSS = `
     border-radius: 9999px;
     color: #635c54;
     background: transparent;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 700;
     cursor: pointer;
     transition: background-color var(--bth-dur-fast) var(--bth-ease-micro), color var(--bth-dur-fast) var(--bth-ease-micro);
@@ -253,12 +253,12 @@ const CSS = `
     }
     .prospection-eyebrow::before { width: 22px; }
     .prospection-title {
-      font-size: 28px;
+      font-size: 24px;
       line-height: 1.04;
     }
     .prospection-subtitle {
       margin-top: 5px;
-      font-size: 13px;
+      font-size: 12.5px;
     }
     .prospection-actions {
       width: 100%;
@@ -271,7 +271,7 @@ const CSS = `
     .prospection-btn {
       height: 36px;
       padding: 0 12px;
-      font-size: 13px;
+      font-size: 12.5px;
     }
     .prospection-btn-primary {
       box-shadow: 0 8px 18px rgba(26,46,30,.16);
@@ -319,33 +319,95 @@ const CSS = `
     .history-head { display: none !important; }
     .history-card-scroll { padding: 10px; background: #faf8f5; }
     .hist-row {
-      display: grid !important;
-      grid-template-columns: 42px minmax(0, 1fr);
-      gap: 0;
+      display: block !important;
       min-height: 0 !important;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       border: 1px solid #e8e2d8;
-      border-radius: 12px;
-      background: #ffffff;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #fffdfa 100%);
       overflow: hidden;
-      box-shadow: 0 8px 22px rgba(26,46,30,.055);
+      box-shadow: 0 12px 28px rgba(26,46,30,.06);
     }
     .hist-row > div { border-right: 0 !important; border-bottom: 0 !important; }
-    .hist-icon { grid-row: span 4; align-items: flex-start !important; padding-top: 14px; background: #fbfaf7; }
-    .hist-enterprise { padding: 14px 14px 8px !important; }
+    .hist-icon { display: none !important; }
+    .hist-enterprise {
+      padding: 16px 16px 10px !important;
+      align-items: flex-start !important;
+      gap: 11px !important;
+      background: #ffffff;
+    }
     .hist-sector, .hist-contact, .hist-date, .hist-result, .hist-action {
-      grid-column: 2;
-      padding: 4px 14px !important;
+      padding: 5px 16px !important;
       min-height: 0;
     }
-    .hist-result { padding-top: 8px !important; }
-    .hist-action { padding-bottom: 14px !important; }
+    .hist-sector {
+      display: block !important;
+      padding-top: 0 !important;
+    }
+    .hist-contact {
+      display: block !important;
+    }
+    .hist-date {
+      display: grid !important;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: baseline;
+      gap: 10px;
+      padding-top: 9px !important;
+      margin: 4px 16px 0;
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      border-top: 1px solid #f0ebe3;
+    }
+    .hist-result {
+      display: flex !important;
+      align-items: center !important;
+      padding-top: 10px !important;
+    }
+    .hist-action {
+      padding-bottom: 16px !important;
+      display: block !important;
+    }
+    .plan-card { border-radius: 14px !important; padding: 15px !important; }
+    .plan-main { gap: 10px !important; }
+    .plan-top { display: block !important; }
+    .plan-status { margin-top: 10px; flex-wrap: wrap; }
+    .plan-contact { align-items: flex-start !important; line-height: 1.4; }
   }
   @media (max-width: 520px) {
-    .prospection-title { font-size: 27px; }
+    .prospection-title { font-size: 23px; }
     .prospection-actions { align-items: stretch; }
     .prospection-btn { width: 100%; }
     .prospection-tab { padding: 0 8px; font-size: 11.5px; }
+    .prospection-controls {
+      padding: 10px 12px;
+    }
+    .history-shell {
+      margin: 10px 12px 18px;
+      border-radius: 14px;
+    }
+    .history-card-scroll {
+      padding: 10px;
+    }
+    .hist-enterprise,
+    .hist-sector,
+    .hist-contact,
+    .hist-result,
+    .hist-action {
+      padding-left: 14px !important;
+      padding-right: 14px !important;
+    }
+    .hist-date {
+      margin-left: 14px;
+      margin-right: 14px;
+    }
+    .planning-scroll {
+      padding-left: 12px;
+      padding-right: 12px;
+    }
+    .planning-section {
+      padding: 12px;
+      border-radius: 14px;
+    }
   }
 `;
 
@@ -534,7 +596,7 @@ function HistRow({ visite, prospect, refCode, idx }: {
               <p style={{ fontSize: 13.5, fontWeight: 700, color: "#1a1714", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                 {prospect.entreprise}
               </p>
-              <p className="tnum" style={{ fontSize: 10.5, color: "#887f74", fontFamily: "ui-monospace,monospace", letterSpacing: "0.04em" }}>
+              <p className="tnum" style={{ fontSize: 10.5, color: "#887f74", fontFamily: "var(--font-inter)", letterSpacing: "0.04em" }}>
                 {refCode}
               </p>
             </div>
@@ -764,7 +826,7 @@ function PlanningCard({ prospect, refCode, urgency, idx }: {
             boxShadow: "0 8px 22px rgba(26,46,30,0.055)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+          <div className="plan-main" style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
             {/* Icon */}
             <div style={{
               width: 38, height: 38, borderRadius: 8, flexShrink: 0,
@@ -779,22 +841,22 @@ function PlanningCard({ prospect, refCode, urgency, idx }: {
             {/* Body */}
             <div style={{ flex: 1, minWidth: 0 }}>
               {/* Row 1 */}
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+              <div className="plan-top" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 6, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 15, fontWeight: 700, color: "#1a1714" }}>{prospect.entreprise}</span>
-                    <span className="tnum" style={{ fontSize: 10.5, color: "#887f74", fontFamily: "ui-monospace,monospace" }}>{refCode}</span>
+                    <span className="tnum" style={{ fontSize: 10.5, color: "#887f74", fontFamily: "var(--font-inter)" }}>{refCode}</span>
                   </div>
                   <p style={{ fontSize: 12.5, color: "#635c54", marginTop: 3 }}>{prospect.secteur_activite}</p>
                 </div>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                <div className="plan-status" style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                   <ResultatBadge resultat={r} sm />
                   {timeEl}
                 </div>
               </div>
 
               {/* Contact line */}
-              <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8 }}>
+              <div className="plan-contact" style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 8 }}>
                 <svg width={11} height={11} fill="none" stroke="#887f74" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                   <path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-const FONT = `system-ui, -apple-system, "Segoe UI", sans-serif`;
+const FONT = `var(--font-inter)`;
 const CSS  = `*, *::before, *::after { box-sizing: border-box; } button { cursor: pointer; -webkit-tap-highlight-color: transparent; }`;
 
 /* ── Breakpoint ─────────────────────────────────────────── */
@@ -134,11 +134,11 @@ function LeftPanel() {
         transition={{ duration: .5 }}
         style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <div style={{ width: 40, height: 40, borderRadius: 11,
-          background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.15)",
+          background: "#edf5ef", border: "1px solid #90bb9a",
           display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Ic d={I.leaf} z={20} s="white" w={2} />
+          <Ic d={I.leaf} z={21} s="#1a2e1e" w={2.35} />
         </div>
-        <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: 17,
+        <span style={{ fontFamily: FONT, fontWeight: 650, fontSize: 16,
           color: "white", letterSpacing: "-0.4px" }}>BTH Hub</span>
       </motion.div>
 
@@ -147,7 +147,7 @@ function LeftPanel() {
         <p style={{ fontFamily: FONT, fontSize: 12, fontWeight: 600,
           color: "rgba(255,255,255,.4)", textTransform: "uppercase",
           letterSpacing: "2px", marginBottom: 20 }}>BTH EXPERT · ALGÉRIE</p>
-        <h2 style={{ fontFamily: FONT, fontWeight: 800, fontSize: 36,
+        <h2 style={{ fontFamily: FONT, fontWeight: 700, fontSize: 30,
           color: "white", letterSpacing: "-1px", lineHeight: 1.15, marginBottom: 20 }}>
           Gérez vos projets<br />environnementaux<br />en toute simplicité.
         </h2>
@@ -165,7 +165,7 @@ function LeftPanel() {
             paddingRight: i < stats.length - 1 ? 24 : 0,
             paddingLeft: i > 0 ? 24 : 0,
             borderRight: i < stats.length - 1 ? "1px solid rgba(255,255,255,.1)" : "none" }}>
-            <p style={{ fontFamily: FONT, fontWeight: 700, fontSize: 22,
+            <p style={{ fontFamily: FONT, fontWeight: 700, fontSize: 18,
               color: "white", letterSpacing: "-0.5px", marginBottom: 4 }}>{n}</p>
             <p style={{ fontFamily: FONT, fontSize: 11.5,
               color: "rgba(255,255,255,.4)", lineHeight: 1.4 }}>{l}</p>
@@ -214,7 +214,7 @@ function FormContent({
           </button>
 
           <div style={{ marginBottom: 28 }}>
-            <h1 style={{ fontFamily: FONT, fontWeight: 800, fontSize: btnFontSize === 16 ? 24 : 28,
+            <h1 style={{ fontFamily: FONT, fontWeight: 700, fontSize: btnFontSize === 16 ? 22 : 25,
               color: "#111827", letterSpacing: "-0.7px", lineHeight: 1.1, marginBottom: 8 }}>
               Mot de passe oublié
             </h1>
@@ -271,8 +271,8 @@ function FormContent({
           transition={{ duration: .22 }}>
 
           <div style={{ marginBottom: 36 }}>
-            <h1 style={{ fontFamily: FONT, fontWeight: 800,
-              fontSize: btnFontSize === 16 ? 26 : 30,
+            <h1 style={{ fontFamily: FONT, fontWeight: 700,
+              fontSize: btnFontSize === 16 ? 23 : 26,
               color: "#111827", letterSpacing: "-0.8px", lineHeight: 1.1, marginBottom: 10 }}>
               Connexion
             </h1>
@@ -397,14 +397,14 @@ export default function LoginForm() {
               transition={{ duration: .5 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 11,
-                  background: "rgba(255,255,255,.15)", border: "1px solid rgba(255,255,255,.2)",
+                  background: "#edf5ef", border: "1px solid #90bb9a",
                   display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <Ic d={I.leaf} z={20} s="white" w={2} />
+                  <Ic d={I.leaf} z={21} s="#1a2e1e" w={2.35} />
                 </div>
-                <span style={{ fontFamily: FONT, fontWeight: 700, fontSize: 18,
+                <span style={{ fontFamily: FONT, fontWeight: 650, fontSize: 17,
                   color: "white", letterSpacing: "-0.4px" }}>BTH Hub</span>
               </div>
-              <h1 style={{ fontFamily: FONT, fontWeight: 800, fontSize: 26,
+              <h1 style={{ fontFamily: FONT, fontWeight: 700, fontSize: 23,
                 color: "white", letterSpacing: "-0.6px", lineHeight: 1.2, marginBottom: 8 }}>
                 Bienvenue.
               </h1>
