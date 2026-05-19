@@ -143,7 +143,7 @@ Dernière mise à jour : 16 mai 2026 (session 9)
   - Fermeture au clic extérieur (ref + `mousedown`)
 
 #### Dashboard — Refonte visuelle complète
-- **Police** : Segoe UI system-ui partout (suppression Google Fonts — Syne, Figtree, DM Sans)
+- **Police** : Inter partout via `next/font/google` (ancienne pile typographique supprimée)
 - **Hero** : banner vert foncé `#1a2e1e` sur tous les viewports (avatar initiales + rôle + nom + greeting). Sans boutons d'action.
 - **Stat cards** : `fontSize: 18, fontWeight: 600` (vs 22/800 avant) — icône 28×28, label 11px uppercase, `boxShadow: "0 1px 3px rgba(0,0,0,.04)"`
 - **Background** : `#f4f5f7` (gris neutre pro vs beige `#f2f1ec`)

@@ -48,14 +48,14 @@ const CSS = `
     margin: 0;
     color: #1a1714;
     font-family: var(--font-display);
-    font-size: 38px;
+    font-size: 30px;
     font-weight: 600;
     line-height: 1.02;
   }
   .clients-subtitle {
     margin-top: 7px;
     color: #887f74;
-    font-size: 14px;
+    font-size: 13px;
   }
   .clients-export {
     height: 40px;
@@ -89,20 +89,20 @@ const CSS = `
   }
   .clients-stat-label {
     color: #887f74;
-    font-size: 11px;
-    font-weight: 800;
+    font-size: 10.5px;
+    font-weight: 650;
   }
   .clients-stat-value {
     margin-top: 8px;
     color: #1a2e1e;
-    font-size: 22px;
-    font-weight: 900;
+    font-size: 17px;
+    font-weight: 750;
     line-height: 1;
   }
   .clients-stat-note {
     margin-top: 5px;
     color: #887f74;
-    font-size: 12px;
+    font-size: 11.5px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -144,7 +144,7 @@ const CSS = `
     border: 1px solid #d0c9be;
     background: #ffffff;
     color: #1a1714;
-    font-size: 14px;
+    font-size: 13px;
     outline: none;
     box-shadow: 0 10px 28px rgba(26,46,30,.04);
   }
@@ -156,6 +156,12 @@ const CSS = `
     flex: 1;
     overflow-y: auto;
     padding: 18px clamp(16px, 3vw, 40px) 0;
+  }
+  .clients-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-bottom: 16px;
   }
   .clients-empty {
     min-height: 360px;
@@ -213,30 +219,142 @@ const CSS = `
     justify-content: center;
   }
   @media (max-width: 767px) {
+    .clients-shell {
+      min-height: 100%;
+    }
     .clients-header {
       padding: 18px 14px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 9;
+      box-shadow: 0 10px 28px rgba(26,46,30,.05);
     }
     .clients-header-top {
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 12px;
     }
     .clients-title {
-      font-size: 30px;
+      font-size: 25px;
+    }
+    .clients-subtitle {
+      max-width: 24rem;
+      font-size: 13px;
+      line-height: 1.45;
     }
     .clients-export {
       width: auto;
       justify-content: center;
       padding: 0 13px;
+      height: 38px;
     }
     .clients-summary {
-      grid-template-columns: repeat(3, minmax(112px, 1fr));
-      overflow-x: auto;
-      padding-bottom: 2px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      overflow: visible;
+      padding-bottom: 4px;
     }
-    .clients-stat { min-height: 68px; }
+    .clients-stat {
+      min-height: 88px;
+      border-radius: 12px;
+      padding: 13px 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-width: 0;
+    }
+    .clients-stat:last-child { grid-column: 1 / -1; }
+    .clients-stat-label {
+      font-size: 11px;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+    .clients-stat-value {
+      margin-top: 9px;
+      font-size: 17px;
+      line-height: 1.05;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .clients-stat-note {
+      margin-top: 7px;
+      font-size: 12px;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
     .clients-content {
       padding: 14px 14px 0;
     }
+    .clients-list {
+      gap: 12px;
+      padding-bottom: 12px;
+    }
+    .clients-client-card {
+      border-radius: 18px !important;
+      box-shadow: 0 14px 34px rgba(26,46,30,.07) !important;
+    }
+    .clients-card-main {
+      display: grid !important;
+      grid-template-columns: 48px minmax(0, 1fr) 36px;
+      align-items: center !important;
+      gap: 10px !important;
+      min-height: 90px;
+      padding: 16px 12px 16px 16px !important;
+    }
+    .clients-card-actions {
+      align-self: stretch;
+      justify-content: center;
+      gap: 0 !important;
+    }
+    .clients-card-delete { display: none !important; }
+    .clients-client-card.clients-expanded .clients-card-actions {
+      justify-content: space-between;
+      gap: 6px !important;
+    }
+    .clients-client-card.clients-expanded .clients-card-delete { display: flex !important; }
+    .clients-card-contact {
+      margin-top: 4px !important;
+      font-size: 12.5px !important;
+      line-height: 1.35 !important;
+      color: #6f675e !important;
+      white-space: normal !important;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .clients-card-name {
+      font-size: 14px !important;
+      line-height: 1.2 !important;
+      letter-spacing: 0 !important;
+    }
+    .clients-card-avatar {
+      padding: 3px !important;
+    }
+    .clients-card-chips {
+      margin-top: 9px !important;
+      gap: 6px !important;
+    }
+    .clients-card-chip {
+      min-height: 21px;
+      padding: 3px 8px !important;
+      font-size: 10.5px !important;
+      max-width: 100%;
+    }
+    .clients-address-chip {
+      max-width: 100%;
+      white-space: normal !important;
+      line-height: 1.35;
+    }
+    .clients-pagination {
+      grid-template-columns: 1fr auto;
+      padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+      position: sticky;
+      bottom: 0;
+      z-index: 8;
+      box-shadow: 0 -10px 28px rgba(26,46,30,.06);
+    }
+    .clients-pagination-spacer { display: none; }
+    .clients-modal-actions { flex-direction: column-reverse; }
   }
 `;
 
@@ -276,7 +394,7 @@ function SoumTableRow({ s }: { s: Soumission }) {
         {/* N° Offre */}
         <div style={{ display: "flex", alignItems: "center", padding: "0 14px", borderRight: SOUM_D }}>
           <span style={{ fontSize: 11, fontWeight: 600, color: "#374151",
-            fontFamily: "ui-monospace, monospace", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
+            fontFamily: "var(--font-inter)", letterSpacing: "0.02em", whiteSpace: "nowrap" }}>
             {s.numero_offre}
           </span>
         </div>
@@ -392,7 +510,7 @@ function SoumMobileList({ soumissions }: { soumissions: Soumission[] }) {
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
               <span style={{ fontSize: 10.5, fontWeight: 600, color: "#374151",
-                fontFamily: "ui-monospace, monospace", letterSpacing: "0.02em" }}>
+                fontFamily: "var(--font-inter)", letterSpacing: "0.02em" }}>
                 {s.numero_offre}
               </span>
               <StatusBadge st={s.statut} />
@@ -656,7 +774,7 @@ export default function ClientsPage() {
               <div className="clients-empty-icon">
                 <Ic d={I.user} z={28} s="white" />
               </div>
-              <p style={{ fontSize: 20, fontWeight: 800, color: "#1a1714", marginBottom: 8 }}>
+              <p style={{ fontSize: 17, fontWeight: 700, color: "#1a1714", marginBottom: 8 }}>
                 Aucun client
               </p>
               <p style={{ fontSize: 14, color: "#887f74", lineHeight: 1.6, maxWidth: 340 }}>
@@ -675,9 +793,9 @@ export default function ClientsPage() {
               onDelete={askDelete}
             />
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingBottom: 16 }}>
+            <div className="clients-list">
               <AnimatePresence>
-                {clients.map((client, idx) => (
+                {paginated.map((client, idx) => (
                   <ClientCard
                     key={client.id} client={client} idx={idx}
                     isExpanded={expandedId === client.id}
@@ -692,11 +810,11 @@ export default function ClientsPage() {
           )}
         </div>
 
-        {/* ── Pagination (desktop only) ────────────────────── */}
-        {!loading && clients.length > 0 && bp === "desktop" && (
+        {/* ── Pagination ────────────────────── */}
+        {!loading && clients.length > 0 && (
           <div className="clients-pagination">
             <span style={{ fontSize: 12, color: "#887f74" }}>
-              <strong style={{ color: "#1a1714", fontWeight: 800 }}>{clients.length}</strong>
+              <strong style={{ color: "#1a1714", fontWeight: 700 }}>{clients.length}</strong>
               {" "}client{clients.length !== 1 ? "s" : ""}
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -707,7 +825,7 @@ export default function ClientsPage() {
               >
                 <Ic d={I.chevL} z={14} />
               </motion.button>
-              <span style={{ fontSize: 12, color: "#1a1714", fontWeight: 800, minWidth: 76, textAlign: "center", userSelect: "none" }}>
+              <span style={{ fontSize: 11.5, color: "#1a1714", fontWeight: 700, minWidth: 76, textAlign: "center", userSelect: "none" }}>
                 Page {page} / {totalPages}
               </span>
               <motion.button whileTap={{ scale: 0.94 }}
@@ -718,7 +836,7 @@ export default function ClientsPage() {
                 <Ic d={I.chevR} z={14} />
               </motion.button>
             </div>
-            <div />
+            <div className="clients-pagination-spacer" />
           </div>
         )}
 
@@ -754,7 +872,7 @@ export default function ClientsPage() {
                     </div>
                     <p style={{ fontSize: 13, color: "#6b7280" }}>Cette action est irréversible.</p>
                   </div>
-                  <div style={{ padding: "0 24px 24px", display: "flex", gap: 10 }}>
+                  <div className="clients-modal-actions" style={{ padding: "0 24px 24px", display: "flex", gap: 10 }}>
                     <button onClick={() => setDeleteConfirm(D0)} style={{ flex: 1, padding: "11px 0", borderRadius: 9999, border: "1.5px solid #d0c9be", background: "white", fontSize: 13, fontWeight: 700, color: "#635c54", cursor: "pointer" }}>
                       Annuler
                     </button>
@@ -790,6 +908,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: idx * 0.04, duration: 0.22, ease: "easeOut" }}
+      className={`clients-client-card ${isExpanded ? "clients-expanded" : ""}`}
       style={{
         background: "white", borderRadius: 16, overflow: "hidden",
         position: "relative",
@@ -812,6 +931,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
 
       {/* ── Main row ────────────────────────────────────── */}
       <div
+        className="clients-card-main"
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
         onClick={onToggle}
@@ -824,7 +944,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
         }}
       >
         {/* Avatar with ring on expand */}
-        <div style={{
+        <div className="clients-card-avatar" style={{
           flexShrink: 0,
           padding: 2,
           borderRadius: "50%",
@@ -836,7 +956,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
 
         {/* Info */}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{
+          <p className="clients-card-name" style={{
             fontSize: 14.5, fontWeight: 700,
             color: isExpanded ? "#1a2e1e" : "#1a1714",
             letterSpacing: "-0.35px", lineHeight: 1.25,
@@ -845,7 +965,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
           }}>
             {client.entreprise}
           </p>
-          <p style={{
+          <p className="clients-card-contact" style={{
             fontSize: 12, color: "#6b7280", marginTop: 2,
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           }}>
@@ -853,9 +973,9 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
             {client.poste && <span style={{ color: "#9ca3af" }}> · {client.poste}</span>}
           </p>
           {/* Meta chips */}
-          <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
+          <div className="clients-card-chips" style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
             {client.ville && (
-              <span style={{
+              <span className="clients-card-chip" style={{
                 display: "inline-flex", alignItems: "center", gap: 3,
                 fontSize: 10.5, color: "#6b7280", fontWeight: 500,
                 background: "#f5f0e8", borderRadius: 9999, padding: "2px 8px",
@@ -864,7 +984,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
                 {client.ville}
               </span>
             )}
-            <span style={{
+            <span className="clients-card-chip" style={{
               display: "inline-flex", alignItems: "center", gap: 3,
               fontSize: 10.5, color: "#9ca3af",
               background: "#fbfaf7", border: "1px solid #e8e2d8",
@@ -877,8 +997,9 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
         </div>
 
         {/* Actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+        <div className="clients-card-actions" style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
           <button
+            className="clients-card-delete"
             title="Supprimer le client"
             onClick={e => onDelete(client, e)}
             style={{
@@ -923,8 +1044,9 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, onTog
               {/* Address chip */}
               {client.adresse && (
                 <div style={{ marginBottom: 12 }}>
-                  <span style={{
+                  <span className="clients-address-chip" style={{
                     display: "inline-flex", alignItems: "center", gap: 5,
+                    maxWidth: "100%",
                     fontSize: 11.5, color: "#374151",
                     background: "#f3f4f6", border: "1px solid #e5e7eb",
                     borderRadius: 6, padding: "3px 9px",
@@ -989,7 +1111,7 @@ function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, onTogg
         <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 16px", borderRight: CT_D, minWidth: 0 }}>
           <Avatar name={client.entreprise} size={36} />
           <span style={{
-            fontSize: 13.5, fontWeight: 800, color: isExpanded ? "#1a2e1e" : "#1a1714",
+            fontSize: 13, fontWeight: 700, color: isExpanded ? "#1a2e1e" : "#1a1714",
             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             transition: "color 0.15s",
           }}>

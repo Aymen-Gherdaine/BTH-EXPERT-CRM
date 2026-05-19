@@ -82,7 +82,7 @@ const CSS = `
   .finance-title {
     margin: 0;
     font-family: var(--font-display);
-    font-size: 42px;
+    font-size: 28px;
     font-weight: 600;
     line-height: 1.02;
     color: #1a1714;
@@ -90,7 +90,7 @@ const CSS = `
   .finance-subtitle {
     margin-top: 8px;
     color: #887f74;
-    font-size: 15px;
+    font-size: 13px;
   }
   .finance-period {
     display: inline-grid;
@@ -180,7 +180,7 @@ const CSS = `
   .metric-value {
     margin-top: 12px;
     color: #1a1714;
-    font-size: 30px;
+    font-size: 22px;
     font-weight: 800;
     line-height: 1;
   }
@@ -195,12 +195,12 @@ const CSS = `
   }
   .balance-value {
     margin-top: 14px;
-    font-size: 48px;
+    font-size: 28px;
     line-height: .95;
-    font-weight: 800;
+    font-weight: 750;
   }
   .balance-value small {
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 800;
   }
   .finance-chart {
@@ -277,7 +277,7 @@ const CSS = `
   .section-title {
     margin: 0;
     font-family: var(--font-display);
-    font-size: 27px;
+    font-size: 22px;
     line-height: 1.05;
     font-weight: 600;
     color: #1a1714;
@@ -339,7 +339,7 @@ const CSS = `
     padding: 0 10px;
     border-radius: 9999px;
     font-size: 12px;
-    font-weight: 900;
+    font-weight: 700;
     white-space: nowrap;
   }
   .finance-rows {
@@ -390,7 +390,7 @@ const CSS = `
   }
   .employee-total {
     font-size: 15px;
-    font-weight: 900;
+    font-weight: 750;
     color: #1a2e1e;
     white-space: nowrap;
   }
@@ -454,7 +454,7 @@ const CSS = `
   .expense-amount {
     color: #1a1714;
     font-size: 13px;
-    font-weight: 900;
+    font-weight: 700;
     white-space: nowrap;
   }
   .empty-card,
@@ -493,26 +493,27 @@ const CSS = `
     }
     .finance-period {
       width: 100%;
-      overflow-x: auto;
       justify-self: stretch;
+      overflow: hidden;
     }
     .finance-period button {
-      min-width: 96px;
+      min-width: 0;
+      padding: 0 10px;
     }
     .metric-stack {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .finance-title {
-      font-size: 36px;
-    }
-    .balance-value {
-      font-size: 42px;
-    }
-    .metric-value {
       font-size: 28px;
     }
+    .balance-value {
+      font-size: 28px;
+    }
+    .metric-value {
+      font-size: 22px;
+    }
     .section-title {
-      font-size: 25px;
+      font-size: 20px;
     }
   }
   @media (max-width: 560px) {
@@ -520,22 +521,32 @@ const CSS = `
       padding: 18px 14px 96px;
     }
     .finance-title {
-      font-size: 30px;
+      font-size: 24px;
     }
     .finance-subtitle {
       font-size: 14px;
+    }
+    .finance-period {
+      gap: 3px;
+      padding: 3px;
+    }
+    .finance-period button {
+      height: 36px;
+      padding: 0 6px;
+      font-size: 11.5px;
+      letter-spacing: 0;
     }
     .metric-stack {
       grid-template-columns: 1fr;
     }
     .balance-value {
-      font-size: 34px;
+      font-size: 28px;
     }
     .metric-value {
-      font-size: 26px;
+      font-size: 21px;
     }
     .section-title {
-      font-size: 24px;
+      font-size: 19px;
     }
     .finance-chart-row {
       grid-template-columns: 1fr;
