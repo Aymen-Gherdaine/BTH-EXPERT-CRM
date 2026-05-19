@@ -43,6 +43,307 @@ const DEFAULTS: Parametres = {
   signature_autorise_url: "",
 };
 
+const CSS = `
+  .settings-shell {
+    min-height: 100%;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfaf7 42%, #f7f2ea 100%);
+    color: #1a1714;
+  }
+  .settings-inner {
+    width: min(1120px, 100%);
+    margin: 0 auto;
+    padding: 28px clamp(16px, 3vw, 40px) 40px;
+  }
+  .settings-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: end;
+    margin-bottom: 18px;
+  }
+  .settings-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #a8874e;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 8px;
+  }
+  .settings-kicker::before {
+    content: "";
+    width: 28px;
+    height: 1px;
+    background: #c9a96e;
+  }
+  .settings-title {
+    margin: 0;
+    font-family: var(--font-display);
+    color: #101c12;
+    font-size: 32px;
+    line-height: 1.05;
+    font-weight: 650;
+    letter-spacing: 0;
+  }
+  .settings-subtitle {
+    margin-top: 8px;
+    color: #756d63;
+    font-size: 14px;
+    line-height: 1.55;
+    max-width: 620px;
+  }
+  .settings-badge {
+    display: inline-flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 13px;
+    border-radius: 9999px;
+    border: 1px solid #e8e2d8;
+    background: #fffdfa;
+    color: #635c54;
+    font-size: 12px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .settings-form {
+    display: grid;
+    gap: 14px;
+  }
+  .settings-card {
+    border: 1px solid #e8e2d8;
+    background: rgba(255,255,255,.92);
+    border-radius: 16px;
+    box-shadow: 0 18px 44px rgba(26,46,30,.055);
+    overflow: hidden;
+  }
+  .settings-card-head {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid #f0ebe3;
+    background: linear-gradient(180deg, #fffdfa 0%, #ffffff 100%);
+  }
+  .settings-card-title {
+    margin: 0;
+    color: #1a2e1e;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+  .settings-card-body {
+    padding: 18px;
+    display: grid;
+    gap: 16px;
+  }
+  .settings-grid-2,
+  .settings-grid-3 {
+    display: grid;
+    gap: 14px;
+  }
+  .settings-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .settings-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .settings-span-2 { grid-column: 1 / -1; }
+  .settings-field {
+    display: grid;
+    gap: 7px;
+    min-width: 0;
+  }
+  .settings-label {
+    color: #635c54;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .settings-hint {
+    color: #958b7e;
+    font-size: 11.5px;
+    line-height: 1.35;
+  }
+  .settings-input,
+  .settings-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid #d0c9be;
+    border-radius: 12px;
+    background: #ffffff;
+    color: #1a1714;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .14s, box-shadow .14s, background .14s;
+  }
+  .settings-input {
+    min-height: 44px;
+    padding: 0 13px;
+  }
+  .settings-textarea {
+    min-height: 92px;
+    padding: 12px 13px;
+    resize: vertical;
+  }
+  .settings-input:focus,
+  .settings-textarea:focus {
+    border-color: #1a2e1e;
+    box-shadow: 0 0 0 4px rgba(26,46,30,.10);
+  }
+  .settings-input[readonly] {
+    background: #f6f4f0;
+    color: #958b7e;
+    cursor: not-allowed;
+  }
+  .settings-mini-title {
+    color: #a8874e;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+  }
+  .settings-divider {
+    border-top: 1px solid #f0ebe3;
+    padding-top: 16px;
+  }
+  .settings-signature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+  .settings-signature-box {
+    display: grid;
+    gap: 9px;
+    min-width: 0;
+  }
+  .settings-signature-preview {
+    height: 118px;
+    border: 1px dashed #d0c9be;
+    border-radius: 14px;
+    background: #fbfaf7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .settings-upload-label {
+    width: fit-content;
+    cursor: pointer;
+  }
+  .settings-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 0 12px;
+    border-radius: 9999px;
+    border: 1px solid #d0c9be;
+    background: #ffffff;
+    color: #635c54;
+    font-size: 12px;
+    font-weight: 800;
+  }
+  .settings-feedback {
+    border-radius: 12px;
+    padding: 11px 13px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .settings-feedback.success {
+    background: #edf7ef;
+    color: #2d5a3d;
+    border: 1px solid #cfe7d4;
+  }
+  .settings-feedback.error {
+    background: #fff1f2;
+    color: #be123c;
+    border: 1px solid #fecdd3;
+  }
+  .settings-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 14px 0 0;
+    background: linear-gradient(180deg, rgba(247,242,234,0) 0%, #f7f2ea 36%);
+  }
+  .settings-save {
+    min-height: 44px;
+    border: 0;
+    border-radius: 9999px;
+    padding: 0 18px;
+    background: #1a2e1e;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 850;
+    box-shadow: 0 16px 34px rgba(26,46,30,.20);
+    cursor: pointer;
+  }
+  .settings-save:disabled {
+    opacity: .58;
+    cursor: default;
+  }
+  @media (max-width: 767px) {
+    .settings-inner {
+      padding: 18px 14px calc(92px + env(safe-area-inset-bottom));
+    }
+    .settings-hero {
+      grid-template-columns: 1fr;
+      align-items: start;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .settings-title {
+      font-size: 27px;
+    }
+    .settings-subtitle {
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    .settings-badge {
+      width: fit-content;
+      min-height: 32px;
+      font-size: 11.5px;
+    }
+    .settings-card {
+      border-radius: 14px;
+      box-shadow: 0 12px 30px rgba(26,46,30,.05);
+    }
+    .settings-card-head {
+      padding: 14px 14px 11px;
+    }
+    .settings-card-body {
+      padding: 14px;
+      gap: 14px;
+    }
+    .settings-grid-2,
+    .settings-grid-3,
+    .settings-signature-grid {
+      grid-template-columns: 1fr;
+    }
+    .settings-input {
+      min-height: 46px;
+      font-size: 16px;
+    }
+    .settings-textarea {
+      font-size: 15px;
+    }
+    .settings-signature-preview {
+      height: 104px;
+    }
+    .settings-actions {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+      border-top: 1px solid #e8e2d8;
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(8px);
+    }
+    .settings-save {
+      width: 100%;
+    }
+  }
+`;
+
 // ── Composants UI ────────────────────────────────────────────
 
 function Field({
@@ -55,10 +356,10 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <div className="space-y-1.5">
-      <label className="text-sm font-medium text-gray-700">{label}</label>
+    <div className="settings-field">
+      <label className="settings-label">{label}</label>
       {children}
-      {hint && <p className="text-xs text-gray-400">{hint}</p>}
+      {hint && <p className="settings-hint">{hint}</p>}
     </div>
   );
 }
@@ -83,9 +384,7 @@ function Input({
       onChange={(e) => onChange?.(e.target.value)}
       placeholder={placeholder}
       readOnly={readOnly}
-      className={`w-full border rounded-lg px-3 py-2.5 text-sm transition focus:outline-none focus:ring-2 focus:ring-[#1a2e1e] focus:border-transparent ${
-        readOnly ? "bg-gray-50 border-gray-100 text-gray-400 cursor-not-allowed" : "border-gray-200"
-      }`}
+      className="settings-input"
     />
   );
 }
@@ -98,20 +397,18 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
-      <h2 className="text-base font-semibold text-gray-800">{title}</h2>
-      {children}
-    </div>
+    <section className="settings-card">
+      <div className="settings-card-head">
+        <h2 className="settings-card-title">{title}</h2>
+      </div>
+      <div className="settings-card-body">{children}</div>
+    </section>
   );
 }
 
 function Feedback({ type, message }: { type: "success" | "error"; message: string }) {
   return (
-    <p
-      className={`text-sm px-3 py-2 rounded-lg ${
-        type === "success" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-600"
-      }`}
-    >
+    <p className={`settings-feedback ${type}`}>
       {message}
     </p>
   );
@@ -202,31 +499,45 @@ export default function ParametresPage() {
 
   if (loading) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-2 border-[#1a2e1e] border-t-transparent rounded-full animate-spin" />
+      <div className="settings-shell">
+        <style>{CSS}</style>
+        <div className="settings-inner">
+          <div className="settings-card">
+            <div className="settings-card-body" style={{ minHeight: 260, alignItems: "center", justifyItems: "center" }}>
+              <div className="w-8 h-8 border-2 border-[#1a2e1e] border-t-transparent rounded-full animate-spin" />
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSave} className="p-8 max-w-2xl mx-auto space-y-6">
+    <div className="settings-shell">
+      <style>{CSS}</style>
+      <form onSubmit={handleSave} className="settings-inner">
       {/* Titre */}
-      <div>
-        <h1 className="text-xl font-semibold text-gray-900">Paramètres</h1>
-        <p className="text-sm text-gray-500 mt-0.5">
-          Ces valeurs sont utilisées par défaut dans toutes les soumissions générées.
-        </p>
+      <div className="settings-hero">
+        <div>
+          <div className="settings-kicker">Configuration</div>
+          <h1 className="settings-title">Paramètres</h1>
+          <p className="settings-subtitle">
+            Valeurs par défaut utilisées dans les documents, les offres et les exports générés par BTH Hub.
+          </p>
+        </div>
+        <span className="settings-badge">BTH Expert</span>
       </div>
 
+      <div className="settings-form">
       {/* ── Section 1 : Informations société ── */}
       <SectionCard title="Informations de la société">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
+        <div className="settings-grid-2">
+          <div className="settings-span-2">
             <Field label="Nom de la société">
               <Input value={form.nom_societe} onChange={(v) => set("nom_societe", v)} />
             </Field>
           </div>
-          <div className="col-span-2">
+          <div className="settings-span-2">
             <Field label="Adresse">
               <Input value={form.adresse} onChange={(v) => set("adresse", v)} placeholder="Rue, numéro, BP…" />
             </Field>
@@ -248,9 +559,9 @@ export default function ParametresPage() {
 
       {/* ── Section 2 : Signataires ── */}
       <SectionCard title="Signataires par défaut des soumissions">
-        <div className="space-y-4">
-          <p className="text-xs text-gray-400 uppercase font-medium tracking-wide">Responsable de l'offre</p>
-          <div className="grid grid-cols-2 gap-4">
+        <div className="settings-field">
+          <p className="settings-mini-title">Responsable de l'offre</p>
+          <div className="settings-grid-2">
             <Field label="Nom complet">
               <Input value={form.signataire1_nom} onChange={(v) => set("signataire1_nom", v)} />
             </Field>
@@ -260,9 +571,9 @@ export default function ParametresPage() {
           </div>
         </div>
 
-        <div className="border-t border-gray-100 pt-4 space-y-4">
-          <p className="text-xs text-gray-400 uppercase font-medium tracking-wide">Autorisé par</p>
-          <div className="grid grid-cols-2 gap-4">
+        <div className="settings-field settings-divider">
+          <p className="settings-mini-title">Autorisé par</p>
+          <div className="settings-grid-2">
             <Field label="Nom complet">
               <Input value={form.signataire2_nom} onChange={(v) => set("signataire2_nom", v)} />
             </Field>
@@ -275,7 +586,7 @@ export default function ParametresPage() {
 
       {/* ── Section 3 : Valeurs par défaut ── */}
       <SectionCard title="Valeurs par défaut des soumissions">
-        <div className="grid grid-cols-3 gap-4">
+        <div className="settings-grid-3">
           <Field label="TVA (%)" hint="Appliquée au total HT">
             <Input
               type="number"
@@ -302,18 +613,18 @@ export default function ParametresPage() {
           <textarea
             value={form.modalites_paiement}
             onChange={(e) => set("modalites_paiement", e.target.value)}
-            rows={2}
-            className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1a2e1e] focus:border-transparent transition resize-none"
+            rows={3}
+            className="settings-textarea"
           />
         </Field>
       </SectionCard>
 
       {/* ── Section 4 : Signatures ── */}
       <SectionCard title="Signatures numérisées">
-        <p className="text-xs text-gray-400">
+        <p className="settings-hint">
           Ces images seront intégrées automatiquement dans les PDF et DOCX générés. Format PNG ou JPG recommandé, fond transparent ou blanc, 1 Mo max.
         </p>
-        <div className="grid grid-cols-2 gap-6 mt-2">
+        <div className="settings-signature-grid">
           {(
             [
               {
@@ -330,17 +641,17 @@ export default function ParametresPage() {
               },
             ] as const
           ).map(({ label, field, filename, which }) => (
-            <div key={field} className="space-y-2">
-              <p className="text-sm font-medium text-gray-700">{label}</p>
-              <div className="border border-dashed border-gray-200 rounded-lg h-24 flex items-center justify-center overflow-hidden bg-gray-50">
+            <div key={field} className="settings-signature-box">
+              <p className="settings-label">{label}</p>
+              <div className="settings-signature-preview">
                 {form[field] ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={form[field]} alt={label} className="max-h-full max-w-full object-contain p-2" />
                 ) : (
-                  <span className="text-xs text-gray-400">Aucune signature</span>
+                  <span className="settings-hint">Aucune signature</span>
                 )}
               </div>
-              <label className="flex items-center gap-2 cursor-pointer w-fit">
+              <label className="settings-upload-label">
                 <input
                   type="file"
                   accept="image/png,image/jpeg,image/webp"
@@ -352,7 +663,7 @@ export default function ParametresPage() {
                     e.target.value = "";
                   }}
                 />
-                <span className="px-3 py-1.5 text-xs font-medium border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-600 disabled:opacity-50">
+                <span className="settings-upload-btn">
                   {uploadingSignature === which ? "Envoi…" : form[field] ? "Remplacer" : "Choisir une image"}
                 </span>
               </label>
@@ -364,14 +675,13 @@ export default function ParametresPage() {
       {/* ── Feedback + Bouton ── */}
       {feedback && <Feedback {...feedback} />}
 
-      <button
-        type="submit"
-        disabled={saving}
-        className="px-6 py-2.5 rounded-lg text-sm font-medium text-white transition-colors disabled:opacity-50"
-        style={{ backgroundColor: "#1a2e1e" }}
-      >
-        {saving ? "Sauvegarde…" : "Sauvegarder les paramètres"}
-      </button>
-    </form>
+      <div className="settings-actions">
+        <button type="submit" disabled={saving} className="settings-save">
+          {saving ? "Sauvegarde…" : "Sauvegarder les paramètres"}
+        </button>
+      </div>
+      </div>
+      </form>
+    </div>
   );
 }

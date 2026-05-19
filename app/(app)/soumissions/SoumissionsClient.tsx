@@ -120,7 +120,18 @@ const CSS = `
     .submission-card-total-row { justify-content: flex-end !important; white-space: nowrap; }
     .submission-card-total-value { font-size: 15.5px !important; }
     .submission-card-currency { font-size: 9.5px !important; }
-    .submission-pager { padding: 10px 14px calc(12px + env(safe-area-inset-bottom)) !important; }
+    .submission-page-shell.has-mobile-pagination {
+      padding-bottom: calc(62px + env(safe-area-inset-bottom));
+    }
+    .submission-pager {
+      padding: 10px 14px calc(12px + env(safe-area-inset-bottom)) !important;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: calc(56px + env(safe-area-inset-bottom));
+      z-index: 19;
+      box-shadow: 0 -10px 28px rgba(26,46,30,.06);
+    }
     .submission-detail-body { padding: 18px 16px calc(28px + env(safe-area-inset-bottom)) !important; }
     .submission-status-actions { flex-direction: column; }
     .submission-budget-row { display: grid !important; grid-template-columns: 18px minmax(0, 1fr); gap: 8px !important; }
@@ -323,11 +334,12 @@ function FilterDropdown({ active, set, counts }: {
 }
 
 /* ── Pager ──────────────────────────────────────────────────── */
-function Pager({ page, total, perPage, onPage }: {
-  page: number; total: number; perPage: number; onPage: Dispatch<SetStateAction<number>>;
+function Pager({ page, total, perPage, onPage, hideWhenSinglePage = false }: {
+  page: number; total: number; perPage: number; onPage: Dispatch<SetStateAction<number>>; hideWhenSinglePage?: boolean;
 }) {
   if (total === 0) return null;
   const pages = Math.max(1, Math.ceil(total / perPage));
+  if (hideWhenSinglePage && pages <= 1) return null;
   const from = (page - 1) * perPage + 1;
   const to = Math.min(page * perPage, total);
   return (
@@ -691,22 +703,26 @@ function PremiumTableRow({
             <Ic d={I.eye} z={13} />
           </span>
         </Link>
-        <button title="Dupliquer" onClick={e => { e.stopPropagation(); onDuplicate(o); }} style={{
-          width: 30, height: 30, borderRadius: 9999,
-          background: "#fffdfa", border: "1px solid #e8e2d8",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#374151", cursor: "pointer",
-        }}>
-          <Ic d={I.copy} z={13} />
-        </button>
-        <button title="Supprimer" onClick={e => { e.stopPropagation(); onDelete(o); }} style={{
-          width: 30, height: 30, borderRadius: 9999,
-          background: "#fff1f2", border: "1px solid #fecdd3",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          color: "#e11d48", cursor: "pointer",
-        }}>
-          <Ic d={I.trash} z={13} />
-        </button>
+        {isAdmin && (
+          <>
+            <button title="Dupliquer" onClick={e => { e.stopPropagation(); onDuplicate(o); }} style={{
+              width: 30, height: 30, borderRadius: 9999,
+              background: "#fffdfa", border: "1px solid #e8e2d8",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#374151", cursor: "pointer",
+            }}>
+              <Ic d={I.copy} z={13} />
+            </button>
+            <button title="Supprimer" onClick={e => { e.stopPropagation(); onDelete(o); }} style={{
+              width: 30, height: 30, borderRadius: 9999,
+              background: "#fff1f2", border: "1px solid #fecdd3",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#e11d48", cursor: "pointer",
+            }}>
+              <Ic d={I.trash} z={13} />
+            </button>
+          </>
+        )}
       </div>
     </motion.div>
   );
@@ -923,7 +939,7 @@ function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, onDelet
           </div>
 
           {/* Status change */}
-          {next.length > 0 && (
+          {isAdmin && next.length > 0 && (
             <div style={{ background: "#f6f6f4", borderRadius: 10, padding: "12px 14px", marginBottom: 14, border: "1px solid #e5e7eb" }}>
               <p style={{ fontSize: 10.5, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>
                 Changer le statut
@@ -1034,14 +1050,16 @@ function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, onDelet
                 <Ic d={I.eye} z={15} />Ouvrir la soumission
               </motion.button>
             </Link>
-            <motion.button whileTap={{ scale: .96 }} onClick={() => onDelete(o)} style={{
-              width: "100%", padding: "10px 0", borderRadius: 10,
-              background: "#fee2e2", border: "1.5px solid #f8717140",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
-              color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer",
-            }}>
-              <Ic d={I.trash} z={15} />Supprimer
-            </motion.button>
+            {isAdmin && (
+              <motion.button whileTap={{ scale: .96 }} onClick={() => onDelete(o)} style={{
+                width: "100%", padding: "10px 0", borderRadius: 10,
+                background: "#fee2e2", border: "1.5px solid #f8717140",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 7,
+                color: "#dc2626", fontWeight: 600, fontSize: 13, cursor: "pointer",
+              }}>
+                <Ic d={I.trash} z={15} />Supprimer
+              </motion.button>
+            )}
           </div>
         </>
       )}
@@ -1156,6 +1174,8 @@ export default function SoumissionsClient() {
   }).map(toView);
 
   const pageItems = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const hasMobilePagination = !isDesktop && filtered.length > 0 && totalPages > 1;
 
   const counts = Object.fromEntries(
     (["Brouillon", "Envoyée", "Acceptée", "Refusée"] as StatutSoumission[]).map(s => [
@@ -1240,7 +1260,7 @@ export default function SoumissionsClient() {
   return (
     <>
       <style>{CSS}</style>
-      <div className="submission-page-shell" style={{ display: "flex", flexDirection: "column", height: "100%", background: "#faf9f7" }}>
+      <div className={`submission-page-shell ${hasMobilePagination ? "has-mobile-pagination" : ""}`} style={{ display: "flex", flexDirection: "column", height: "100%", background: "#faf9f7" }}>
 
         {/* ── Hero ─────────────────────────────────────────────── */}
         <div className="submission-hero" style={{
@@ -1280,18 +1300,20 @@ export default function SoumissionsClient() {
                   </motion.button>
                 </a>
               )}
-              <Link href="/soumissions/nouvelle">
-                <motion.button whileTap={{ scale: .94 }} style={{
-                  height: 36, padding: isDesktop ? "0 16px" : "0 13px",
-                  borderRadius: 9999, background: "#1a2e1e", border: "none",
-                  display: "flex", alignItems: "center", gap: 6,
-                  color: "white", fontWeight: 600, fontSize: 13, cursor: "pointer",
-                  boxShadow: "0 2px 10px rgba(26,46,30,.20)", whiteSpace: "nowrap",
-                }}>
-                  <Ic d={I.plus} z={14} />
-                  {isDesktop ? "Nouvelle soumission" : "Nouvelle"}
-                </motion.button>
-              </Link>
+              {isAdmin && (
+                <Link href="/soumissions/nouvelle">
+                  <motion.button whileTap={{ scale: .94 }} style={{
+                    height: 36, padding: isDesktop ? "0 16px" : "0 13px",
+                    borderRadius: 9999, background: "#1a2e1e", border: "none",
+                    display: "flex", alignItems: "center", gap: 6,
+                    color: "white", fontWeight: 600, fontSize: 13, cursor: "pointer",
+                    boxShadow: "0 2px 10px rgba(26,46,30,.20)", whiteSpace: "nowrap",
+                  }}>
+                    <Ic d={I.plus} z={14} />
+                    {isDesktop ? "Nouvelle soumission" : "Nouvelle"}
+                  </motion.button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -1384,9 +1406,13 @@ export default function SoumissionsClient() {
               </div>
               <p style={{ fontWeight: 700, fontSize: 16, color: "#111827", marginBottom: 8, letterSpacing: 0 }}>Aucune soumission</p>
               <p style={{ fontSize: 14, color: "#9ca3af", marginBottom: 24 }}>
-                {q || filtre ? "Aucun résultat pour ces critères." : "Créez votre première soumission."}
+                {q || filtre
+                  ? "Aucun résultat pour ces critères."
+                  : isAdmin
+                  ? "Créez votre première soumission."
+                  : "Aucune soumission disponible."}
               </p>
-              {!q && !filtre && (
+              {isAdmin && !q && !filtre && (
                 <Link href="/soumissions/nouvelle">
                   <motion.button whileTap={{ scale: .96 }} style={{
                     padding: "11px 22px", borderRadius: 9999, background: "#1a2e1e",
@@ -1409,7 +1435,7 @@ export default function SoumissionsClient() {
                       items={pageItems} isAdmin={isAdmin} onOpen={openDetail} selId={selId} px={px}
                     />
                   </div>
-                  <Pager page={page} total={filtered.length} perPage={PER_PAGE} onPage={setPage} />
+                  <Pager page={page} total={filtered.length} perPage={PER_PAGE} onPage={setPage} hideWhenSinglePage={!isDesktop} />
                 </div>
               ) : (
                 /* Premium table */

@@ -44,8 +44,8 @@ type NavGroup = "PRINCIPAL" | "FINANCE" | "ADMINISTRATION";
 type NavItem = { href: string; label: string; icon: keyof typeof ICONS; roles: UserRole[]; group: NavGroup };
 
 const NAV: NavItem[] = [
-  { href: "/dashboard",          label: "Tableau de bord", icon: "home",   roles: ["admin", "charge_projet"],               group: "PRINCIPAL"      },
-  { href: "/soumissions",        label: "Soumissions",     icon: "docs",   roles: ["admin", "charge_projet"],               group: "PRINCIPAL"      },
+  { href: "/dashboard",          label: "Tableau de bord", icon: "home",   roles: ["admin", "charge_projet", "commercial"], group: "PRINCIPAL"      },
+  { href: "/soumissions",        label: "Soumissions",     icon: "docs",   roles: ["admin", "charge_projet", "commercial"], group: "PRINCIPAL"      },
   { href: "/clients",            label: "Clients",         icon: "users",  roles: ["admin", "charge_projet", "commercial"], group: "PRINCIPAL"      },
   { href: "/prospection",        label: "Prospection",     icon: "map",    roles: ["admin", "commercial"],                  group: "PRINCIPAL"      },
   { href: "/depenses",           label: "Dépenses",        icon: "wallet", roles: ["admin", "charge_projet", "commercial"], group: "FINANCE"        },
@@ -250,8 +250,8 @@ function SidebarInner({
               {/* Nav links with icons */}
               <div className="p-1.5">
                 {[
-                  { href: "/profil",     label: "Mon profil",  icon: "user"     as const },
-                  { href: "/parametres", label: "Paramètres",  icon: "settings" as const },
+                  { href: "/profil", label: "Mon profil", icon: "user" as const },
+                  ...(role === "commercial" ? [] : [{ href: "/parametres", label: "Paramètres", icon: "settings" as const }]),
                 ].map(({ href, label, icon }) => (
                   <Link key={href} href={href}
                     onMouseEnter={() => router.prefetch(href)}

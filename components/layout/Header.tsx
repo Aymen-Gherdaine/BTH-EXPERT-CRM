@@ -35,6 +35,7 @@ function getDisplayName(user: User): string {
 }
 
 type CurrentProfile = {
+  role?: string | null;
   full_name?: string | null;
   avatar_url?: string | null;
   email?: string | null;
@@ -94,6 +95,10 @@ export default function Header() {
     ? name.trim().split(/\s+/).map((w: string) => w[0]).slice(0, 2).join("").toUpperCase()
     : user ? getInitials(user) : "";
   const email = profile?.email || user?.email || "";
+  const profileLinks = [
+    { href: "/profil", label: "Mon profil" },
+    ...(profile?.role && profile.role !== "commercial" ? [{ href: "/parametres", label: "Paramètres" }] : []),
+  ];
 
   return (
     // Visible on mobile + tablet, hidden on desktop
@@ -185,10 +190,7 @@ export default function Header() {
 
                 {/* Nav links */}
                 <div className="p-1.5">
-                  {[
-                    { href: "/profil",     label: "Mon profil"  },
-                    { href: "/parametres", label: "Paramètres"  },
-                  ].map(({ href, label }) => (
+                  {profileLinks.map(({ href, label }) => (
                     <Link key={href} href={href} onClick={() => setOpen(false)}
                       className="flex items-center px-[10px] py-[9px] rounded-bth-sm text-[13px]
                                  font-medium text-bth-n-700 hover:bg-bth-n-50 transition-colors duration-100 no-underline">

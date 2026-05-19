@@ -575,6 +575,9 @@ const CSS = `
       min-height: 100%;
       overflow: visible;
     }
+    .depenses-page.has-mobile-pagination {
+      padding-bottom: calc(62px + env(safe-area-inset-bottom));
+    }
     .depenses-header {
       padding: 13px 14px 12px;
     }
@@ -718,6 +721,12 @@ const CSS = `
       grid-template-columns: 1fr auto;
       padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
       background: rgba(251,250,247,.94);
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: calc(56px + env(safe-area-inset-bottom));
+      z-index: 19;
+      box-shadow: 0 -10px 28px rgba(26,46,30,.06);
     }
     .depenses-page-count {
       font-size: 12px;
@@ -1147,6 +1156,7 @@ export default function DepensesPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const showPagination = filtered.length > 0 && (isDesktop || totalPages > 1);
 
   useEffect(() => setPage(1), [search, catFilter]);
   useEffect(() => setPage((current) => Math.min(current, totalPages)), [totalPages]);
@@ -1289,7 +1299,7 @@ export default function DepensesPage() {
   return (
     <>
       <style jsx global>{CSS}</style>
-      <div className="depenses-page">
+      <div className={`depenses-page ${showPagination && !isDesktop ? "has-mobile-pagination" : ""}`}>
         <header className="depenses-header">
           <motion.div className="depenses-header-top" initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
             <div>
@@ -1598,24 +1608,26 @@ export default function DepensesPage() {
           </section>
         </main>
 
-        <footer className="depenses-pagination">
-          <span className="depenses-page-count">
-            {filtered.length} dépense{filtered.length !== 1 ? "s" : ""}
-            {search || catFilter ? ` trouvée${filtered.length !== 1 ? "s" : ""}` : ""}
-          </span>
-          <div className="depenses-pager">
-            <button className="depenses-page-btn" type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)} aria-label="Page précédente">
-              <Icon paths={I.chevronLeft} size={14} />
-            </button>
-            <span className="depenses-page-label">
-              {page} / {totalPages}
+        {showPagination && (
+          <footer className="depenses-pagination">
+            <span className="depenses-page-count">
+              {filtered.length} dépense{filtered.length !== 1 ? "s" : ""}
+              {search || catFilter ? ` trouvée${filtered.length !== 1 ? "s" : ""}` : ""}
             </span>
-            <button className="depenses-page-btn" type="button" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)} aria-label="Page suivante">
-              <Icon paths={I.chevronRight} size={14} />
-            </button>
-          </div>
-          <span />
-        </footer>
+            <div className="depenses-pager">
+              <button className="depenses-page-btn" type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)} aria-label="Page précédente">
+                <Icon paths={I.chevronLeft} size={14} />
+              </button>
+              <span className="depenses-page-label">
+                {page} / {totalPages}
+              </span>
+              <button className="depenses-page-btn" type="button" disabled={page >= totalPages} onClick={() => setPage((current) => current + 1)} aria-label="Page suivante">
+                <Icon paths={I.chevronRight} size={14} />
+              </button>
+            </div>
+            <span />
+          </footer>
+        )}
       </div>
     </>
   );

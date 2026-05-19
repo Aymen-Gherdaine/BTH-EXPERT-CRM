@@ -7,7 +7,7 @@ import StepClientInfo from "@/components/forms/StepClientInfo";
 import StepProjectInfo from "@/components/forms/StepProjectInfo";
 import StepBudget from "@/components/forms/StepBudget";
 import StepPreview from "@/components/forms/StepPreview";
-import { FormDataStep1, FormDataStep2, FormDataStep3 } from "@/types";
+import { FormDataStep1, FormDataStep2, FormDataStep3, UserRole } from "@/types";
 import type { SoumissionAIContent } from "@/lib/anthropic";
 
 const STEPS = ["Informations client", "Projet", "Budget", "Prévisualisation"];
@@ -56,6 +56,7 @@ const slideVariants: Variants = {
 
 export default function NouvelleSoumissionPage() {
   const router = useRouter();
+  const [role, setRole] = useState<UserRole | null>(null);
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
   const [step1, setStep1] = useState<FormDataStep1>(defaultStep1);
@@ -71,6 +72,19 @@ export default function NouvelleSoumissionPage() {
 
   // Le formulaire est "sale" dès que l'utilisateur a commencé à remplir des données
   const isDirty = !saved && (step > 0 || step1.nom_contact.trim() !== "" || step1.entreprise.trim() !== "");
+
+  useEffect(() => {
+    fetch("/api/me")
+      .then((res) => res.ok ? res.json() : null)
+      .then((data: { role?: UserRole } | null) => {
+        if (data?.role === "commercial") {
+          router.replace("/soumissions");
+          return;
+        }
+        setRole(data?.role ?? "admin");
+      })
+      .catch(() => router.replace("/soumissions"));
+  }, [router]);
 
   function requestLeave(action: () => void) {
     if (!isDirty) { action(); return; }
@@ -174,6 +188,16 @@ export default function NouvelleSoumissionPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  if (!role) {
+    return (
+      <div className="p-8 max-w-4xl mx-auto">
+        <div className="h-8 w-64 bg-gray-100 rounded-xl animate-pulse" />
+        <div className="h-4 w-80 bg-gray-50 rounded-lg animate-pulse mt-3" />
+        <div className="h-96 bg-white rounded-2xl border border-gray-100 animate-pulse mt-8" />
+      </div>
+    );
   }
 
   return (
