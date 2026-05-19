@@ -118,10 +118,15 @@ export default function BottomNav({ role }: { role: UserRole }) {
                   active ? "text-bth-green-800" : "text-bth-n-400",
                 ].join(" ")}
               >
-                {/* Active pill — top center, 2px × 20px */}
-                {active && (
+                {/* Active pill or loading pulse — top center */}
+                {active && !( isPending && pendingHref === href) && (
                   <span className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-bth-green-800" />
                 )}
+                {isPending && pendingHref === href && (
+                  <span className="absolute top-0 left-1/2 -translate-x-1/2 w-5 h-0.5 rounded-full bg-bth-gold-500"
+                    style={{ animation: "bth-pill-pulse .8s ease-in-out infinite" }} />
+                )}
+                <style>{"@keyframes bth-pill-pulse{0%,100%{opacity:1}50%{opacity:.35}}"}</style>
                 <Ic d={ICONS[icon]} size={22} sw={active ? 2 : 1.6} />
                 <span className={`text-[10px] leading-none ${active ? "font-semibold" : "font-medium"}`}>
                   {label}

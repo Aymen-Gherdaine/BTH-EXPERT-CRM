@@ -208,6 +208,18 @@ function SidebarInner({
                         <Ic d={ICONS[icon]} size={16} sw={active ? 2 : 1.7} />
                       </span>
                       {label}
+                      {isPending && pendingHref === href && (
+                        <span className="ml-auto">
+                          <svg
+                            style={{ animation: "spin .7s linear infinite" }}
+                            width={12} height={12} viewBox="0 0 24 24" fill="none"
+                          >
+                            <style>{"@keyframes spin{to{transform:rotate(360deg)}}"}</style>
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity=".25" />
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+                          </svg>
+                        </span>
+                      )}
                     </div>
                   </Link>
                 );
