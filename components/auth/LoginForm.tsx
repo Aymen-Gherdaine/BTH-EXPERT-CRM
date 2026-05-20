@@ -10,11 +10,10 @@ const CSS  = `*, *::before, *::after { box-sizing: border-box; } button { cursor
 
 /* ── Breakpoint ─────────────────────────────────────────── */
 function useBp(): "mobile" | "desktop" {
-  const [bp, set] = useState<"mobile" | "desktop">(() =>
-    typeof window !== "undefined" && window.innerWidth >= 768 ? "desktop" : "mobile"
-  );
+  const [bp, set] = useState<"mobile" | "desktop">("mobile");
   useEffect(() => {
     const h = () => set(window.innerWidth >= 768 ? "desktop" : "mobile");
+    h();
     window.addEventListener("resize", h);
     return () => window.removeEventListener("resize", h);
   }, []);
