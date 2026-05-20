@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -253,11 +253,13 @@ const CSS = `
     overflow-x: auto;
     overflow-y: hidden;
     padding-bottom: 18px;
-    scrollbar-width: thin;
-    scrollbar-color: #d0c9be transparent;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    cursor: grab;
+    user-select: none;
   }
-  .kanban-board::-webkit-scrollbar { height: 6px; }
-  .kanban-board::-webkit-scrollbar-thumb { background: #d0c9be; border-radius: 9999px; }
+  .kanban-board.is-panning { cursor: grabbing; }
+  .kanban-board::-webkit-scrollbar { display: none; }
   .kanban-column {
     flex: 0 0 var(--kanban-column-width, 260px);
     width: var(--kanban-column-width, 260px);
@@ -1486,11 +1488,56 @@ function KanbanView({ prospects, prospectRefMap, today, activeId, onDragStart, o
     cfg,
     prospects: prospects.filter(p => getProspectEtape(p) === cfg.value),
   }));
+  const panRef = useRef({ active: false, pointerId: -1, startX: 0, scrollLeft: 0 });
+
+  function canPanBoard(target: EventTarget | null): boolean {
+    if (!(target instanceof HTMLElement)) return true;
+    return !target.closest(".kanban-card, .kanban-add, button, a, input, label, select, textarea");
+  }
+
+  function handleBoardPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if ((event.pointerType === "mouse" && event.button !== 0) || !canPanBoard(event.target)) return;
+    const board = event.currentTarget;
+    panRef.current = {
+      active: true,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      scrollLeft: board.scrollLeft,
+    };
+    board.classList.add("is-panning");
+    board.setPointerCapture(event.pointerId);
+  }
+
+  function handleBoardPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const pan = panRef.current;
+    if (!pan.active || pan.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    event.currentTarget.scrollLeft = pan.scrollLeft - (event.clientX - pan.startX);
+  }
+
+  function stopBoardPan(event: ReactPointerEvent<HTMLDivElement>) {
+    const pan = panRef.current;
+    if (!pan.active || pan.pointerId !== event.pointerId) return;
+    panRef.current = { active: false, pointerId: -1, startX: 0, scrollLeft: 0 };
+    event.currentTarget.classList.remove("is-panning");
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
 
   return (
     <div className="kanban-shell">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={onDragStart} onDragEnd={onDragEnd}>
-        <div ref={scrollRef} className="kanban-board" onScroll={onScroll}>
+        <div
+          ref={scrollRef}
+          className="kanban-board"
+          onScroll={onScroll}
+          onPointerDown={handleBoardPointerDown}
+          onPointerMove={handleBoardPointerMove}
+          onPointerUp={stopBoardPan}
+          onPointerCancel={stopBoardPan}
+          onPointerLeave={stopBoardPan}
+        >
           {byEtape.map(({ cfg, prospects: colProspects }) => (
             <KanbanColumn
               key={cfg.value}
