@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,7 +17,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS as DndCSS } from "@dnd-kit/utilities";
-import type { Prospect, StatutProspect, Visite } from "@/types";
+import type { EtapeProspect, Prospect, StatutProspect, Visite } from "@/types";
 import { formatDateFr } from "@/lib/utils";
 
 /* ── global CSS ─────────────────────────────────────────────── */
@@ -259,8 +259,8 @@ const CSS = `
   .kanban-board::-webkit-scrollbar { height: 6px; }
   .kanban-board::-webkit-scrollbar-thumb { background: #d0c9be; border-radius: 9999px; }
   .kanban-column {
-    flex: 0 0 280px;
-    width: 280px;
+    flex: 0 0 var(--kanban-column-width, 260px);
+    width: var(--kanban-column-width, 260px);
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -282,6 +282,17 @@ const CSS = `
     padding: 12px;
     border-bottom: 1px solid #e8e2d8;
     background: rgba(255,255,255,.74);
+  }
+  .kanban-column-title {
+    margin: 0;
+    color: #1a2e1e;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .kanban-column-description {
+    margin-top: 1px;
+    color: #887f74;
+    font-size: 11px;
   }
   .kanban-column-list {
     flex: 1;
@@ -374,6 +385,64 @@ const CSS = `
     font-weight: 600;
     box-shadow: 0 14px 34px rgba(26,46,30,.18);
   }
+  .kanban-loss-popover {
+    position: fixed;
+    right: 18px;
+    bottom: 78px;
+    z-index: 70;
+    width: min(320px, calc(100vw - 32px));
+    border: 1px solid #e8e2d8;
+    border-radius: 10px;
+    background: #ffffff;
+    padding: 14px;
+    box-shadow: 0 18px 44px rgba(26,46,30,.16);
+  }
+  .kanban-loss-title {
+    margin: 0 0 10px;
+    color: #1a2e1e;
+    font-size: 14px;
+    font-weight: 650;
+  }
+  .kanban-loss-options {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .kanban-loss-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #45403a;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .kanban-loss-option input {
+    accent-color: #1a2e1e;
+  }
+  .kanban-loss-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 13px;
+  }
+  .kanban-loss-btn {
+    height: 32px;
+    border-radius: 8px;
+    padding: 0 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .kanban-loss-btn-secondary {
+    border: 1px solid #d0c9be;
+    background: #ffffff;
+    color: #635c54;
+  }
+  .kanban-loss-btn-primary {
+    border: 1px solid #1a2e1e;
+    background: #1a2e1e;
+    color: #ffffff;
+  }
   .empty-state {
     flex: 1;
     display: flex;
@@ -456,11 +525,16 @@ const CSS = `
     .kanban-column {
       flex-basis: calc(100vw - 24px);
       width: calc(100vw - 24px);
+      --kanban-column-width: calc(100vw - 24px) !important;
       scroll-snap-align: center;
       max-height: none;
     }
     .kanban-dots {
       display: flex;
+    }
+    .kanban-loss-popover {
+      right: 14px;
+      bottom: 74px;
     }
     .history-shell {
       flex: none;
@@ -589,6 +663,13 @@ type Urgency = "retard" | "aujourd_hui" | "semaine" | "non_planifie";
 type SortCol = "date_visite" | "entreprise" | "resultat" | "date_action";
 type SortDir = "asc" | "desc";
 type ToastState = { message: string } | null;
+type LossReason =
+  | "Budget insuffisant"
+  | "Concurrent choisi"
+  | "Projet annulé"
+  | "À recontacter plus tard"
+  | "Autre";
+type PendingLossMove = { prospectId: string } | null;
 
 /* ── constants ──────────────────────────────────────────────── */
 const RESULTAT_LABELS: Record<string, string> = {
@@ -610,45 +691,97 @@ const RCFG: Record<string, RCfg> = {
   autre:                  { bg: "#f5f0e8", text: "#635c54", dot: "#887f74", border: "#d0c9be" },
 };
 
-type StatutCfg = {
-  value: StatutProspect;
+type EtapeCfg = {
+  value: EtapeProspect;
   label: string;
   description: string;
   bg: string;
   text: string;
   dot: string;
   border: string;
+  width: number;
 };
 
-const KANBAN_STATUSES: StatutCfg[] = [
+const KANBAN_ETAPES: EtapeCfg[] = [
   {
-    value: "actif",
-    label: "Actif",
-    description: "Suivi en cours",
-    bg: "#f2f7f3",
-    text: "#1f4429",
-    dot: "#3a7a50",
-    border: "#c1d9c6",
+    value: "client_potentiel",
+    label: "Client potentiel",
+    description: "Pas encore contacté",
+    bg: "#f5f0e8",
+    text: "#635c54",
+    dot: "#b0a898",
+    border: "#d0c9be",
+    width: 260,
   },
   {
-    value: "converti",
-    label: "Converti",
-    description: "Devenu client",
+    value: "contacte",
+    label: "Contacté",
+    description: "Premier contact fait",
     bg: "#eef5f8",
     text: "#2f6689",
     dot: "#3a7ca5",
     border: "#cbdde8",
+    width: 260,
   },
   {
-    value: "sans_suite",
-    label: "Sans suite",
-    description: "Suivi arrêté",
-    bg: "#f5f0e8",
-    text: "#635c54",
-    dot: "#887f74",
-    border: "#d0c9be",
+    value: "soumission_en_cours",
+    label: "Soumission en cours",
+    description: "Offre en préparation",
+    bg: "#fefaef",
+    text: "#7c6238",
+    dot: "#C9A96E",
+    border: "#f3dfa0",
+    width: 260,
+  },
+  {
+    value: "soumission_envoyee",
+    label: "Soumission envoyée",
+    description: "En attente de réponse",
+    bg: "#f2f7f3",
+    text: "#1f4429",
+    dot: "#3a7a50",
+    border: "#c1d9c6",
+    width: 260,
+  },
+  {
+    value: "gagne",
+    label: "Gagné",
+    description: "Mandat accepté",
+    bg: "#ecfdf3",
+    text: "#1f6f35",
+    dot: "#2f8f46",
+    border: "#badfc3",
+    width: 220,
+  },
+  {
+    value: "perdu",
+    label: "Perdu",
+    description: "Sans suite",
+    bg: "#fff4f1",
+    text: "#9c3c30",
+    dot: "#c44a3a",
+    border: "#efc8bf",
+    width: 220,
   },
 ];
+
+const LOSS_REASONS: LossReason[] = [
+  "Budget insuffisant",
+  "Concurrent choisi",
+  "Projet annulé",
+  "À recontacter plus tard",
+  "Autre",
+];
+
+const DEFAULT_ETAPE: EtapeProspect = "client_potentiel";
+
+const LEGACY_STATUS_ETAPE: Record<StatutProspect, EtapeProspect> = {
+  actif: "client_potentiel",
+  converti: "gagne",
+  sans_suite: "perdu",
+};
+
+const KNOWN_ETAPES = new Set<EtapeProspect>(KANBAN_ETAPES.map(e => e.value));
 
 const PAGE_SIZE = 15;
 
@@ -682,9 +815,25 @@ function isProspectOverdue(p: Prospect, today: Date): boolean {
   return !!d && d < today;
 }
 
-function getStatutCfg(statut: StatutProspect): StatutCfg {
-  return KANBAN_STATUSES.find(s => s.value === statut) ?? KANBAN_STATUSES[0];
+function isEtapeProspect(value: string): value is EtapeProspect {
+  return KNOWN_ETAPES.has(value as EtapeProspect);
 }
+
+function getProspectEtape(p: Prospect): EtapeProspect {
+  const etape = p.etape as EtapeProspect | undefined;
+  if (etape && isEtapeProspect(etape)) return etape;
+  return LEGACY_STATUS_ETAPE[p.statut_global] ?? DEFAULT_ETAPE;
+}
+
+function getEtapeCfg(etape: EtapeProspect): EtapeCfg {
+  return KANBAN_ETAPES.find(s => s.value === etape) ?? KANBAN_ETAPES[0];
+}
+
+type ProspectPatchPayload = {
+  etape: EtapeProspect;
+  statut_global?: StatutProspect;
+  raison_perte?: string | null;
+};
 
 function prospectMatchesFilters(p: Prospect, query: string, resultat: string): boolean {
   const q = query.toLowerCase();
@@ -1160,8 +1309,8 @@ function PlanningSection({ title, prospects, prospectRefMap, urgency, dotColor, 
    MAIN PAGE
 ══════════════════════════════════════════════════════════════ */
 
-function StatutBadge({ statut }: { statut: StatutProspect }) {
-  const cfg = getStatutCfg(statut);
+function EtapeBadge({ etape }: { etape: EtapeProspect }) {
+  const cfg = getEtapeCfg(etape);
   return (
     <span style={{
       display: "inline-flex", alignItems: "center", gap: 5,
@@ -1182,7 +1331,8 @@ function KanbanCard({ prospect, refCode, today, dragging = false, overlay = fals
   dragging?: boolean;
   overlay?: boolean;
 }) {
-  const cfg = getStatutCfg(prospect.statut_global);
+  const etape = getProspectEtape(prospect);
+  const cfg = getEtapeCfg(etape);
   const lastV = getLastVisite(prospect);
   const overdue = isProspectOverdue(prospect, today);
   const note = lastV?.action_requise || lastV?.notes_visite || prospect.notes_generales;
@@ -1211,7 +1361,7 @@ function KanbanCard({ prospect, refCode, today, dragging = false, overlay = fals
       </p>
 
       <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 10, flexWrap: "wrap" }}>
-        <StatutBadge statut={prospect.statut_global} />
+        <EtapeBadge etape={etape} />
         {overdue && (
           <span style={{ fontSize: 11, fontWeight: 700, color: "#9c3c30", background: "#fff4f1", padding: "2px 8px", borderRadius: 6, border: "1px solid #efc8bf" }}>
             ASAP
@@ -1244,7 +1394,7 @@ function SortableKanbanCard({ prospect, refCode, today }: {
     isDragging,
   } = useSortable({
     id: prospect.id,
-    data: { statut: prospect.statut_global },
+    data: { etape: getProspectEtape(prospect) },
   });
 
   return (
@@ -1263,7 +1413,7 @@ function SortableKanbanCard({ prospect, refCode, today }: {
 }
 
 function KanbanColumn({ cfg, prospects, prospectRefMap, today }: {
-  cfg: StatutCfg;
+  cfg: EtapeCfg;
   prospects: Prospect[];
   prospectRefMap: Map<string, number>;
   today: Date;
@@ -1271,14 +1421,18 @@ function KanbanColumn({ cfg, prospects, prospectRefMap, today }: {
   const { isOver, setNodeRef } = useDroppable({ id: cfg.value });
 
   return (
-    <section ref={setNodeRef} className={`kanban-column${isOver ? " is-over" : ""}`}>
+    <section
+      ref={setNodeRef}
+      className={`kanban-column${isOver ? " is-over" : ""}`}
+      style={{ "--kanban-column-width": `${cfg.width}px` } as CSSProperties}
+    >
       <div className="kanban-column-header">
         <span style={{ width: 8, height: 8, borderRadius: "50%", background: cfg.dot, flexShrink: 0 }} />
         <div style={{ minWidth: 0, flex: 1 }}>
-          <h2 style={{ margin: 0, color: "#2e2a26", fontSize: 12, fontWeight: 700 }}>
+          <h2 className="kanban-column-title">
             {cfg.label}
           </h2>
-          <p style={{ marginTop: 1, color: "#887f74", fontSize: 11 }}>{cfg.description}</p>
+          <p className="kanban-column-description">{cfg.description}</p>
         </div>
         <span style={{ color: "#635c54", background: "#f5f0e8", border: "1px solid #e8e2d8", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>
           {prospects.length}
@@ -1328,16 +1482,16 @@ function KanbanView({ prospects, prospectRefMap, today, activeId, onDragStart, o
   sensors: ReturnType<typeof useSensors>;
 }) {
   const activeProspect = activeId ? prospects.find(p => p.id === activeId) ?? null : null;
-  const byStatus = KANBAN_STATUSES.map((cfg) => ({
+  const byEtape = KANBAN_ETAPES.map((cfg) => ({
     cfg,
-    prospects: prospects.filter(p => p.statut_global === cfg.value),
+    prospects: prospects.filter(p => getProspectEtape(p) === cfg.value),
   }));
 
   return (
     <div className="kanban-shell">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={onDragStart} onDragEnd={onDragEnd}>
         <div ref={scrollRef} className="kanban-board" onScroll={onScroll}>
-          {byStatus.map(({ cfg, prospects: colProspects }) => (
+          {byEtape.map(({ cfg, prospects: colProspects }) => (
             <KanbanColumn
               key={cfg.value}
               cfg={cfg}
@@ -1361,7 +1515,7 @@ function KanbanView({ prospects, prospectRefMap, today, activeId, onDragStart, o
       </DndContext>
 
       <div className="kanban-dots" aria-label="Colonnes Kanban">
-        {KANBAN_STATUSES.map((cfg, i) => (
+        {KANBAN_ETAPES.map((cfg, i) => (
           <button
             key={cfg.value}
             className={`kanban-dot bth-focus${activeIndex === i ? " is-active" : ""}`}
@@ -1371,6 +1525,51 @@ function KanbanView({ prospects, prospectRefMap, today, activeId, onDragStart, o
         ))}
       </div>
     </div>
+  );
+}
+
+function LossReasonPopover({ pending, reason, onReasonChange, onConfirm, onCancel }: {
+  pending: PendingLossMove;
+  reason: LossReason;
+  onReasonChange: (reason: LossReason) => void;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <AnimatePresence>
+      {pending && (
+        <motion.div
+          className="kanban-loss-popover"
+          initial={{ opacity: 0, y: 8, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 8, scale: 0.98 }}
+          transition={{ duration: 0.16 }}
+        >
+          <p className="kanban-loss-title">Raison de la perte ?</p>
+          <div className="kanban-loss-options">
+            {LOSS_REASONS.map((option) => (
+              <label key={option} className="kanban-loss-option">
+                <input
+                  type="radio"
+                  name="raison_perte"
+                  checked={reason === option}
+                  onChange={() => onReasonChange(option)}
+                />
+                <span>{option}</span>
+              </label>
+            ))}
+          </div>
+          <div className="kanban-loss-actions">
+            <button type="button" className="kanban-loss-btn kanban-loss-btn-secondary bth-focus" onClick={onCancel}>
+              Annuler
+            </button>
+            <button type="button" className="kanban-loss-btn kanban-loss-btn-primary bth-focus" onClick={onConfirm}>
+              Confirmer
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -1386,6 +1585,8 @@ export default function ProspectionPage() {
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [kanbanIndex, setKanbanIndex] = useState(0);
   const [toast, setToast] = useState<ToastState>(null);
+  const [pendingLossMove, setPendingLossMove] = useState<PendingLossMove>(null);
+  const [lossReason, setLossReason] = useState<LossReason>("Budget insuffisant");
   const kanbanScrollRef = useRef<HTMLDivElement | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -1482,11 +1683,12 @@ export default function ProspectionPage() {
     return kanbanProspects.filter(p => prospectMatchesFilters(p, search, filterResultat));
   }, [kanbanProspects, search, filterResultat]);
 
-  function resolveDropStatus(id: UniqueIdentifier): StatutProspect | null {
+  function resolveDropEtape(id: UniqueIdentifier): EtapeProspect | null {
     const raw = String(id);
-    const direct = KANBAN_STATUSES.find(s => s.value === raw);
+    const direct = KANBAN_ETAPES.find(s => s.value === raw);
     if (direct) return direct.value;
-    return kanbanProspects.find(p => p.id === raw)?.statut_global ?? null;
+    const prospect = kanbanProspects.find(p => p.id === raw);
+    return prospect ? getProspectEtape(prospect) : null;
   }
 
   function showToast(message: string) {
@@ -1510,17 +1712,23 @@ export default function ProspectionPage() {
     });
   }
 
-  async function moveProspectToStatus(prospectId: string, nextStatus: StatutProspect) {
+  async function moveProspectToEtape(prospectId: string, nextEtape: EtapeProspect, raisonPerte?: LossReason) {
     const current = kanbanProspects.find(p => p.id === prospectId);
-    if (!current || current.statut_global === nextStatus) return;
+    if (!current || getProspectEtape(current) === nextEtape) return;
 
     const previousKanban = kanbanProspects;
     const previousActive = prospects;
+    const nextStatus: StatutProspect = nextEtape === "gagne" ? "converti" : current.statut_global;
     const updated: Prospect = {
       ...current,
+      etape: nextEtape,
       statut_global: nextStatus,
+      raison_perte: nextEtape === "perdu" ? (raisonPerte ?? null) : current.raison_perte,
       updated_at: new Date().toISOString(),
     };
+    const payload: ProspectPatchPayload = { etape: nextEtape };
+    if (nextEtape === "gagne") payload.statut_global = "converti";
+    if (nextEtape === "perdu") payload.raison_perte = raisonPerte ?? null;
 
     setKanbanProspects(prev => prev.map(p => p.id === prospectId ? updated : p));
     updateActiveProspects(current.statut_global, nextStatus, updated);
@@ -1529,13 +1737,13 @@ export default function ProspectionPage() {
       const res = await fetch(`/api/prospects/${prospectId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ statut_global: nextStatus }),
+        body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Statut non enregistré");
+      if (!res.ok) throw new Error("Étape non enregistrée");
     } catch {
       setKanbanProspects(previousKanban);
       setProspects(previousActive);
-      showToast("Le statut n'a pas pu être mis à jour.");
+      showToast("L'étape n'a pas pu être mise à jour.");
     }
   }
 
@@ -1547,16 +1755,34 @@ export default function ProspectionPage() {
     const { active, over } = event;
     setActiveDragId(null);
     if (!over) return;
-    const nextStatus = resolveDropStatus(over.id);
-    if (!nextStatus) return;
-    void moveProspectToStatus(String(active.id), nextStatus);
+    const prospectId = String(active.id);
+    const nextEtape = resolveDropEtape(over.id);
+    const current = kanbanProspects.find(p => p.id === prospectId);
+    if (!nextEtape || !current || getProspectEtape(current) === nextEtape) return;
+    if (nextEtape === "perdu") {
+      setLossReason("Budget insuffisant");
+      setPendingLossMove({ prospectId });
+      return;
+    }
+    void moveProspectToEtape(prospectId, nextEtape);
+  }
+
+  function confirmLossMove() {
+    if (!pendingLossMove) return;
+    const { prospectId } = pendingLossMove;
+    setPendingLossMove(null);
+    void moveProspectToEtape(prospectId, "perdu", lossReason);
+  }
+
+  function cancelLossMove() {
+    setPendingLossMove(null);
   }
 
   function handleKanbanScroll() {
     const el = kanbanScrollRef.current;
     if (!el) return;
     const width = el.clientWidth || 1;
-    setKanbanIndex(Math.min(KANBAN_STATUSES.length - 1, Math.max(0, Math.round(el.scrollLeft / width))));
+    setKanbanIndex(Math.min(KANBAN_ETAPES.length - 1, Math.max(0, Math.round(el.scrollLeft / width))));
   }
 
   function handleKanbanDotClick(index: number) {
@@ -1678,7 +1904,7 @@ export default function ProspectionPage() {
 
           {/* Tabs — in filter bar */}
           <div className="prospection-tabs">
-            {([["planning", "Planning (À faire)"], ["kanban", "Kanban"], ["tous", "Tous (Historique)"]] as [Tab, string][]).map(([t, lbl]) => (
+            {([["planning", "Planning"], ["kanban", "Kanban"], ["tous", "Tous (Historique)"]] as [Tab, string][]).map(([t, lbl]) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -1825,6 +2051,14 @@ export default function ProspectionPage() {
             </div>
           )
         )}
+
+        <LossReasonPopover
+          pending={pendingLossMove}
+          reason={lossReason}
+          onReasonChange={setLossReason}
+          onConfirm={confirmLossMove}
+          onCancel={cancelLossMove}
+        />
 
         <AnimatePresence>
           {toast && (

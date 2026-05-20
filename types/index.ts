@@ -94,6 +94,13 @@ export interface DashboardStats {
 }
 
 export type StatutProspect = 'actif' | 'sans_suite' | 'converti';
+export type EtapeProspect =
+  | 'client_potentiel'
+  | 'contacte'
+  | 'soumission_en_cours'
+  | 'soumission_envoyee'
+  | 'gagne'
+  | 'perdu';
 export type ResultatVisite =
   | 'soumission_demandee'
   | 'rappel_planifie'
@@ -125,6 +132,8 @@ export interface Prospect {
   adresse: string;
   notes_generales: string | null;
   statut_global: StatutProspect;
+  etape: EtapeProspect;
+  raison_perte: string | null;
   created_by: string;
   created_at: string;
   updated_at: string;
