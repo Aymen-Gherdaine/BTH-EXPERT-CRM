@@ -1,9 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Prospect, Visite } from "@/types";
+import {
+  closestCenter,
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+  type UniqueIdentifier,
+} from "@dnd-kit/core";
+import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS as DndCSS } from "@dnd-kit/utilities";
+import type { Prospect, StatutProspect, Visite } from "@/types";
 import { formatDateFr } from "@/lib/utils";
 
 /* ── global CSS ─────────────────────────────────────────────── */
@@ -125,7 +139,7 @@ const CSS = `
   }
   .prospection-tabs {
     display: inline-grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 4px;
     padding: 4px;
     border: 1px solid #e8e2d8;
@@ -224,6 +238,142 @@ const CSS = `
     background: rgba(255,255,255,.78);
     box-shadow: 0 10px 28px rgba(26,46,30,.045);
   }
+  .kanban-shell {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: clamp(16px, 3vw, 28px) clamp(16px, 3vw, 32px) 24px;
+  }
+  .kanban-board {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 18px;
+    scrollbar-width: thin;
+    scrollbar-color: #d0c9be transparent;
+  }
+  .kanban-board::-webkit-scrollbar { height: 6px; }
+  .kanban-board::-webkit-scrollbar-thumb { background: #d0c9be; border-radius: 9999px; }
+  .kanban-column {
+    flex: 0 0 280px;
+    width: 280px;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e8e2d8;
+    border-radius: 12px;
+    background: #faf8f5;
+    overflow: hidden;
+    transition: background-color 200ms var(--bth-ease-out), border-color 200ms var(--bth-ease-out), box-shadow 200ms var(--bth-ease-out);
+  }
+  .kanban-column.is-over {
+    background: #f2f7f3;
+    border: 1px dashed #3a7a50;
+    box-shadow: 0 14px 32px rgba(26,46,30,.08);
+  }
+  .kanban-column-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    border-bottom: 1px solid #e8e2d8;
+    background: rgba(255,255,255,.74);
+  }
+  .kanban-column-list {
+    flex: 1;
+    min-height: 120px;
+    overflow-y: auto;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .kanban-add {
+    min-height: 44px;
+    margin: 10px;
+    border-radius: 8px;
+    border: 1px dashed #d0c9be;
+    background: #ffffff;
+    color: #635c54;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 150ms var(--bth-ease-micro), color 150ms var(--bth-ease-micro), border-color 150ms var(--bth-ease-micro);
+  }
+  .kanban-add:hover {
+    background: #f2f7f3;
+    color: #1a2e1e;
+    border-color: #90bb9a;
+  }
+  .kanban-card {
+    display: block;
+    text-decoration: none;
+    background: #ffffff;
+    border: 1px solid #e8e2d8;
+    border-left-width: 3px;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 8px 22px rgba(26,46,30,.055);
+    cursor: grab;
+    transition: transform 200ms ease-out, box-shadow 200ms ease-out, opacity 200ms ease-out;
+  }
+  .kanban-card:active { cursor: grabbing; }
+  .kanban-card.is-dragging {
+    opacity: .9;
+    transform: scale(1.02);
+    box-shadow: 0 16px 36px rgba(26,46,30,.14);
+  }
+  .kanban-note {
+    margin-top: 8px;
+    color: #635c54;
+    font-size: 12px;
+    font-style: italic;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .kanban-dots {
+    display: none;
+    justify-content: center;
+    gap: 7px;
+    padding-top: 10px;
+  }
+  .kanban-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 9999px;
+    border: 0;
+    background: #d0c9be;
+    cursor: pointer;
+    transition: width 200ms var(--bth-ease-out), background-color 200ms var(--bth-ease-out);
+  }
+  .kanban-dot.is-active {
+    width: 18px;
+    background: #1a2e1e;
+  }
+  .prospection-toast {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 60;
+    max-width: min(360px, calc(100vw - 32px));
+    border-radius: 8px;
+    background: #c44a3a;
+    color: #ffffff;
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 14px 34px rgba(26,46,30,.18);
+  }
   .empty-state {
     flex: 1;
     display: flex;
@@ -290,6 +440,28 @@ const CSS = `
     }
     .prospection-tabs { width: 100%; }
     .prospection-tab { min-height: 34px; }
+    .kanban-shell {
+      flex: none;
+      min-height: 0;
+      padding: 12px 0 86px;
+    }
+    .kanban-board {
+      flex: none;
+      min-height: 520px;
+      gap: 12px;
+      padding: 0 12px 12px;
+      scroll-snap-type: x mandatory;
+      scroll-padding: 12px;
+    }
+    .kanban-column {
+      flex-basis: calc(100vw - 24px);
+      width: calc(100vw - 24px);
+      scroll-snap-align: center;
+      max-height: none;
+    }
+    .kanban-dots {
+      display: flex;
+    }
     .history-shell {
       flex: none;
       min-height: 0;
@@ -412,10 +584,11 @@ const CSS = `
 `;
 
 /* ── types ──────────────────────────────────────────────────── */
-type Tab = "planning" | "tous";
+type Tab = "planning" | "kanban" | "tous";
 type Urgency = "retard" | "aujourd_hui" | "semaine" | "non_planifie";
 type SortCol = "date_visite" | "entreprise" | "resultat" | "date_action";
 type SortDir = "asc" | "desc";
+type ToastState = { message: string } | null;
 
 /* ── constants ──────────────────────────────────────────────── */
 const RESULTAT_LABELS: Record<string, string> = {
@@ -436,6 +609,46 @@ const RCFG: Record<string, RCfg> = {
   absent:                 { bg: "#fbf4e8", text: "#7c6238", dot: "#a8874e", border: "#ead7b3" },
   autre:                  { bg: "#f5f0e8", text: "#635c54", dot: "#887f74", border: "#d0c9be" },
 };
+
+type StatutCfg = {
+  value: StatutProspect;
+  label: string;
+  description: string;
+  bg: string;
+  text: string;
+  dot: string;
+  border: string;
+};
+
+const KANBAN_STATUSES: StatutCfg[] = [
+  {
+    value: "actif",
+    label: "Actif",
+    description: "Suivi en cours",
+    bg: "#f2f7f3",
+    text: "#1f4429",
+    dot: "#3a7a50",
+    border: "#c1d9c6",
+  },
+  {
+    value: "converti",
+    label: "Converti",
+    description: "Devenu client",
+    bg: "#eef5f8",
+    text: "#2f6689",
+    dot: "#3a7ca5",
+    border: "#cbdde8",
+  },
+  {
+    value: "sans_suite",
+    label: "Sans suite",
+    description: "Suivi arrêté",
+    bg: "#f5f0e8",
+    text: "#635c54",
+    dot: "#887f74",
+    border: "#d0c9be",
+  },
+];
 
 const PAGE_SIZE = 15;
 
@@ -462,6 +675,25 @@ function getDateAction(p: Prospect): Date | null {
   const v = getLastVisite(p);
   if (!v?.date_prochaine_action) return null;
   return parseLocalDate(v.date_prochaine_action);
+}
+
+function isProspectOverdue(p: Prospect, today: Date): boolean {
+  const d = getDateAction(p);
+  return !!d && d < today;
+}
+
+function getStatutCfg(statut: StatutProspect): StatutCfg {
+  return KANBAN_STATUSES.find(s => s.value === statut) ?? KANBAN_STATUSES[0];
+}
+
+function prospectMatchesFilters(p: Prospect, query: string, resultat: string): boolean {
+  const q = query.toLowerCase();
+  const matchSearch = !q ||
+    p.entreprise.toLowerCase().includes(q) ||
+    p.nom_contact.toLowerCase().includes(q) ||
+    p.secteur_activite.toLowerCase().includes(q);
+  const matchResultat = !resultat || getLastVisite(p)?.resultat === resultat;
+  return matchSearch && matchResultat;
 }
 
 function fmt(iso: string): string {
@@ -928,19 +1160,246 @@ function PlanningSection({ title, prospects, prospectRefMap, urgency, dotColor, 
    MAIN PAGE
 ══════════════════════════════════════════════════════════════ */
 
+function StatutBadge({ statut }: { statut: StatutProspect }) {
+  const cfg = getStatutCfg(statut);
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 5,
+      padding: "2px 7px", borderRadius: 5,
+      background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.text,
+      fontSize: 10.5, fontWeight: 600, whiteSpace: "nowrap",
+    }}>
+      <span style={{ width: 5, height: 5, borderRadius: "50%", background: cfg.dot, flexShrink: 0 }} />
+      {cfg.label}
+    </span>
+  );
+}
+
+function KanbanCard({ prospect, refCode, today, dragging = false, overlay = false }: {
+  prospect: Prospect;
+  refCode: string;
+  today: Date;
+  dragging?: boolean;
+  overlay?: boolean;
+}) {
+  const cfg = getStatutCfg(prospect.statut_global);
+  const lastV = getLastVisite(prospect);
+  const overdue = isProspectOverdue(prospect, today);
+  const note = lastV?.action_requise || lastV?.notes_visite || prospect.notes_generales;
+
+  return (
+    <Link
+      href={`/prospection/${prospect.id}`}
+      className={`kanban-card bth-focus${dragging || overlay ? " is-dragging" : ""}`}
+      style={{
+        borderLeftColor: overdue ? "#c44a3a" : cfg.dot,
+        pointerEvents: overlay ? "none" : undefined,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+        <span style={{ minWidth: 0, color: "#1a1714", fontSize: 14, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {prospect.entreprise}
+        </span>
+        <span className="tnum" style={{ color: "#b0a898", fontSize: 12, fontWeight: 400, flexShrink: 0 }}>
+          {refCode}
+        </span>
+      </div>
+
+      <p style={{ marginTop: 6, color: "#887f74", fontSize: 12, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        {prospect.nom_contact}
+        {prospect.poste_contact && <span> · {prospect.poste_contact}</span>}
+      </p>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 10, flexWrap: "wrap" }}>
+        <StatutBadge statut={prospect.statut_global} />
+        {overdue && (
+          <span style={{ fontSize: 11, fontWeight: 700, color: "#9c3c30", background: "#fff4f1", padding: "2px 8px", borderRadius: 6, border: "1px solid #efc8bf" }}>
+            ASAP
+          </span>
+        )}
+      </div>
+
+      {lastV?.date_prochaine_action && (
+        <p style={{ marginTop: 9, color: "#887f74", fontSize: 11, fontWeight: 500 }}>
+          Relance · {formatDateFr(lastV.date_prochaine_action)}
+        </p>
+      )}
+
+      {note && <p className="kanban-note">&ldquo;{note}&rdquo;</p>}
+    </Link>
+  );
+}
+
+function SortableKanbanCard({ prospect, refCode, today }: {
+  prospect: Prospect;
+  refCode: string;
+  today: Date;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: prospect.id,
+    data: { statut: prospect.statut_global },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: DndCSS.Transform.toString(transform),
+        transition: transition ?? "transform 200ms ease-out",
+      }}
+      {...attributes}
+      {...listeners}
+    >
+      <KanbanCard prospect={prospect} refCode={refCode} today={today} dragging={isDragging} />
+    </div>
+  );
+}
+
+function KanbanColumn({ cfg, prospects, prospectRefMap, today }: {
+  cfg: StatutCfg;
+  prospects: Prospect[];
+  prospectRefMap: Map<string, number>;
+  today: Date;
+}) {
+  const { isOver, setNodeRef } = useDroppable({ id: cfg.value });
+
+  return (
+    <section ref={setNodeRef} className={`kanban-column${isOver ? " is-over" : ""}`}>
+      <div className="kanban-column-header">
+        <span style={{ width: 8, height: 8, borderRadius: "50%", background: cfg.dot, flexShrink: 0 }} />
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <h2 style={{ margin: 0, color: "#2e2a26", fontSize: 12, fontWeight: 700 }}>
+            {cfg.label}
+          </h2>
+          <p style={{ marginTop: 1, color: "#887f74", fontSize: 11 }}>{cfg.description}</p>
+        </div>
+        <span style={{ color: "#635c54", background: "#f5f0e8", border: "1px solid #e8e2d8", borderRadius: 6, padding: "2px 8px", fontSize: 11, fontWeight: 700 }}>
+          {prospects.length}
+        </span>
+      </div>
+
+      <SortableContext items={prospects.map(p => p.id)} strategy={verticalListSortingStrategy}>
+        <div className="kanban-column-list">
+          {prospects.length === 0 ? (
+            <p style={{ color: "#887f74", fontSize: 12, fontStyle: "italic", padding: "10px 4px" }}>
+              Aucun prospect
+            </p>
+          ) : (
+            prospects.map((p) => (
+              <SortableKanbanCard
+                key={p.id}
+                prospect={p}
+                refCode={prospectRef(prospectRefMap.get(p.id) ?? 0)}
+                today={today}
+              />
+            ))
+          )}
+        </div>
+      </SortableContext>
+
+      <Link href="/prospection/nouveau" className="kanban-add bth-focus">
+        <svg width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        Ajouter
+      </Link>
+    </section>
+  );
+}
+
+function KanbanView({ prospects, prospectRefMap, today, activeId, onDragStart, onDragEnd, scrollRef, activeIndex, onScroll, onDotClick, sensors }: {
+  prospects: Prospect[];
+  prospectRefMap: Map<string, number>;
+  today: Date;
+  activeId: string | null;
+  onDragStart: (event: DragStartEvent) => void;
+  onDragEnd: (event: DragEndEvent) => void;
+  scrollRef: RefObject<HTMLDivElement | null>;
+  activeIndex: number;
+  onScroll: () => void;
+  onDotClick: (index: number) => void;
+  sensors: ReturnType<typeof useSensors>;
+}) {
+  const activeProspect = activeId ? prospects.find(p => p.id === activeId) ?? null : null;
+  const byStatus = KANBAN_STATUSES.map((cfg) => ({
+    cfg,
+    prospects: prospects.filter(p => p.statut_global === cfg.value),
+  }));
+
+  return (
+    <div className="kanban-shell">
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={onDragStart} onDragEnd={onDragEnd}>
+        <div ref={scrollRef} className="kanban-board" onScroll={onScroll}>
+          {byStatus.map(({ cfg, prospects: colProspects }) => (
+            <KanbanColumn
+              key={cfg.value}
+              cfg={cfg}
+              prospects={colProspects}
+              prospectRefMap={prospectRefMap}
+              today={today}
+            />
+          ))}
+        </div>
+
+        <DragOverlay dropAnimation={{ duration: 200, easing: "ease-out" }}>
+          {activeProspect ? (
+            <KanbanCard
+              prospect={activeProspect}
+              refCode={prospectRef(prospectRefMap.get(activeProspect.id) ?? 0)}
+              today={today}
+              overlay
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+
+      <div className="kanban-dots" aria-label="Colonnes Kanban">
+        {KANBAN_STATUSES.map((cfg, i) => (
+          <button
+            key={cfg.value}
+            className={`kanban-dot bth-focus${activeIndex === i ? " is-active" : ""}`}
+            onClick={() => onDotClick(i)}
+            aria-label={`Voir ${cfg.label}`}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ProspectionPage() {
   const [prospects, setProspects] = useState<Prospect[]>([]);
+  const [kanbanProspects, setKanbanProspects] = useState<Prospect[]>([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState<Tab>("planning");
   const [search, setSearch] = useState("");
   const [filterResultat, setFilterResultat] = useState("");
   const [histPage, setHistPage] = useState(1);
   const [exporting, setExporting] = useState(false);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [kanbanIndex, setKanbanIndex] = useState(0);
+  const [toast, setToast] = useState<ToastState>(null);
+  const kanbanScrollRef = useRef<HTMLDivElement | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
 
   useEffect(() => {
-    fetch("/api/prospects?statut=actif")
-      .then(r => r.json())
-      .then(json => { setProspects(json.data ?? []); setLoading(false); });
+    Promise.all([
+      fetch("/api/prospects?statut=actif").then(r => r.json()),
+      fetch("/api/prospects").then(r => r.json()),
+    ]).then(([activeJson, allJson]) => {
+      setProspects(activeJson.data ?? []);
+      setKanbanProspects(allJson.data ?? []);
+      setLoading(false);
+    });
   }, []);
 
   /* Reset pagination on filter change */
@@ -953,6 +1412,13 @@ export default function ProspectionPage() {
     sorted.forEach((p, i) => m.set(p.id, i));
     return m;
   }, [prospects]);
+
+  const kanbanRefMap = useMemo(() => {
+    const sorted = [...kanbanProspects].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const m = new Map<string, number>();
+    sorted.forEach((p, i) => m.set(p.id, i));
+    return m;
+  }, [kanbanProspects]);
 
   /* Planning groups */
   const today = useMemo(getLocalToday, []);
@@ -1011,6 +1477,95 @@ export default function ProspectionPage() {
     prospects.forEach(p => (p.visites ?? []).forEach(v => s.add(v.resultat)));
     return [...s];
   }, [prospects]);
+
+  const filteredKanbanProspects = useMemo(() => {
+    return kanbanProspects.filter(p => prospectMatchesFilters(p, search, filterResultat));
+  }, [kanbanProspects, search, filterResultat]);
+
+  function resolveDropStatus(id: UniqueIdentifier): StatutProspect | null {
+    const raw = String(id);
+    const direct = KANBAN_STATUSES.find(s => s.value === raw);
+    if (direct) return direct.value;
+    return kanbanProspects.find(p => p.id === raw)?.statut_global ?? null;
+  }
+
+  function showToast(message: string) {
+    setToast({ message });
+    window.setTimeout(() => setToast(null), 3000);
+  }
+
+  function updateActiveProspects(previousStatus: StatutProspect, nextStatus: StatutProspect, updated: Prospect) {
+    setProspects((current) => {
+      if (previousStatus === "actif" && nextStatus !== "actif") {
+        return current.filter(p => p.id !== updated.id);
+      }
+      if (previousStatus !== "actif" && nextStatus === "actif") {
+        return [updated, ...current.filter(p => p.id !== updated.id)]
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      }
+      if (previousStatus === "actif" && nextStatus === "actif") {
+        return current.map(p => p.id === updated.id ? updated : p);
+      }
+      return current;
+    });
+  }
+
+  async function moveProspectToStatus(prospectId: string, nextStatus: StatutProspect) {
+    const current = kanbanProspects.find(p => p.id === prospectId);
+    if (!current || current.statut_global === nextStatus) return;
+
+    const previousKanban = kanbanProspects;
+    const previousActive = prospects;
+    const updated: Prospect = {
+      ...current,
+      statut_global: nextStatus,
+      updated_at: new Date().toISOString(),
+    };
+
+    setKanbanProspects(prev => prev.map(p => p.id === prospectId ? updated : p));
+    updateActiveProspects(current.statut_global, nextStatus, updated);
+
+    try {
+      const res = await fetch(`/api/prospects/${prospectId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statut_global: nextStatus }),
+      });
+      if (!res.ok) throw new Error("Statut non enregistré");
+    } catch {
+      setKanbanProspects(previousKanban);
+      setProspects(previousActive);
+      showToast("Le statut n'a pas pu être mis à jour.");
+    }
+  }
+
+  function handleKanbanDragStart(event: DragStartEvent) {
+    setActiveDragId(String(event.active.id));
+  }
+
+  function handleKanbanDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    setActiveDragId(null);
+    if (!over) return;
+    const nextStatus = resolveDropStatus(over.id);
+    if (!nextStatus) return;
+    void moveProspectToStatus(String(active.id), nextStatus);
+  }
+
+  function handleKanbanScroll() {
+    const el = kanbanScrollRef.current;
+    if (!el) return;
+    const width = el.clientWidth || 1;
+    setKanbanIndex(Math.min(KANBAN_STATUSES.length - 1, Math.max(0, Math.round(el.scrollLeft / width))));
+  }
+
+  function handleKanbanDotClick(index: number) {
+    const el = kanbanScrollRef.current;
+    if (!el) return;
+    const target = el.children[index] as HTMLElement | undefined;
+    target?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    setKanbanIndex(index);
+  }
 
   const px = 28;
 
@@ -1123,7 +1678,7 @@ export default function ProspectionPage() {
 
           {/* Tabs — in filter bar */}
           <div className="prospection-tabs">
-            {([["planning", "Planning (À faire)"], ["tous", "Tous (Historique)"]] as [Tab, string][]).map(([t, lbl]) => (
+            {([["planning", "Planning (À faire)"], ["kanban", "Kanban"], ["tous", "Tous (Historique)"]] as [Tab, string][]).map(([t, lbl]) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -1147,6 +1702,22 @@ export default function ProspectionPage() {
               <div key={i} className="sk" style={{ height: 72, borderRadius: 14, background: "white", border: "1px solid #e5e7eb" }} />
             ))}
           </div>
+        ) : tab === "kanban" ? (
+
+          <KanbanView
+            prospects={filteredKanbanProspects}
+            prospectRefMap={kanbanRefMap}
+            today={today}
+            activeId={activeDragId}
+            onDragStart={handleKanbanDragStart}
+            onDragEnd={handleKanbanDragEnd}
+            scrollRef={kanbanScrollRef}
+            activeIndex={kanbanIndex}
+            onScroll={handleKanbanScroll}
+            onDotClick={handleKanbanDotClick}
+            sensors={sensors}
+          />
+
         ) : tab === "tous" ? (
 
           /* ── TOUS: premium table ── */
@@ -1254,6 +1825,20 @@ export default function ProspectionPage() {
             </div>
           )
         )}
+
+        <AnimatePresence>
+          {toast && (
+            <motion.div
+              className="prospection-toast"
+              initial={{ opacity: 0, y: 80 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              transition={{ duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+            >
+              {toast.message}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </div>
     </>
