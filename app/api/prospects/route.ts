@@ -24,6 +24,10 @@ async function getSupabase() {
 
 export async function GET(req: NextRequest) {
   const supabase = await getSupabase();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
   const { searchParams } = new URL(req.url);
   const statut = searchParams.get("statut");
 
