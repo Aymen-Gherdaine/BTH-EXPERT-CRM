@@ -28,7 +28,10 @@
       "Bash(npm install *)",
       "Bash(bash \"C:/Users/Precision/.claude/statusline-command.sh\")",
       "Bash(npm audit *)",
-      "Bash(npx supabase *)"
+      "Bash(npx supabase *)",
+      "Bash(node -e ' *)",
+      "Bash(not exist *)",
+      "Bash(node)"
     ]
   }
 }
