@@ -23,3 +23,12 @@ yarn-debug.log*
 *.pem
 .vercel
 tsconfig.tsbuildinfo
+
+# Dev artifacts — internal planning docs
+CLAUDE.md
+AGENTS.md
+DESIGN.md
+PROGRESS.md
+mindmap.md
+audit-checklist.html
+docs-architecture.html
