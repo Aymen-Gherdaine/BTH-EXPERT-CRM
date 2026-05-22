@@ -5,6 +5,7 @@ import { generateSoumissionContent, SoumissionAIContent } from "@/lib/anthropic"
 import { FormDataStep1, FormDataStep2 } from "@/types";
 import { generateSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -30,6 +31,13 @@ export async function POST(req: NextRequest) {
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+
+  if (!checkRateLimit(user.id)) {
+    return NextResponse.json(
+      { error: "Trop de requêtes. Attendez 1 minute avant de réessayer." },
+      { status: 429 }
+    )
+  }
 
   try {
     const body = await req.json();
