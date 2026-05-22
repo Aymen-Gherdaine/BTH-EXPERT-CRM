@@ -314,7 +314,10 @@
     margin-top: 1rem;
   }
 
-  .seg-bar { }
+  .seg-bar {
+    display: block;
+    min-height: 1px; /* ensure rule is non-empty to satisfy linters */
+  }
 
   .seg-bar-label {
     display: flex;

@@ -19,7 +19,7 @@
 > Ces skills sont installés et doivent être utilisés systématiquement selon le contexte.
 > Ne pas les ignorer — ils définissent le niveau de qualité attendu sur ce projet.
 
-**`superpowers`** — À activer pour toute feature complexe touchant plus de 3 fichiers.
+**`superpowers`** — À activer pour toute feature.
 Laisse-le décomposer la tâche en sous-agents spécialisés. Ne pas essayer de tout faire en un seul contexte.
 
 **`frontend-design`** — Obligatoire pour tout composant UI, page, dashboard, formulaire.
