@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback, Dispatch, SetStateAction } from "react";
+import { useEffect, useState, Dispatch, SetStateAction } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import useSWR from "swr";
-import { Soumission, StatutSoumission, LigneBudget } from "@/types";
+import { StatutSoumission, LigneBudget } from "@/types";
 import { formatMontant, formatDateFr } from "@/lib/utils";
-import { SoumissionView, ApiListResponse, MeResponse, SortCol, VersementState, V0, DeleteState, D0 } from "./types";
+import { SoumissionView, SortCol, D0, V0 } from "./types";
 import { CSS, ST, NEXT_ST, I, fmtInt } from "./constants";
 import { useBp } from "@/hooks/useBp";
+import { useSoumissions } from "./hooks/useSoumissions";
 import { Ic, StatusBadge, Avatar, FilterDropdown, Pager } from "./components";
 
 
@@ -751,18 +750,19 @@ function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, onDelet
 ══════════════════════════════════════════════════════════════ */
 
 export default function SoumissionsClient() {
-  const router = useRouter();
   const bp = useBp();
   const isDesktop = bp === "desktop";
 
-  const { data: soumissionsRes, isLoading: soumissionsLoading, mutate: mutateSoumissions } =
-    useSWR<ApiListResponse<Soumission>>("/api/soumissions");
-  const { data: meRes, isLoading: meLoading } = useSWR<MeResponse>("/api/me");
+  const {
+    soumissions, loading, isAdmin, toView,
+    selId, selDetail, detailLoading,
+    versement, setVersement, versementInput, setVersementInput, savingVersement,
+    deleteConfirm, setDeleteConfirm, deletingId,
+    selected,
+    openDetail, closeDetail, handleStatut, openVersementFor,
+    handleSaveVersement, handleDelete, confirmDelete, handleDuplicate, toggleSel,
+  } = useSoumissions();
 
-  const role = meRes?.role ?? "admin";
-  const isAdmin = role === "admin" || role === "charge_projet";
-
-  /* View toggle — persisted in localStorage */
   const [view, setView] = useState<"cards" | "table">("cards");
   useEffect(() => {
     const saved = localStorage.getItem("soum-view");
@@ -775,26 +775,9 @@ export default function SoumissionsClient() {
 
   const PER_PAGE = !isDesktop ? 6 : view === "cards" ? 9 : 12;
 
-  const soumissions = soumissionsRes?.data ?? [];
-  const loading = (soumissionsLoading && !soumissionsRes) || (meLoading && !meRes);
   const [q, setQ] = useState("");
   const [filtre, setFiltre] = useState<StatutSoumission | null>(null);
   const [page, setPage] = useState(1);
-  const [selected, setSelected] = useState<string[]>([]);
-  const [selId, setSelId] = useState<string | null>(null);
-  const [selDetail, setSelDetail] = useState<SoumissionView | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [versement, setVersement] = useState<VersementState>(V0);
-  const [versementInput, setVersementInput] = useState("");
-  const [savingVersement, setSavingVersement] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<DeleteState>(D0);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const toView = useCallback((s: Soumission): SoumissionView => ({
-    ...s,
-    _cn: s.client?.entreprise ?? "—",
-    _contact: s.client ? `${s.client.titre} ${s.client.nom_contact}` : "—",
-  }), []);
 
   useEffect(() => { setPage(1); }, [filtre, q, view]);
 
@@ -820,74 +803,6 @@ export default function SoumissionsClient() {
   const totalTTC   = soumissions.reduce((s, o) => s + o.total_ttc, 0);
   const nbAccepted = soumissions.filter(o => o.statut === "Acceptée").length;
   const totalVerse = soumissions.reduce((s, o) => s + (o.versement_recu ?? 0), 0);
-
-  const updateSoumissions = useCallback((updater: (items: Soumission[]) => Soumission[]) => {
-    mutateSoumissions(
-      current => ({ data: updater(current?.data ?? []) }),
-      { revalidate: false }
-    );
-  }, [mutateSoumissions]);
-
-  async function openDetail(o: SoumissionView) {
-    setSelId(o.id);
-    setSelDetail(o);
-    setDetailLoading(true);
-    const res = await fetch(`/api/soumissions/${o.id}`);
-    const json = await res.json();
-    if (json.data) setSelDetail(toView(json.data));
-    setDetailLoading(false);
-  }
-
-  function closeDetail() { setSelId(null); setSelDetail(null); }
-
-  async function handleStatut(id: string, statut: StatutSoumission) {
-    await fetch(`/api/soumissions/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ statut }),
-    });
-    updateSoumissions(prev => prev.map(s => s.id === id ? { ...s, statut } : s));
-    if (selDetail?.id === id) setSelDetail(prev => prev ? { ...prev, statut } : null);
-    if (statut === "Acceptée") {
-      const s = soumissions.find(x => x.id === id);
-      openVersementFor(id, s?.titre_projet ?? "", s?.total_ttc ?? 0, s?.versement_recu ?? 0);
-    }
-  }
-
-  function openVersementFor(id: string, titre: string, ttc: number, current: number) {
-    setVersementInput(current ? String(current) : "");
-    setVersement({ open: true, id, titre, ttc, current });
-  }
-
-  async function handleSaveVersement() {
-    const montant = parseFloat(versementInput.replace(/\s/g, "").replace(",", ".")) || 0;
-    setSavingVersement(true);
-    await fetch(`/api/soumissions/${versement.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ versement_recu: montant }),
-    });
-    updateSoumissions(prev => prev.map(s => s.id === versement.id ? { ...s, versement_recu: montant } : s));
-    if (selDetail?.id === versement.id) setSelDetail(prev => prev ? { ...prev, versement_recu: montant } : null);
-    setSavingVersement(false);
-    setVersement(V0);
-  }
-
-  function handleDelete(s: SoumissionView) {
-    setDeleteConfirm({ open: true, id: s.id, label: s.titre_projet });
-  }
-
-  async function confirmDelete() {
-    setDeletingId(deleteConfirm.id);
-    await fetch(`/api/soumissions/${deleteConfirm.id}`, { method: "DELETE" });
-    updateSoumissions(prev => prev.filter(s => s.id !== deleteConfirm.id));
-    if (selId === deleteConfirm.id) closeDetail();
-    setDeletingId(null);
-    setDeleteConfirm(D0);
-  }
-
-  const handleDuplicate = (s: SoumissionView) => router.push(`/soumissions/${s.id}?duplicate=1`);
-  const toggleSel = (id: string) => setSelected(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
 
   const px = isDesktop ? 32 : 14;
 
