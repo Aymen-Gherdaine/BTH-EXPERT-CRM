@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Bloquer si .env.local est stagé
+if git diff --cached --name-only | grep -q "\.env\.local"; then
+  echo "❌ BLOQUÉ : .env.local ne doit jamais être committé."
+  exit 1
+fi
+
+# Bloquer si des patterns de clés API sont détectés dans les fichiers stagés
+# (exclut .husky/ pour éviter la fausse détection sur le hook lui-même)
+if git diff --cached -- ':!.husky/' | grep -E "(sk-ant-|sb_secret_|sb_publishable_|SUPABASE_SERVICE_ROLE_KEY=ey)"; then
+  echo "❌ BLOQUÉ : Clé API détectée dans les fichiers stagés."
+  exit 1
+fi
+
+echo "✅ Aucun secret détecté."
