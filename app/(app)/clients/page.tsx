@@ -708,7 +708,7 @@ export default function ClientsPage() {
   const paginated = clients.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const cityCount = new Set(clients.map(c => c.ville).filter(Boolean)).size;
   const latestClient = clients[0];
-  const showPagination = !loading && clients.length > 0 && (bp === "desktop" || totalPages > 1);
+  const showPagination = !loading && clients.length > 0 && totalPages > 1;
 
   return (
     <>

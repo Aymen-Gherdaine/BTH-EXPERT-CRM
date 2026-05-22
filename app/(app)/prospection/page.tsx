@@ -1133,37 +1133,39 @@ function HistoryTable({
           <strong style={{ color: "#2e2a26", fontWeight: 700 }}>{total}</strong>{" "}
           visite{total !== 1 ? "s" : ""}
         </span>
-        <div className="history-pager">
-          <motion.button
-            whileTap={{ scale: 0.94 }}
-            onClick={() => onPage(Math.max(1, page - 1))}
-            disabled={page <= 1}
-            className="history-page-button bth-focus"
-            style={{
-              color: page <= 1 ? "#d0c9be" : "#45403a",
-              cursor: page <= 1 ? "default" : "pointer",
-              opacity: page <= 1 ? 0.65 : 1,
-            }}
-          >
-            <svg width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
-          </motion.button>
-          <span className="history-page-label">
-            Page {page} / {pages}
-          </span>
-          <motion.button
-            whileTap={{ scale: 0.94 }}
-            onClick={() => onPage(Math.min(pages, page + 1))}
-            disabled={page >= pages}
-            className="history-page-button bth-focus"
-            style={{
-              color: page >= pages ? "#d0c9be" : "#45403a",
-              cursor: page >= pages ? "default" : "pointer",
-              opacity: page >= pages ? 0.65 : 1,
-            }}
-          >
-            <svg width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>
-          </motion.button>
-        </div>
+        {pages > 1 && (
+          <div className="history-pager">
+            <motion.button
+              whileTap={{ scale: 0.94 }}
+              onClick={() => onPage(Math.max(1, page - 1))}
+              disabled={page <= 1}
+              className="history-page-button bth-focus"
+              style={{
+                color: page <= 1 ? "#d0c9be" : "#45403a",
+                cursor: page <= 1 ? "default" : "pointer",
+                opacity: page <= 1 ? 0.65 : 1,
+              }}
+            >
+              <svg width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
+            </motion.button>
+            <span className="history-page-label">
+              Page {page} / {pages}
+            </span>
+            <motion.button
+              whileTap={{ scale: 0.94 }}
+              onClick={() => onPage(Math.min(pages, page + 1))}
+              disabled={page >= pages}
+              className="history-page-button bth-focus"
+              style={{
+                color: page >= pages ? "#d0c9be" : "#45403a",
+                cursor: page >= pages ? "default" : "pointer",
+                opacity: page >= pages ? 0.65 : 1,
+              }}
+            >
+              <svg width={13} height={13} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" /></svg>
+            </motion.button>
+          </div>
+        )}
         <span className="history-footer-spacer" aria-hidden="true" />
       </div>
     </div>

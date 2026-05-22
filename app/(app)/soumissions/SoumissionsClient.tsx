@@ -835,36 +835,38 @@ function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle, onDup
         </span>
 
         {/* Pagination */}
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <motion.button
-            whileTap={{ scale: 0.94 }}
-            onClick={() => onPage(p => Math.max(1, p - 1))}
-            disabled={page <= 1}
-            style={{
-              width: 32, height: 32, borderRadius: 9999, border: "1px solid #e8e2d8",
-              background: "white", display: "flex", alignItems: "center", justifyContent: "center",
-              color: page <= 1 ? "#d0c9be" : "#1a2e1e", cursor: page <= 1 ? "default" : "pointer",
-            }}
-          >
-            <Ic d={I.chevL} z={13} />
-          </motion.button>
-          <span style={{ fontSize: 12, color: "#374151", fontWeight: 500, minWidth: 80, textAlign: "center", userSelect: "none" }}>
-            Page {page} / {Math.max(1, Math.ceil(total / perPage))}
-          </span>
-          <motion.button
-            whileTap={{ scale: 0.94 }}
-            onClick={() => onPage(p => Math.min(Math.max(1, Math.ceil(total / perPage)), p + 1))}
-            disabled={page >= Math.max(1, Math.ceil(total / perPage))}
-            style={{
-              width: 32, height: 32, borderRadius: 9999, border: "1px solid #e8e2d8",
-              background: "white", display: "flex", alignItems: "center", justifyContent: "center",
-              color: page >= Math.max(1, Math.ceil(total / perPage)) ? "#d0c9be" : "#1a2e1e",
-              cursor: page >= Math.max(1, Math.ceil(total / perPage)) ? "default" : "pointer",
-            }}
-          >
-            <Ic d={I.chevR} z={13} />
-          </motion.button>
-        </div>
+        {Math.max(1, Math.ceil(total / perPage)) > 1 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <motion.button
+              whileTap={{ scale: 0.94 }}
+              onClick={() => onPage(p => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              style={{
+                width: 32, height: 32, borderRadius: 9999, border: "1px solid #e8e2d8",
+                background: "white", display: "flex", alignItems: "center", justifyContent: "center",
+                color: page <= 1 ? "#d0c9be" : "#1a2e1e", cursor: page <= 1 ? "default" : "pointer",
+              }}
+            >
+              <Ic d={I.chevL} z={13} />
+            </motion.button>
+            <span style={{ fontSize: 12, color: "#374151", fontWeight: 500, minWidth: 80, textAlign: "center", userSelect: "none" }}>
+              Page {page} / {Math.max(1, Math.ceil(total / perPage))}
+            </span>
+            <motion.button
+              whileTap={{ scale: 0.94 }}
+              onClick={() => onPage(p => Math.min(Math.max(1, Math.ceil(total / perPage)), p + 1))}
+              disabled={page >= Math.max(1, Math.ceil(total / perPage))}
+              style={{
+                width: 32, height: 32, borderRadius: 9999, border: "1px solid #e8e2d8",
+                background: "white", display: "flex", alignItems: "center", justifyContent: "center",
+                color: page >= Math.max(1, Math.ceil(total / perPage)) ? "#d0c9be" : "#1a2e1e",
+                cursor: page >= Math.max(1, Math.ceil(total / perPage)) ? "default" : "pointer",
+              }}
+            >
+              <Ic d={I.chevR} z={13} />
+            </motion.button>
+          </div>
+        )}
 
         {/* Total */}
         {isAdmin && (
@@ -1435,7 +1437,7 @@ export default function SoumissionsClient() {
                       items={pageItems} isAdmin={isAdmin} onOpen={openDetail} selId={selId} px={px}
                     />
                   </div>
-                  <Pager page={page} total={filtered.length} perPage={PER_PAGE} onPage={setPage} hideWhenSinglePage={!isDesktop} />
+                  <Pager page={page} total={filtered.length} perPage={PER_PAGE} onPage={setPage} hideWhenSinglePage={true} />
                 </div>
               ) : (
                 /* Premium table */

@@ -1156,7 +1156,7 @@ export default function DepensesPage() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
   const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  const showPagination = filtered.length > 0 && (isDesktop || totalPages > 1);
+  const showPagination = filtered.length > 0 && totalPages > 1;
 
   useEffect(() => setPage(1), [search, catFilter]);
   useEffect(() => setPage((current) => Math.min(current, totalPages)), [totalPages]);
