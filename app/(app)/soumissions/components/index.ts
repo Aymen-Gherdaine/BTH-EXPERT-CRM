@@ -3,3 +3,8 @@ export { StatusBadge } from "./StatusBadge";
 export { Avatar } from "./Avatar";
 export { FilterDropdown } from "./FilterDropdown";
 export { Pager } from "./Pager";
+export { CardGrid } from "./CardGrid";
+export { PremiumTable } from "./PremiumTable";
+export { DetailPanel } from "./DetailPanel";
+export { DeleteModal } from "./DeleteModal";
+export { VersementModal } from "./VersementModal";
