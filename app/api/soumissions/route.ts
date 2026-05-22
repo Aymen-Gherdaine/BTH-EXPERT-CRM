@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { generateNumeroOffre } from "@/lib/utils";
-import { FormDataComplete } from "@/types";
+import { soumissionCreateSchema } from "@/lib/schemas";
+import { validateBody } from "@/lib/schemas/helpers";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -66,8 +67,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Action réservée aux administrateurs et chargés de projet" }, { status: 403 });
     }
 
-    const body: { formData: FormDataComplete; contexte: { section_1: string; section_1_1: string } } = await req.json();
-    const { formData, contexte } = body;
+    const rawBody = await req.json();
+    const validation = validateBody(soumissionCreateSchema, rawBody);
+    if (!validation.success) return validation.response;
+    const { formData, contexte } = validation.data;
 
     // 1. Upsert client
     const clientPayload = {

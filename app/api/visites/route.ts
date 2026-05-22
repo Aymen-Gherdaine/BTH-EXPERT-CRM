@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { visiteCreateSchema } from "@/lib/schemas";
+import { validateBody } from "@/lib/schemas/helpers";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -52,10 +54,9 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   const body = await req.json();
-  const {
-    prospect_id, date_visite, resultat,
-    notes_visite, date_prochaine_action, action_requise,
-  } = body;
+  const validation = validateBody(visiteCreateSchema, body);
+  if (!validation.success) return validation.response;
+  const { prospect_id, date_visite, resultat, notes_visite, date_prochaine_action, action_requise } = validation.data;
 
   const { data, error } = await supabase
     .from("visites")

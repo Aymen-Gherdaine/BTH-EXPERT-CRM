@@ -3,6 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { generateSoumissionContent, SoumissionAIContent } from "@/lib/anthropic";
 import { FormDataStep1, FormDataStep2 } from "@/types";
+import { generateSchema } from "@/lib/schemas";
+import { validateBody } from "@/lib/schemas/helpers";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -30,14 +32,15 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   try {
-    const { step1, step2 }: { step1: FormDataStep1; step2: FormDataStep2 } =
-      await req.json();
+    const body = await req.json();
+    const validation = validateBody(generateSchema, body);
+    if (!validation.success) return validation.response;
+    const { step1, step2 } = validation.data;
 
-    if (!step1 || !step2) {
-      return NextResponse.json({ error: "Données manquantes" }, { status: 400 });
-    }
-
-    const data: SoumissionAIContent = await generateSoumissionContent(step1, step2);
+    const data: SoumissionAIContent = await generateSoumissionContent(
+      step1 as unknown as FormDataStep1,
+      step2 as unknown as FormDataStep2
+    );
 
     return NextResponse.json({ success: true, data });
   } catch (error) {

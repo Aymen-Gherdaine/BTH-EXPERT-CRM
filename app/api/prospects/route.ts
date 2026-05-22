@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { prospectCreateSchema } from "@/lib/schemas";
+import { validateBody } from "@/lib/schemas/helpers";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -51,10 +53,9 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   const body = await req.json();
-  const {
-    entreprise, secteur_activite, nom_contact, poste_contact,
-    telephone, email, adresse, notes_generales,
-  } = body;
+  const validation = validateBody(prospectCreateSchema, body);
+  if (!validation.success) return validation.response;
+  const { entreprise, secteur_activite, nom_contact, poste_contact, telephone, email, adresse, notes_generales } = validation.data;
 
   const { data, error } = await supabase
     .from("prospects")

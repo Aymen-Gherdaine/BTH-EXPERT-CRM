@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { visitePatchSchema } from "@/lib/schemas";
+import { validateBody } from "@/lib/schemas/helpers";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -18,8 +20,6 @@ async function getSupabase() {
   );
 }
 
-const VALID_RESULTATS = ["soumission_demandee", "rappel_planifie", "pas_interesse", "absent", "autre"] as const;
-
 export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -29,29 +29,16 @@ export async function PATCH(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  const body = await req.json() as {
-    date_visite?: string;
-    resultat?: string;
-    notes_visite?: string | null;
-    date_prochaine_action?: string | null;
-    action_requise?: string | null;
-  };
+  const body = await req.json();
+  const validation = validateBody(visitePatchSchema, body);
+  if (!validation.success) return validation.response;
 
   const update: Record<string, unknown> = {};
-  if (body.date_visite !== undefined) update.date_visite = body.date_visite;
-  if (body.resultat !== undefined) {
-    if (!VALID_RESULTATS.includes(body.resultat as typeof VALID_RESULTATS[number])) {
-      return NextResponse.json({ error: "Résultat invalide" }, { status: 400 });
-    }
-    update.resultat = body.resultat;
-  }
-  if (body.notes_visite !== undefined) update.notes_visite = body.notes_visite;
-  if (body.date_prochaine_action !== undefined) update.date_prochaine_action = body.date_prochaine_action;
-  if (body.action_requise !== undefined) update.action_requise = body.action_requise;
-
-  if (Object.keys(update).length === 0) {
-    return NextResponse.json({ error: "Aucune modification fournie" }, { status: 400 });
-  }
+  if (validation.data.date_visite !== undefined) update.date_visite = validation.data.date_visite;
+  if (validation.data.resultat !== undefined) update.resultat = validation.data.resultat;
+  if (validation.data.notes_visite !== undefined) update.notes_visite = validation.data.notes_visite;
+  if (validation.data.date_prochaine_action !== undefined) update.date_prochaine_action = validation.data.date_prochaine_action;
+  if (validation.data.action_requise !== undefined) update.action_requise = validation.data.action_requise;
 
   const { data, error } = await supabase
     .from("visites")

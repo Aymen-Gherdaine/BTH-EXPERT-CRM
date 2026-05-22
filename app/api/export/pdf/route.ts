@@ -4,7 +4,9 @@ import { cookies } from "next/headers";
 import { generateDocument } from "@/lib/generate-document";
 import { convertToPdf } from "@/lib/convert-to-pdf";
 import { buildDocumentData } from "@/lib/export-helpers";
-import { Client, EditablePreview, LigneBudget, Soumission } from "@/types";
+import { Client } from "@/types";
+import { exportDocumentSchema } from "@/lib/schemas";
+import { validateBody } from "@/lib/schemas/helpers";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -34,19 +36,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const {
-      soumission,
-      client,
-      lignes,
-      contexteData,
-      editablePreview,
-    }: {
-      soumission: Soumission;
-      client?: Client;
-      lignes: LigneBudget[];
-      contexteData?: { section_1: string; section_1_1: string };
-      editablePreview?: EditablePreview;
-    } = body;
+    const validation = validateBody(exportDocumentSchema, body);
+    if (!validation.success) return validation.response;
+    const { soumission, client, lignes, contexteData, editablePreview } = validation.data;
 
     const { data: parametres } = await supabase
       .from("parametres")
@@ -55,12 +47,12 @@ export async function POST(req: NextRequest) {
       .single();
 
     const data = buildDocumentData(
-      soumission,
-      client ?? ({} as Client),
-      lignes,
+      soumission as unknown as Parameters<typeof buildDocumentData>[0],
+      (client ?? {}) as unknown as Client,
+      lignes as unknown as Parameters<typeof buildDocumentData>[2],
       contexteData,
       parametres ?? {},
-      editablePreview
+      editablePreview as unknown as Parameters<typeof buildDocumentData>[5]
     );
     const docxBuffer = generateDocument(data, true);
     const pdfBuffer = await convertToPdf(docxBuffer);
