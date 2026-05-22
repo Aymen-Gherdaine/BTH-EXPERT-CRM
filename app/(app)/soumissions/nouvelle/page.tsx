@@ -69,9 +69,22 @@ export default function NouvelleSoumissionPage() {
   const [saved, setSaved] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const pendingActionRef = useRef<(() => void) | null>(null);
+  const [parametres, setParametres] = useState<{
+    signataire1_nom: string | null;
+    signataire1_titre: string | null;
+    signataire2_nom: string | null;
+    signataire2_titre: string | null;
+  } | null>(null);
 
   // Le formulaire est "sale" dès que l'utilisateur a commencé à remplir des données
   const isDirty = !saved && (step > 0 || step1.nom_contact.trim() !== "" || step1.entreprise.trim() !== "");
+
+  useEffect(() => {
+    fetch("/api/parametres")
+      .then(r => r.ok ? r.json() : null)
+      .then(data => setParametres(data))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/me")
@@ -306,6 +319,7 @@ export default function NouvelleSoumissionPage() {
                 saving={saving}
                 onBack={handleBackFromPreview}
                 onSave={handleSave}
+                parametres={parametres}
               />
             )}
           </motion.div>

@@ -19,6 +19,12 @@ interface Props {
   onSave: () => void;
   soumissionId?: string;
   clientId?: string;
+  parametres?: {
+    signataire1_nom?: string | null;
+    signataire1_titre?: string | null;
+    signataire2_nom?: string | null;
+    signataire2_titre?: string | null;
+  } | null;
 }
 
 const DARK_BLUE = "#192D38";
@@ -125,6 +131,7 @@ export default function StepPreview({
   onSave,
   soumissionId,
   clientId,
+  parametres,
 }: Props) {
   const router = useRouter();
   const [numeroOffre] = useState(() => generateNumeroOffre());
@@ -139,9 +146,6 @@ export default function StepPreview({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
   const [showRegenerateModal, setShowRegenerateModal] = useState(false);
-  const [sig, setSig] = useState<{ s1_nom: string | null; s1_titre: string | null; s2_nom: string | null; s2_titre: string | null }>(
-    { s1_nom: null, s1_titre: null, s2_nom: null, s2_titre: null }
-  );
   const [regenerating, setRegenerating] = useState(false);
 
   // FIX 1 — leave guard
@@ -224,13 +228,6 @@ export default function StepPreview({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection]);
-
-  useEffect(() => {
-    fetch("/api/parametres")
-      .then(r => r.json())
-      .then(d => setSig({ s1_nom: d.signataire1_nom ?? null, s1_titre: d.signataire1_titre ?? null, s2_nom: d.signataire2_nom ?? null, s2_titre: d.signataire2_titre ?? null }))
-      .catch(() => {});
-  }, []);
 
   const civiliteLong =
     editablePreview.titre === "M."
@@ -1351,13 +1348,13 @@ export default function StepPreview({
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 grid grid-cols-2 gap-6">
           <div>
             <p className="text-xs text-gray-400 mb-2">Responsable de l'offre :</p>
-            <p className="font-semibold text-sm" style={{ color: BTH_GREEN }}>{sig.s1_nom ?? "—"}</p>
-            <p className="text-xs text-gray-400">{sig.s1_titre ?? ""}</p>
+            <p className="font-semibold text-sm" style={{ color: BTH_GREEN }}>{parametres?.signataire1_nom ?? "—"}</p>
+            <p className="text-xs text-gray-400">{parametres?.signataire1_titre ?? ""}</p>
           </div>
           <div>
             <p className="text-xs text-gray-400 mb-2">Autorisé par :</p>
-            <p className="font-semibold text-sm" style={{ color: BTH_GREEN }}>{sig.s2_nom ?? "—"}</p>
-            <p className="text-xs text-gray-400">{sig.s2_titre ?? ""}</p>
+            <p className="font-semibold text-sm" style={{ color: BTH_GREEN }}>{parametres?.signataire2_nom ?? "—"}</p>
+            <p className="text-xs text-gray-400">{parametres?.signataire2_titre ?? ""}</p>
           </div>
         </div>
       </div>
