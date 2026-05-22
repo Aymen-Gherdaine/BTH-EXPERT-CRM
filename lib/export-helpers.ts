@@ -1,6 +1,7 @@
 import { Client, EditablePreview, LigneBudget, Soumission, TypeEtude } from "@/types";
 import { DocumentData } from "@/lib/generate-document";
 import { formatDateFr } from "@/lib/utils";
+import { sanitizeAiText } from "@/lib/sanitize-ai-text";
 
 type ContexteData = { section_1: string; section_1_1: string };
 
@@ -87,13 +88,13 @@ function buildFromEditablePreview(
     // Projet — from editablePreview
     titre_projet: preview.titre_projet,
     description_mission: preview.titre_projet.toLowerCase(),
-    contexte_paragraphe_1: preview.contexte_paragraphe_1,
-    contexte_paragraphe_2: preview.contexte_paragraphe_2,
+    contexte_paragraphe_1: sanitizeAiText(preview.contexte_paragraphe_1),
+    contexte_paragraphe_2: sanitizeAiText(preview.contexte_paragraphe_2),
     // Objectifs — from editablePreview
-    objectif_1: preview.objectif_1,
-    objectif_2: preview.objectif_2,
-    objectif_3: preview.objectif_3,
-    objectif_4: preview.objectif_4,
+    objectif_1: sanitizeAiText(preview.objectif_1),
+    objectif_2: sanitizeAiText(preview.objectif_2),
+    objectif_3: sanitizeAiText(preview.objectif_3),
+    objectif_4: sanitizeAiText(preview.objectif_4),
     // Hypothèses — split hypothese_specifique back to template variables
     hypothese_1: hyps[0] ?? "",
     hypothese_2_intro: "",
@@ -177,12 +178,12 @@ export function buildDocumentData(
     date_offre: formatDateFr(soumission.date_offre),
     titre_projet: soumission.titre_projet,
     description_mission: soumission.titre_projet.toLowerCase(),
-    contexte_paragraphe_1: paragraphes[0] ?? "",
-    contexte_paragraphe_2: paragraphes[1] ?? "",
-    objectif_1: objectifs[0] ?? "",
-    objectif_2: objectifs[1] ?? "",
-    objectif_3: objectifs[2] ?? "",
-    objectif_4: objectifs[3] ?? "",
+    contexte_paragraphe_1: sanitizeAiText(paragraphes[0] ?? ""),
+    contexte_paragraphe_2: sanitizeAiText(paragraphes[1] ?? ""),
+    objectif_1: sanitizeAiText(objectifs[0] ?? ""),
+    objectif_2: sanitizeAiText(objectifs[1] ?? ""),
+    objectif_3: sanitizeAiText(objectifs[2] ?? ""),
+    objectif_4: sanitizeAiText(objectifs[3] ?? ""),
     ...getHypotheses(soumission.type_etude),
     delai_jours: soumission.delai_jours,
     validite_jours: parametres.validite_jours ?? 30,
