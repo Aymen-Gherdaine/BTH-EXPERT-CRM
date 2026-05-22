@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { Soumission, StatutSoumission, LigneBudget, UserRole } from "@/types";
+import { Soumission, StatutSoumission, LigneBudget } from "@/types";
 import { formatMontant, formatDateFr } from "@/lib/utils";
+import { StCfg, SoumissionView, ApiListResponse, MeResponse, SortCol, VersementState, V0, DeleteState, D0 } from "./types";
 
 /* ── Scrollbar + skeleton ────────────────────────────────────── */
 const CSS = `
@@ -162,7 +163,6 @@ const fmtInt = (n: number) =>
   Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 
 /* ── Status config ──────────────────────────────────────────── */
-type StCfg = { accent: string; bgBadge: string; textBadge: string; dot: string; border: string };
 const ST: Record<StatutSoumission, StCfg> = {
   Brouillon: { accent: "#94a3b8", bgBadge: "#f8fafc", textBadge: "#475569", dot: "#94a3b8", border: "#e2e8f0" },
   Envoyée:   { accent: "#3b82f6", bgBadge: "#eff6ff", textBadge: "#2563eb", dot: "#3b82f6", border: "#bfdbfe" },
@@ -252,11 +252,6 @@ function Avatar({ name, size = 32 }: { name: string; size?: number }) {
     </div>
   );
 }
-
-/* ── SoumissionView ─────────────────────────────────────────── */
-type SoumissionView = Soumission & { _cn: string; _contact: string };
-type ApiListResponse<T> = { data?: T[] };
-type MeResponse = { role?: UserRole };
 
 /* ── FilterDropdown ─────────────────────────────────────────── */
 function FilterDropdown({ active, set, counts }: {
@@ -535,8 +530,6 @@ function CardGrid({ items, isAdmin, onOpen, selId, px }: {
 /* ══════════════════════════════════════════════════════════════
    TABLE VIEW
 ══════════════════════════════════════════════════════════════ */
-
-type SortCol = "numero_offre" | "client" | "titre_projet" | "statut" | "total_ttc" | "date_offre";
 
 function PremiumTableRow({
   o, isAdmin, onClick, isActive, isSelected, onToggle,
@@ -1107,12 +1100,6 @@ function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, onDelet
     </>
   );
 }
-
-/* ── Modal states ───────────────────────────────────────────── */
-interface VersementState { open: boolean; id: string; titre: string; ttc: number; current: number }
-const V0: VersementState = { open: false, id: "", titre: "", ttc: 0, current: 0 };
-interface DeleteState { open: boolean; id: string; label: string }
-const D0: DeleteState = { open: false, id: "", label: "" };
 
 /* ══════════════════════════════════════════════════════════════
    MAIN EXPORT
