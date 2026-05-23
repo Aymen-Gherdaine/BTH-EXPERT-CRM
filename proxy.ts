@@ -5,7 +5,7 @@ const PUBLIC_ROUTES = ["/login", "/auth/callback", "/auth/set-password"];
 const ADMIN_PREFIXES = ["/admin/", "/couts-marges"];
 const SETTINGS_PREFIX = "/parametres";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { supabase, response } = createMiddlewareClient(request);
 
   const {
