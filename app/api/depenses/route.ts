@@ -30,6 +30,13 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single<{ role: string }>();
+  const role = profile?.role;
+
   const { searchParams } = new URL(req.url);
   const categorie = searchParams.get("categorie");
   const projet_lie = searchParams.get("projet_lie");
@@ -39,6 +46,7 @@ export async function GET(req: NextRequest) {
     .select("*, profiles(full_name), soumissions(id, titre_projet, numero_offre, total_ht)")
     .order("date_depense", { ascending: false });
 
+  if (role === "commercial") query = query.eq("employe_id", user.id);
   if (categorie) query = query.eq("categorie", categorie);
   if (projet_lie) query = query.eq("projet_lie", projet_lie);
 

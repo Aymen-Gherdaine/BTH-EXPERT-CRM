@@ -43,6 +43,18 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single<{ role: string }>();
+  if (profile?.role === "commercial") {
+    return NextResponse.json(
+      { error: "Accès refusé — export réservé aux admins et chargés de projet" },
+      { status: 403 }
+    );
+  }
+
   const { data, error } = await supabase
     .from("soumissions")
     .select("numero_offre, date_offre, titre_projet, type_etude, delai_jours, total_ht, tva, total_ttc, versement_recu, statut, client:clients(titre, nom_contact, entreprise)")

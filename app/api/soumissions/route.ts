@@ -40,6 +40,13 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single<{ role: string }>();
+  const role = profile?.role;
+
   const { searchParams } = new URL(req.url);
   const statut = searchParams.get("statut");
   const client_id = searchParams.get("client_id");
@@ -55,7 +62,15 @@ export async function GET(req: NextRequest) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ data });
+  const sanitizedData = (data ?? []).map(s => {
+    if (role === "commercial") {
+      const { total_ht, tva, total_ttc, versement_recu, ...rest } = s as Record<string, unknown>;
+      void total_ht; void tva; void total_ttc; void versement_recu;
+      return rest;
+    }
+    return s;
+  });
+  return NextResponse.json({ data: sanitizedData });
 }
 
 export async function POST(req: NextRequest) {
