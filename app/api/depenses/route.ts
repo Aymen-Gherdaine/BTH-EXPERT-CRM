@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { depenseCreateSchema } from "@/lib/schemas/index";
+import { validateBody } from "@/lib/schemas/helpers";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -53,11 +55,10 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   const body = await req.json();
-  const { categorie, montant, description, date_depense, justificatif_url, projet_lie } = body;
 
-  if (!categorie || montant === undefined || montant === null) {
-    return NextResponse.json({ error: "categorie et montant sont obligatoires" }, { status: 400 });
-  }
+  const validation = validateBody(depenseCreateSchema, body);
+  if (!validation.success) return validation.response;
+  const { categorie, montant, description, date_depense, justificatif_url, projet_lie } = validation.data;
 
   // employe_id is always set server-side — never from request body
   const { data, error } = await supabase
