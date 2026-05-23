@@ -93,6 +93,40 @@ export const soumissionCreateSchema = z.object({
   }),
 })
 
+// ── Client PATCH ──────────────────────────────────────────
+export const clientPatchSchema = z.object({
+  titre: z.string().min(1).max(10).optional(),
+  nom_contact: z.string().min(1).max(100).optional(),
+  poste: z.string().max(100).optional(),
+  entreprise: z.string().min(1).max(200).optional(),
+  adresse: z.string().max(300).optional(),
+  ville: z.string().max(100).optional(),
+  telephone: z.string().max(30).optional(),
+  email: z.string().email().optional().nullable(),
+}).refine(data => Object.keys(data).length > 0, "Au moins un champ requis")
+
+// ── Dépense POST ──────────────────────────────────────────
+const CATEGORIES_VALIDES = [
+  "mission",
+  "vehicule",
+  "repas",
+  "materiel",
+  "communication",
+  "autre",
+] as const
+
+export const depenseCreateSchema = z.object({
+  categorie: z.enum(CATEGORIES_VALIDES),
+  montant: z.number().positive("Le montant doit être positif"),
+  description: z.string().max(1000).optional().nullable(),
+  date_depense: z.string().regex(
+    /^\d{4}-\d{2}-\d{2}$/,
+    "Format date invalide (YYYY-MM-DD)"
+  ).optional(),
+  justificatif_url: z.string().url().optional().nullable(),
+  projet_lie: z.string().uuid("projet_lie doit être un UUID valide").optional().nullable(),
+})
+
 // ── Export DOCX / PDF ──────────────────────────────────────
 export const exportDocumentSchema = z.object({
   soumission: z.object({

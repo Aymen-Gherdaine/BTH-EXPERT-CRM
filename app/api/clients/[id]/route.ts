@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { clientPatchSchema } from "@/lib/schemas/index";
+import { validateBody } from "@/lib/schemas/helpers";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -31,30 +33,11 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   const { id } = await params;
-  const body = await req.json() as {
-    titre?: string;
-    nom_contact?: string;
-    poste?: string;
-    entreprise?: string;
-    adresse?: string;
-    ville?: string;
-    telephone?: string;
-    email?: string;
-  };
+  const body = await req.json();
 
-  const update: Record<string, unknown> = {};
-  if (body.titre       !== undefined) update.titre       = body.titre;
-  if (body.nom_contact !== undefined) update.nom_contact = body.nom_contact;
-  if (body.poste       !== undefined) update.poste       = body.poste;
-  if (body.entreprise  !== undefined) update.entreprise  = body.entreprise;
-  if (body.adresse     !== undefined) update.adresse     = body.adresse;
-  if (body.ville       !== undefined) update.ville       = body.ville;
-  if (body.telephone   !== undefined) update.telephone   = body.telephone;
-  if (body.email       !== undefined) update.email       = body.email;
-
-  if (Object.keys(update).length === 0) {
-    return NextResponse.json({ error: "Aucune modification fournie" }, { status: 400 });
-  }
+  const validation = validateBody(clientPatchSchema, body);
+  if (!validation.success) return validation.response;
+  const update = validation.data;
 
   const { data, error } = await supabase
     .from("clients")
