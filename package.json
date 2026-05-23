@@ -25,6 +25,7 @@
     "docxtemplater": "^3.68.6",
     "framer-motion": "^12.9.4",
     "next": "^16.2.6",
+    "next-nprogress-bar": "^2.4.7",
     "pizzip": "^3.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
