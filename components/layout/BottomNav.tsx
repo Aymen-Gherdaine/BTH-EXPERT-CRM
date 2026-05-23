@@ -71,6 +71,11 @@ export default function BottomNav({ role }: { role: UserRole }) {
   const sheetItems = (role === "commercial" ? COMMERCIAL_SHEET_ITEMS : SHEET_ITEMS).filter(i => i.roles.includes(role));
 
   useEffect(() => {
+    primaryItems.forEach(({ href }) => router.prefetch(href));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     setPendingHref(null);
     setSheetOpen(false);
   }, [pathname]);

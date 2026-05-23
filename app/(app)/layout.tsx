@@ -6,6 +6,7 @@ import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
 import { SidebarProvider } from "@/components/layout/SidebarContext";
 import SWRProvider from "@/components/layout/SWRProvider";
+import NavigationProgress from "@/components/layout/NavigationProgress";
 import type { UserRole } from "@/types";
 
 export default async function AppLayout({
@@ -47,6 +48,7 @@ export default async function AppLayout({
   return (
     <SidebarProvider>
       <SWRProvider>
+        <NavigationProgress />
         <div className="flex h-screen bg-bth-canvas overflow-hidden">
           <Sidebar role={role} />
           <div className="flex-1 flex flex-col h-screen min-w-0 overflow-hidden">

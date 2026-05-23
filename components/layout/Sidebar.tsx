@@ -207,7 +207,9 @@ function SidebarInner({
                       <span className="text-bth-green-700">
                         <Ic d={ICONS[icon]} size={16} sw={active ? 2 : 1.7} />
                       </span>
-                      {label}
+                      <span className={isPending && pendingHref === href ? "opacity-70 animate-pulse" : ""}>
+                        {label}
+                      </span>
                     </div>
                   </Link>
                 );

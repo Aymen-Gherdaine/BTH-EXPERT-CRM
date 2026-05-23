@@ -6,11 +6,13 @@ import useSWR from "swr";
 import { Soumission, StatutSoumission } from "@/types";
 import { SoumissionView, ApiListResponse, MeResponse, VersementState, V0, DeleteState, D0 } from "../types";
 
-export function useSoumissions() {
+export function useSoumissions(initialSoumissions: Soumission[] = []) {
   const router = useRouter();
 
   const { data: soumissionsRes, isLoading: soumissionsLoading, mutate: mutateSoumissions } =
-    useSWR<ApiListResponse<Soumission>>("/api/soumissions");
+    useSWR<ApiListResponse<Soumission>>("/api/soumissions", {
+      fallbackData: { data: initialSoumissions },
+    });
   const { data: meRes, isLoading: meLoading } = useSWR<MeResponse>("/api/me");
 
   const role = meRes?.role ?? "admin";
