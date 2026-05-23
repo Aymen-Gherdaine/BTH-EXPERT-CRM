@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import * as XLSX from "xlsx";
+import { autoFitColumns } from "@/lib/excel-utils";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -47,6 +48,7 @@ export async function GET() {
   }));
 
   const ws = XLSX.utils.json_to_sheet(rows);
+  autoFitColumns(ws, rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Clients");
   const raw = XLSX.write(wb, { type: "array", bookType: "xlsx" }) as unknown as Uint8Array<ArrayBuffer>;
