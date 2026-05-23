@@ -12,7 +12,7 @@ interface Props {
   draftLignes: LigneBudget[];
   setDraftLignes: Dispatch<SetStateAction<LigneBudget[]>>;
   lignes: LigneBudget[];
-  budgetSectionRef: RefObject<HTMLDivElement>;
+  budgetSectionRef: RefObject<HTMLDivElement | null>;
   onEditRequest: () => void;
   onSave: (lignes: LigneBudget[]) => void;
   onCancel: () => void;
@@ -311,7 +311,7 @@ export function BudgetSection({
                       <td colSpan={3} className="px-3 py-2 text-right text-gray-600 text-xs">TVA 19%</td>
                       <td className="px-3 py-2 text-right text-gray-700">{formatMontant(tva)}</td>
                     </tr>
-                    <tr className="border-t border-gray-200" style={{ backgroundColor: `${BTH_GREEN}0d` }}>
+                    <tr className="border-t border-gray-200 bg-bth-green-800/5">
                       <td colSpan={3} className="px-3 py-2 text-right font-bold text-gray-900 text-sm">Total TTC</td>
                       <td className="px-3 py-2 text-right font-bold text-lg" style={{ color: BTH_GREEN }}>
                         {formatMontant(total_ttc)}
