@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     const { data: parametres } = await supabase
       .from("parametres")
-      .select("signataire1_nom, signataire1_titre, signataire2_nom, signataire2_titre, tva_pct, validite_jours")
+      .select("signataire1_nom, signataire1_titre, signataire2_nom, signataire2_titre, tva_pct, validite_jours, modalites_paiement")
       .eq("id", 1)
       .single();
 

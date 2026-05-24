@@ -6,7 +6,7 @@ import path from 'path';
 const TEMPLATE_PATH = path.join(process.cwd(), 'templates', 'template-standard-v2.docx');
 
 function formatMontant(n: number): string {
-  return n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+  return n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
 const UNITES = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf',
@@ -46,54 +46,71 @@ export function nombreEnLettres(n: number): string {
   return `${prefixe}-${centaineEnLettres(reste)}`;
 }
 
-export interface LigneBudget {
+interface BudgetLigne {
   numero: number;
   designation: string;
   quantite: number;
-  prix_unitaire: number;
+  prix_formate: string;
+}
+
+interface BudgetGroupe {
+  titre_groupe: string;
+  lignes: BudgetLigne[];
+  sous_total_formate: string;
+}
+
+interface ListItem {
+  item: string;
 }
 
 export interface DocumentData {
   // Client
   titre: string;
-  titre_long: string;
   nom_client: string;
-  nom_client_majuscule: string;
   poste_client: string;
   entreprise: string;
   adresse: string;
   ville: string;
-  code_postal: string;
+
   // Offre
   numero_offre: string;
   date_offre: string;
-  // Projet
-  titre_projet: string;
-  description_mission: string;
+  objet_ligne1: string;
+
+  // Salutations
+  salutation: string;
+  salutation_fin: string;
+
+  // Section 1 Contexte
+  intro_paragraphe: string;
   contexte_paragraphe_1: string;
   contexte_paragraphe_2: string;
-  // Objectifs
-  objectif_1: string;
-  objectif_2: string;
-  objectif_3: string;
-  objectif_4: string;
-  // Hypothèses
-  hypothese_1: string;
-  hypothese_2_intro: string;
-  hypothese_2_a: string;
-  hypothese_2_b: string;
-  hypothese_3: string;
-  hypothese_4: string;
-  // Délais
-  delai_jours: number;
-  validite_jours: number;
+  callout_objectif: string;
+
+  // Listes — arrays pour loops paragraphLoop
+  perimetre_items: ListItem[];
+  objectifs_items: ListItem[];
+  hypotheses_items: ListItem[];
+  livrables_items: ListItem[];
+  inclusions_items: ListItem[];
+  exclusions_items: ListItem[];
+
+  // Section 3
+  description_echeancier: string;
+
+  // Section 4 Budget
+  groupes_budget: BudgetGroupe[];
+  recap_lignes: BudgetLigne[];
+  total_ht_formate: string;
   tva_pct: number;
-  // Budget
-  lignes_budget: LigneBudget[];
-  // Totaux
-  total_ht: number;
-  tva: number;
-  total_ttc: number;
+  tva_formate: string;
+  total_ttc_formate: string;
+  modalites_paiement: string;
+
+  // Délais
+  validite_jours: number;
+  validite_jours_lettres: string;
+
   // Signataires
   signataire_1_nom: string;
   signataire_1_titre: string;
@@ -106,7 +123,6 @@ export function generateDocument(data: DocumentData, forPdf = false): Buffer {
   const zip = new PizZip(templateBuffer);
 
   // Remove date picker SDT wrapper so Cloudmersive renders {date_offre} as plain text.
-  // Negative lookahead prevents the regex from crossing into adjacent SDTs.
   let docXml = zip.files['word/document.xml'].asText();
   docXml = docXml.replace(
     /<w:sdt><w:sdtPr>(?:(?!<\/w:sdt>)[\s\S])*?<w:date\b(?:(?!<\/w:sdt>)[\s\S])*?<\/w:sdtPr><w:sdtContent>((?:(?!<\/w:sdt>)[\s\S])*?)<\/w:sdtContent><\/w:sdt>/g,
@@ -114,8 +130,7 @@ export function generateDocument(data: DocumentData, forPdf = false): Buffer {
   );
 
   if (forPdf) {
-    // Cloudmersive doesn't render Word headers, so the logo would be missing.
-    // Copy the logo drawing from header1.xml into the document body.
+    // Cloudmersive doesn't render Word headers, so copy the logo from header1.xml into the body.
     const headerXml = zip.files['word/header1.xml']?.asText() ?? '';
     const headerRelsXml = zip.files['word/_rels/header1.xml.rels']?.asText() ?? '';
 
@@ -153,62 +168,7 @@ export function generateDocument(data: DocumentData, forPdf = false): Buffer {
     linebreaks: true,
   });
 
-  const lignesBudgetFormatees = data.lignes_budget.map((l) => ({
-    numero: l.numero,
-    designation: l.designation,
-    quantite: l.quantite,
-    prix_unitaire_formate: formatMontant(l.prix_unitaire),
-  }));
-
-  doc.render({
-    // Client
-    titre: data.titre,
-    titre_long: data.titre_long,
-    nom_client: data.nom_client,
-    nom_client_majuscule: data.nom_client_majuscule,
-    poste_client: data.poste_client,
-    entreprise: data.entreprise,
-    adresse: data.adresse,
-    ville: data.ville,
-    code_postal: data.code_postal,
-    // Offre
-    numero_offre: data.numero_offre,
-    date_offre: data.date_offre,
-    // Projet
-    titre_projet: data.titre_projet,
-    description_mission: data.description_mission,
-    contexte_paragraphe_1: data.contexte_paragraphe_1,
-    contexte_paragraphe_2: data.contexte_paragraphe_2,
-    // Objectifs
-    objectif_1: data.objectif_1,
-    objectif_2: data.objectif_2,
-    objectif_3: data.objectif_3,
-    objectif_4: data.objectif_4,
-    // Hypothèses
-    hypothese_1: data.hypothese_1,
-    hypothese_2_intro: data.hypothese_2_intro,
-    hypothese_2_a: data.hypothese_2_a,
-    hypothese_2_b: data.hypothese_2_b,
-    hypothese_3: data.hypothese_3,
-    hypothese_4: data.hypothese_4,
-    // Délais
-    delai_jours: data.delai_jours,
-    delai_jours_lettres: nombreEnLettres(data.delai_jours),
-    validite_jours: data.validite_jours,
-    validite_jours_lettres: nombreEnLettres(data.validite_jours),
-    tva_pct: data.tva_pct,
-    // Budget (boucle)
-    lignes_budget: lignesBudgetFormatees,
-    // Totaux
-    total_ht_formate: formatMontant(data.total_ht),
-    tva_formate: formatMontant(data.tva),
-    total_ttc_formate: formatMontant(data.total_ttc),
-    // Signataires
-    signataire_1_nom: data.signataire_1_nom,
-    signataire_1_titre: data.signataire_1_titre,
-    signataire_2_nom: data.signataire_2_nom,
-    signataire_2_titre: data.signataire_2_titre,
-  });
+  doc.render(data);
 
   return doc.getZip().generate({ type: 'nodebuffer' }) as Buffer;
 }

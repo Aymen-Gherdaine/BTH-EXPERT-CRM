@@ -200,4 +200,5 @@ export type EditablePreview = {
   exclusions_specifiques: string;
   // Budget lines (editable, replaces step3.lignes as source of truth)
   lignes_budget: LigneBudget[];
+  callout_objectif?: string | null;
 };
