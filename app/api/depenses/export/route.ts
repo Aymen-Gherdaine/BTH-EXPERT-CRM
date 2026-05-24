@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
+import { styleHeaders } from "@/lib/excel-utils";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -69,6 +70,7 @@ export async function GET(_req: NextRequest) {
   }));
 
   const ws = XLSX.utils.json_to_sheet(rows);
+  styleHeaders(ws, Object.keys(rows[0] ?? {}));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Dépenses");
   // Double-cast: XLSX returns Uint8Array<ArrayBufferLike> but Blob expects Uint8Array<ArrayBuffer>
