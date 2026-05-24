@@ -682,6 +682,8 @@ const CSS = `
       margin: 8px 0 5px;
       font-size: 14px;
       line-height: 1.3;
+      word-break: break-word;
+      overflow-wrap: break-word;
     }
     .depenses-card-amount-row {
       margin-top: 9px;
@@ -702,6 +704,14 @@ const CSS = `
       margin-left: 0;
       margin-top: 2px;
       font-size: 9px;
+    }
+    .depenses-card .depenses-project {
+      display: flex;
+      max-width: 100%;
+      overflow: hidden;
+    }
+    .depenses-card-amount-row > span:first-child {
+      flex-shrink: 0;
     }
     .depenses-card-actions {
       margin-top: 10px;
