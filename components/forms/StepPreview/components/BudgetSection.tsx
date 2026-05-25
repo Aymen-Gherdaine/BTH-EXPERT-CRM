@@ -18,6 +18,16 @@ interface Props {
   onCancel: () => void;
 }
 
+function groupByGroupe(lignes: LigneBudget[]): Map<string, LigneBudget[]> {
+  const map = new Map<string, LigneBudget[]>();
+  for (const l of lignes) {
+    const g = l.groupe || "Mission";
+    if (!map.has(g)) map.set(g, []);
+    map.get(g)!.push(l);
+  }
+  return map;
+}
+
 export function BudgetSection({
   activeSection,
   savedSections,
@@ -119,94 +129,115 @@ export function BudgetSection({
             className="overflow-hidden"
           >
             <div className="pl-5 pr-4 pb-3">
-              {/* Column headers */}
-              <div className="hidden sm:grid sm:grid-cols-[32px_1fr_60px_130px_36px] gap-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-1">
-                <span className="text-center">N°</span>
-                <span>Désignation</span>
-                <span className="text-center">Qté</span>
-                <span className="text-right">Prix unitaire</span>
-                <span />
-              </div>
+              {/* Render lines grouped by groupe */}
+              {(() => {
+                const grouped = groupByGroupe(draftLignes);
+                return Array.from(grouped.entries()).map(([groupe, groupLignes]) => {
+                  const groupIndices = draftLignes.reduce<number[]>((acc, l, i) => {
+                    if ((l.groupe || "Mission") === groupe) acc.push(i);
+                    return acc;
+                  }, []);
 
-              <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-                <div className="min-w-[420px] space-y-2">
-                  {draftLignes.map((l, i) => (
-                    <div
-                      key={i}
-                      className="grid grid-cols-[32px_1fr_60px_130px_36px] gap-2 items-center"
-                    >
-                      <span className="text-xs text-gray-400 text-center py-2.5 shrink-0">
-                        {i + 1}
-                      </span>
-                      <input
-                        value={l.designation}
-                        placeholder="Désignation"
-                        onChange={(e) =>
-                          setDraftLignes((prev) =>
-                            prev.map((ligne, idx) =>
-                              idx === i ? { ...ligne, designation: e.target.value } : ligne
-                            )
-                          )
-                        }
-                        className="w-full px-2.5 py-2 rounded-lg text-sm border outline-none transition-shadow"
-                        style={{ borderColor: BTH_GREEN }}
-                        onFocus={(e) => { e.target.style.boxShadow = "0 0 0 3px rgba(26,46,30,0.12)"; }}
-                        onBlur={(e) => { e.target.style.boxShadow = "none"; }}
-                      />
-                      <input
-                        type="number"
-                        value={l.quantite}
-                        min={1}
-                        onChange={(e) =>
-                          setDraftLignes((prev) =>
-                            prev.map((ligne, idx) =>
-                              idx === i ? { ...ligne, quantite: Math.max(1, Number(e.target.value)) } : ligne
-                            )
-                          )
-                        }
-                        className="w-full px-2 py-2 rounded-lg text-sm border text-center outline-none transition-shadow"
-                        style={{ borderColor: BTH_GREEN }}
-                        onFocus={(e) => { e.target.style.boxShadow = "0 0 0 3px rgba(26,46,30,0.12)"; }}
-                        onBlur={(e) => { e.target.style.boxShadow = "none"; }}
-                      />
-                      <input
-                        type="number"
-                        value={l.prix_unitaire}
-                        min={0}
-                        onChange={(e) =>
-                          setDraftLignes((prev) =>
-                            prev.map((ligne, idx) =>
-                              idx === i ? { ...ligne, prix_unitaire: Math.max(0, Number(e.target.value)) } : ligne
-                            )
-                          )
-                        }
-                        className="w-full px-2.5 py-2 rounded-lg text-sm border text-right outline-none transition-shadow"
-                        style={{ borderColor: BTH_GREEN }}
-                        onFocus={(e) => { e.target.style.boxShadow = "0 0 0 3px rgba(26,46,30,0.12)"; }}
-                        onBlur={(e) => { e.target.style.boxShadow = "none"; }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDraftLignes((prev) =>
-                            prev
-                              .filter((_, idx) => idx !== i)
-                              .map((ligne, idx) => ({ ...ligne, numero: idx + 1, ordre: idx + 1 }))
-                          )
-                        }
-                        className="w-9 h-9 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                  return (
+                    <div key={groupe} className="mb-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-wide mb-2 pt-1"
+                        style={{ color: BTH_GREEN }}>
+                        {groupe}
+                      </p>
+                      <div className="hidden sm:grid sm:grid-cols-[32px_1fr_60px_130px_36px] gap-2 mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400 px-1">
+                        <span className="text-center">N°</span>
+                        <span>Désignation</span>
+                        <span className="text-center">Qté</span>
+                        <span className="text-right">Prix unitaire</span>
+                        <span />
+                      </div>
+                      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+                        <div className="min-w-[420px] space-y-2">
+                          {groupIndices.map((flatIdx, posInGroup) => {
+                            const l = draftLignes[flatIdx];
+                            return (
+                              <div
+                                key={flatIdx}
+                                className="grid grid-cols-[32px_1fr_60px_130px_36px] gap-2 items-center"
+                              >
+                                <span className="text-xs text-gray-400 text-center py-2.5 shrink-0">
+                                  {flatIdx + 1}
+                                </span>
+                                <input
+                                  value={l.designation}
+                                  placeholder="Désignation"
+                                  onChange={(e) =>
+                                    setDraftLignes((prev) =>
+                                      prev.map((ligne, idx) =>
+                                        idx === flatIdx ? { ...ligne, designation: e.target.value } : ligne
+                                      )
+                                    )
+                                  }
+                                  className="w-full px-2.5 py-2 rounded-lg text-sm border outline-none transition-shadow"
+                                  style={{ borderColor: BTH_GREEN }}
+                                  onFocus={(e) => { e.target.style.boxShadow = "0 0 0 3px rgba(26,46,30,0.12)"; }}
+                                  onBlur={(e) => { e.target.style.boxShadow = "none"; }}
+                                />
+                                <input
+                                  type="number"
+                                  value={l.quantite}
+                                  min={1}
+                                  onChange={(e) =>
+                                    setDraftLignes((prev) =>
+                                      prev.map((ligne, idx) =>
+                                        idx === flatIdx ? { ...ligne, quantite: Math.max(1, Number(e.target.value)) } : ligne
+                                      )
+                                    )
+                                  }
+                                  className="w-full px-2 py-2 rounded-lg text-sm border text-center outline-none transition-shadow"
+                                  style={{ borderColor: BTH_GREEN }}
+                                  onFocus={(e) => { e.target.style.boxShadow = "0 0 0 3px rgba(26,46,30,0.12)"; }}
+                                  onBlur={(e) => { e.target.style.boxShadow = "none"; }}
+                                />
+                                <input
+                                  type="number"
+                                  value={l.prix_unitaire}
+                                  min={0}
+                                  onChange={(e) =>
+                                    setDraftLignes((prev) =>
+                                      prev.map((ligne, idx) =>
+                                        idx === flatIdx ? { ...ligne, prix_unitaire: Math.max(0, Number(e.target.value)) } : ligne
+                                      )
+                                    )
+                                  }
+                                  className="w-full px-2.5 py-2 rounded-lg text-sm border text-right outline-none transition-shadow"
+                                  style={{ borderColor: BTH_GREEN }}
+                                  onFocus={(e) => { e.target.style.boxShadow = "0 0 0 3px rgba(26,46,30,0.12)"; }}
+                                  onBlur={(e) => { e.target.style.boxShadow = "none"; }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setDraftLignes((prev) =>
+                                      prev
+                                        .filter((_, idx) => idx !== flatIdx)
+                                        .map((ligne, idx) => ({ ...ligne, numero: idx + 1, ordre: idx + 1 }))
+                                    )
+                                  }
+                                  disabled={groupLignes.length === 1 && grouped.size === 1}
+                                  className="w-9 h-9 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                                >
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  );
+                });
+              })()}
 
-              {/* Add ligne */}
+              {/* Add ligne — inherits groupe from last line */}
               <button
                 type="button"
                 onClick={() =>
@@ -218,6 +249,7 @@ export function BudgetSection({
                       quantite: 1,
                       prix_unitaire: 0,
                       ordre: prev.length + 1,
+                      groupe: prev[prev.length - 1]?.groupe ?? "Mission",
                     },
                   ])
                 }
@@ -280,45 +312,64 @@ export function BudgetSection({
             transition={{ duration: 0.15 }}
           >
             <div className="pl-5 pr-4 pb-4">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="bg-[#F4F6F7]">
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 w-8">N°</th>
-                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Désignation</th>
-                      <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 w-12">Q</th>
-                      <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 w-36">Prix (DZD)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {lignes.map((l) => (
-                      <tr key={l.numero} className="border-t border-gray-100">
-                        <td className="px-3 py-2 text-center text-gray-500">{l.numero}</td>
-                        <td className="px-3 py-2 text-gray-700">{l.designation}</td>
-                        <td className="px-3 py-2 text-center text-gray-500">{l.quantite}</td>
-                        <td className="px-3 py-2 text-right text-gray-700">
-                          {formatMontant(l.prix_unitaire)}
-                        </td>
-                      </tr>
-                    ))}
-                    <tr className="border-t border-gray-200 bg-[#F4F6F7]">
-                      <td colSpan={3} className="px-3 py-2 text-right font-medium text-gray-700 text-xs">Total HT</td>
-                      <td className="px-3 py-2 text-right font-medium text-gray-900">
-                        {formatMontant(total_ht)}
-                      </td>
-                    </tr>
-                    <tr className="border-t border-gray-100">
-                      <td colSpan={3} className="px-3 py-2 text-right text-gray-600 text-xs">TVA 19%</td>
-                      <td className="px-3 py-2 text-right text-gray-700">{formatMontant(tva)}</td>
-                    </tr>
-                    <tr className="border-t border-gray-200 bg-bth-green-800/5">
-                      <td colSpan={3} className="px-3 py-2 text-right font-bold text-gray-900 text-sm">Total TTC</td>
-                      <td className="px-3 py-2 text-right font-bold text-lg" style={{ color: BTH_GREEN }}>
-                        {formatMontant(total_ttc)}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+              {/* One table per groupe */}
+              {Array.from(groupByGroupe(lignes).entries()).map(([groupe, groupLignes]) => {
+                const sous_total = groupLignes.reduce((s, l) => s + l.quantite * l.prix_unitaire, 0);
+                return (
+                  <div key={groupe} className="mb-4 last:mb-0">
+                    <p className="text-xs font-semibold mb-1.5" style={{ color: BTH_GREEN }}>
+                      {groupe}
+                    </p>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-[#F4F6F7]">
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600 w-8">N°</th>
+                            <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Désignation</th>
+                            <th className="px-3 py-2 text-center text-xs font-semibold text-gray-600 w-12">Q</th>
+                            <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600 w-36">Prix (DZD)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {groupLignes.map((l) => (
+                            <tr key={l.numero} className="border-t border-gray-100">
+                              <td className="px-3 py-2 text-center text-gray-500">{l.numero}</td>
+                              <td className="px-3 py-2 text-gray-700">{l.designation}</td>
+                              <td className="px-3 py-2 text-center text-gray-500">{l.quantite}</td>
+                              <td className="px-3 py-2 text-right text-gray-700 tnum">
+                                {formatMontant(l.prix_unitaire)}
+                              </td>
+                            </tr>
+                          ))}
+                          <tr className="border-t border-gray-200 bg-[#F4F6F7]">
+                            <td colSpan={3} className="px-3 py-2 text-right font-medium text-gray-700 text-xs">
+                              Sous-total
+                            </td>
+                            <td className="px-3 py-2 text-right font-medium text-gray-900 tnum">
+                              {formatMontant(sous_total)}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Grand totals */}
+              <div className="border-t border-gray-200 pt-3 space-y-1 mt-2">
+                <div className="flex justify-between text-xs text-gray-600">
+                  <span>Total HT</span>
+                  <span className="font-medium tnum">{formatMontant(total_ht)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>TVA 19%</span>
+                  <span className="tnum">{formatMontant(tva)}</span>
+                </div>
+                <div className="flex justify-between text-sm font-bold border-t border-gray-200 pt-1.5">
+                  <span style={{ color: BTH_GREEN }}>Total TTC</span>
+                  <span style={{ color: BTH_GREEN }} className="tnum">{formatMontant(total_ttc)}</span>
+                </div>
               </div>
             </div>
           </motion.div>

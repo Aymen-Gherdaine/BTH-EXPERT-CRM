@@ -46,7 +46,7 @@ export async function PUT(
   if (Array.isArray(lignes) && lignes.length > 0) {
     const rows = lignes.map(
       (
-        l: { numero: number; designation: string; quantite: number; prix_unitaire: number },
+        l: { numero: number; designation: string; quantite: number; prix_unitaire: number; groupe?: string },
         i: number
       ) => ({
         soumission_id: id,
@@ -55,6 +55,7 @@ export async function PUT(
         quantite: l.quantite,
         prix_unitaire: l.prix_unitaire,
         ordre: i + 1,
+        groupe: l.groupe ?? "Mission",
       })
     );
 

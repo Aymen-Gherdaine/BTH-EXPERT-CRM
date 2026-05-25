@@ -4,6 +4,16 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FormDataStep3, LigneBudget } from "@/types";
 import { formatMontant } from "@/lib/utils";
+import { CATALOGUE_TACHES, GROUPES_ETUDE } from "@/constants/catalogue-budget";
+
+const BTH_GREEN = "#1a2e1e";
+const CUSTOM_SENTINEL = "__custom__";
+
+type Section = {
+  id: string;
+  groupe: string;
+  lignes: LigneBudget[];
+};
 
 interface Props {
   data: FormDataStep3;
@@ -11,49 +21,158 @@ interface Props {
   onNext: (data: FormDataStep3) => void;
 }
 
-export default function StepBudget({ data, onBack, onNext }: Props) {
-  const [lignes, setLignes] = useState<LigneBudget[]>(
-    data.lignes.length > 0
-      ? data.lignes
-      : [{ numero: 1, designation: "", quantite: 1, prix_unitaire: 0, ordre: 0 }]
-  );
-  const [errors, setErrors] = useState<string | null>(null);
+function emptyLigne(groupe: string): LigneBudget {
+  return { numero: 1, designation: "", quantite: 1, prix_unitaire: 0, ordre: 0, groupe };
+}
 
-  const total_ht = lignes.reduce((s, l) => s + l.quantite * l.prix_unitaire, 0);
+function sectionsFromLignes(lignes: LigneBudget[]): Section[] {
+  const map = new Map<string, LigneBudget[]>();
+  for (const l of lignes) {
+    const g = l.groupe || "Mission";
+    if (!map.has(g)) map.set(g, []);
+    map.get(g)!.push(l);
+  }
+  return Array.from(map.entries()).map(([groupe, sectionLignes]) => ({
+    id: crypto.randomUUID(),
+    groupe,
+    lignes: sectionLignes,
+  }));
+}
+
+function initCustomSet(sections: Section[]): Set<string> {
+  const set = new Set<string>();
+  for (const s of sections) {
+    const catalogue = CATALOGUE_TACHES[s.groupe] ?? [];
+    s.lignes.forEach((l, i) => {
+      if (l.designation && !catalogue.includes(l.designation)) {
+        set.add(`${s.id}-${i}`);
+      }
+    });
+  }
+  return set;
+}
+
+function flattenSections(sections: Section[]): LigneBudget[] {
+  let counter = 0;
+  return sections.flatMap((s, si) =>
+    s.lignes.map((l, li) => ({
+      ...l,
+      groupe: s.groupe,
+      numero: ++counter,
+      ordre: si * 1000 + li,
+    }))
+  );
+}
+
+export default function StepBudget({ data, onBack, onNext }: Props) {
+  const [{ sections, customSet }, setAll] = useState(() => {
+    const sections: Section[] =
+      data.lignes.length > 0
+        ? sectionsFromLignes(data.lignes)
+        : [
+            {
+              id: crypto.randomUUID(),
+              groupe: "Attestation de classification",
+              lignes: [emptyLigne("Attestation de classification")],
+            },
+          ];
+    return { sections, customSet: initCustomSet(sections) };
+  });
+
+  const [errors, setErrors] = useState<string | null>(null);
+  const [addingSection, setAddingSection] = useState(false);
+  const [newGroupeChoice, setNewGroupeChoice] = useState<string>(GROUPES_ETUDE[0]);
+  const [customGroupeText, setCustomGroupeText] = useState("");
+
+  // Continuous line offset before a given section
+  function lineOffset(sectionIdx: number): number {
+    let count = 0;
+    for (let i = 0; i < sectionIdx; i++) count += sections[i].lignes.length;
+    return count;
+  }
+
+  const allLignes = sections.flatMap((s) => s.lignes);
+  const total_ht = allLignes.reduce((s, l) => s + l.quantite * l.prix_unitaire, 0);
   const tva = total_ht * 0.19;
   const total_ttc = total_ht + tva;
 
-  function addLigne() {
-    setLignes((prev) => [
-      ...prev,
-      {
-        numero: prev.length + 1,
-        designation: "",
-        quantite: 1,
-        prix_unitaire: 0,
-        ordre: prev.length,
-      },
-    ]);
+  // ── State helpers ──────────────────────────────────────────
+  function setSections(fn: (prev: Section[]) => Section[]) {
+    setAll((prev) => ({ ...prev, sections: fn(prev.sections) }));
   }
 
-  function removeLigne(idx: number) {
-    setLignes((prev) =>
-      prev
-        .filter((_, i) => i !== idx)
-        .map((l, i) => ({ ...l, numero: i + 1, ordre: i }))
+  function setCustomKey(key: string, value: boolean) {
+    setAll((prev) => {
+      const next = new Set(prev.customSet);
+      value ? next.add(key) : next.delete(key);
+      return { ...prev, customSet: next };
+    });
+  }
+
+  function updateLigne(
+    sectionId: string,
+    lineIdx: number,
+    field: keyof LigneBudget,
+    value: string | number
+  ) {
+    setSections((prev) =>
+      prev.map((s) =>
+        s.id !== sectionId
+          ? s
+          : { ...s, lignes: s.lignes.map((l, i) => (i === lineIdx ? { ...l, [field]: value } : l)) }
+      )
     );
   }
 
-  function updateLigne(idx: number, field: keyof LigneBudget, value: string | number) {
-    setLignes((prev) =>
-      prev.map((l, i) => (i === idx ? { ...l, [field]: value } : l))
+  function addLigneToSection(sectionId: string) {
+    setSections((prev) =>
+      prev.map((s) =>
+        s.id !== sectionId ? s : { ...s, lignes: [...s.lignes, emptyLigne(s.groupe)] }
+      )
     );
   }
 
-  function validate() {
-    if (lignes.some((l) => !l.designation.trim())) {
-      setErrors("Toutes les lignes doivent avoir une désignation.");
-      return false;
+  function removeLigne(sectionId: string, lineIdx: number) {
+    setAll((prev) => {
+      const newSections = prev.sections.map((s) => {
+        if (s.id !== sectionId) return s;
+        const lignes = s.lignes.filter((_, i) => i !== lineIdx);
+        return { ...s, lignes: lignes.length ? lignes : [emptyLigne(s.groupe)] };
+      });
+      const newCustomSet = new Set(prev.customSet);
+      newCustomSet.delete(`${sectionId}-${lineIdx}`);
+      return { sections: newSections, customSet: newCustomSet };
+    });
+  }
+
+  function removeSection(sectionId: string) {
+    setSections((prev) => {
+      const filtered = prev.filter((s) => s.id !== sectionId);
+      return filtered.length ? filtered : prev;
+    });
+  }
+
+  function confirmAddSection() {
+    const groupe =
+      newGroupeChoice === "Personnalisé"
+        ? customGroupeText.trim() || "Personnalisé"
+        : newGroupeChoice;
+    const id = crypto.randomUUID();
+    setSections((prev) => [...prev, { id, groupe, lignes: [emptyLigne(groupe)] }]);
+    setAddingSection(false);
+    setNewGroupeChoice(GROUPES_ETUDE[0]);
+    setCustomGroupeText("");
+  }
+
+  // ── Validation ─────────────────────────────────────────────
+  function validate(): boolean {
+    for (const s of sections) {
+      for (const l of s.lignes) {
+        if (!l.designation.trim()) {
+          setErrors("Toutes les lignes doivent avoir une désignation.");
+          return false;
+        }
+      }
     }
     if (total_ht <= 0) {
       setErrors("Le budget total doit être supérieur à 0.");
@@ -64,14 +183,14 @@ export default function StepBudget({ data, onBack, onNext }: Props) {
   }
 
   function handleNext() {
-    if (validate()) onNext({ lignes });
+    if (validate()) onNext({ lignes: flattenSections(sections) });
   }
 
   return (
     <div className="p-8">
       <h2 className="text-lg font-semibold text-gray-900 mb-2">Budget</h2>
       <p className="text-sm text-gray-500 mb-6">
-        Saisissez les lignes du devis. La TVA (19%) est calculée automatiquement.
+        Organisez le devis en tableaux — un par type d'étude. La TVA (19%) est calculée automatiquement.
       </p>
 
       {errors && (
@@ -80,107 +199,263 @@ export default function StepBudget({ data, onBack, onNext }: Props) {
         </div>
       )}
 
-      {/* Table */}
-      <div className="border border-gray-200 rounded-xl overflow-hidden mb-4">
-        {/* Header */}
-        <div className="grid grid-cols-[40px_1fr_80px_140px_40px] gap-0 bg-[#F4F6F7] px-4 py-3">
-          <span className="text-xs font-semibold text-gray-500">N°</span>
-          <span className="text-xs font-semibold text-gray-500">Désignation</span>
-          <span className="text-xs font-semibold text-gray-500 text-center">Qté</span>
-          <span className="text-xs font-semibold text-gray-500 text-right">Prix unitaire (DZD)</span>
-          <span />
-        </div>
+      {/* Sections */}
+      <AnimatePresence>
+        {sections.map((section, sectionIdx) => {
+          const offset = lineOffset(sectionIdx);
+          const catalogue = CATALOGUE_TACHES[section.groupe] ?? [];
 
-        <AnimatePresence>
-          {lignes.map((ligne, idx) => (
+          return (
             <motion.div
-              key={idx}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
+              key={section.id}
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, height: 0, overflow: "hidden" }}
               transition={{ duration: 0.2 }}
-              className="grid grid-cols-[40px_1fr_80px_140px_40px] gap-0 items-center px-4 py-3 border-t border-gray-100"
+              className="mb-6"
             >
-              <span className="text-sm text-gray-400 font-medium">{ligne.numero}</span>
+              {/* Section header */}
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold" style={{ color: BTH_GREEN }}>
+                  {section.groupe}
+                </h3>
+                {sections.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeSection(section.id)}
+                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Supprimer ce tableau
+                  </button>
+                )}
+              </div>
 
-              <input
-                type="text"
-                value={ligne.designation}
-                onChange={(e) => updateLigne(idx, "designation", e.target.value)}
-                placeholder="Désignation de la prestation..."
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#1a2e1e] transition-colors mr-3"
-              />
+              {/* Table */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden mb-3">
+                {/* Header row */}
+                <div className="grid grid-cols-[40px_1fr_72px_140px_40px] gap-0 bg-[#F4F6F7] px-4 py-2.5">
+                  <span className="text-xs font-semibold text-gray-500">N°</span>
+                  <span className="text-xs font-semibold text-gray-500">Désignation</span>
+                  <span className="text-xs font-semibold text-gray-500 text-center">Qté</span>
+                  <span className="text-xs font-semibold text-gray-500 text-right">Prix (DZD)</span>
+                  <span />
+                </div>
 
-              <input
-                type="number"
-                value={ligne.quantite}
-                onChange={(e) =>
-                  updateLigne(idx, "quantite", parseInt(e.target.value) || 1)
-                }
-                min={1}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-center outline-none focus:border-[#1a2e1e] transition-colors mx-1"
-              />
+                <AnimatePresence>
+                  {section.lignes.map((ligne, lineIdx) => {
+                    const isCustom = customSet.has(`${section.id}-${lineIdx}`);
+                    const lineNum = offset + lineIdx + 1;
 
-              <input
-                type="number"
-                value={ligne.prix_unitaire || ""}
-                onChange={(e) =>
-                  updateLigne(idx, "prix_unitaire", parseFloat(e.target.value) || 0)
-                }
-                min={0}
-                step={1000}
-                placeholder="0"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-right outline-none focus:border-[#1a2e1e] transition-colors ml-1"
-              />
+                    return (
+                      <motion.div
+                        key={`${section.id}-${lineIdx}`}
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="grid grid-cols-[40px_1fr_72px_140px_40px] gap-0 items-start px-4 py-2.5 border-t border-gray-100"
+                      >
+                        <span className="text-sm text-gray-400 font-medium pt-2.5">{lineNum}</span>
 
+                        {/* Designation */}
+                        <div className="mr-3">
+                          {isCustom ? (
+                            <div>
+                              <textarea
+                                value={ligne.designation}
+                                onChange={(e) =>
+                                  updateLigne(section.id, lineIdx, "designation", e.target.value)
+                                }
+                                placeholder="Saisissez la désignation de la prestation..."
+                                rows={3}
+                                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#1a2e1e] transition-colors resize-y"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  updateLigne(section.id, lineIdx, "designation", "");
+                                  setCustomKey(`${section.id}-${lineIdx}`, false);
+                                }}
+                                className="mt-1 text-xs text-gray-400 hover:text-gray-600 cursor-pointer"
+                              >
+                                ← Retour au catalogue
+                              </button>
+                            </div>
+                          ) : (
+                            <select
+                              value={ligne.designation}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === CUSTOM_SENTINEL) {
+                                  updateLigne(section.id, lineIdx, "designation", "");
+                                  setCustomKey(`${section.id}-${lineIdx}`, true);
+                                } else {
+                                  updateLigne(section.id, lineIdx, "designation", val);
+                                  setCustomKey(`${section.id}-${lineIdx}`, false);
+                                }
+                              }}
+                              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#1a2e1e] transition-colors bg-white cursor-pointer"
+                            >
+                              <option value="">— Choisir une tâche —</option>
+                              {catalogue.map((task, i) => (
+                                <option key={i} value={task}>
+                                  {task.length > 80 ? task.substring(0, 80) + "…" : task}
+                                </option>
+                              ))}
+                              <option value={CUSTOM_SENTINEL}>Personnalisé...</option>
+                            </select>
+                          )}
+                        </div>
+
+                        <input
+                          type="number"
+                          value={ligne.quantite}
+                          min={1}
+                          onChange={(e) =>
+                            updateLigne(section.id, lineIdx, "quantite", parseInt(e.target.value) || 1)
+                          }
+                          className="w-full px-2 py-2 border border-gray-200 rounded-lg text-sm text-center outline-none focus:border-[#1a2e1e] transition-colors mx-1 mt-0.5"
+                        />
+
+                        <input
+                          type="number"
+                          value={ligne.prix_unitaire || ""}
+                          min={0}
+                          step={1000}
+                          placeholder="0"
+                          onChange={(e) =>
+                            updateLigne(section.id, lineIdx, "prix_unitaire", parseFloat(e.target.value) || 0)
+                          }
+                          className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm text-right outline-none focus:border-[#1a2e1e] transition-colors ml-1 mt-0.5"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => removeLigne(section.id, lineIdx)}
+                          disabled={section.lignes.length === 1}
+                          className="ml-2 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed mt-1.5"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+
+              {/* Add task to this section */}
               <button
                 type="button"
-                onClick={() => removeLigne(idx)}
-                disabled={lignes.length === 1}
-                className="ml-2 p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+                onClick={() => addLigneToSection(section.id)}
+                className="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-gray-800 transition-colors cursor-pointer ml-1"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
+                Ajouter une tâche
               </button>
             </motion.div>
-          ))}
-        </AnimatePresence>
-      </div>
+          );
+        })}
+      </AnimatePresence>
 
-      {/* Add line */}
-      <button
-        type="button"
-        onClick={addLigne}
-        className="flex items-center gap-2 text-sm font-medium mb-6 transition-colors cursor-pointer"
-        style={{ color: "#1a2e1e" }}
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-        Ajouter une ligne
-      </button>
+      {/* Add section panel */}
+      <AnimatePresence mode="wait">
+        {addingSection ? (
+          <motion.div
+            key="add-section-panel"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mb-6 overflow-hidden"
+          >
+            <div className="p-4 border border-dashed border-gray-300 rounded-xl bg-gray-50">
+              <p className="text-sm font-medium text-gray-700 mb-3">Type d'étude / tableau à ajouter</p>
+              <div className="flex flex-col gap-3">
+                <select
+                  value={newGroupeChoice}
+                  onChange={(e) => setNewGroupeChoice(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white outline-none focus:border-[#1a2e1e] transition-colors cursor-pointer"
+                >
+                  {GROUPES_ETUDE.map((g) => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+                {newGroupeChoice === "Personnalisé" && (
+                  <input
+                    type="text"
+                    value={customGroupeText}
+                    onChange={(e) => setCustomGroupeText(e.target.value)}
+                    placeholder="Nom du tableau personnalisé..."
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#1a2e1e] transition-colors"
+                    autoFocus
+                  />
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={confirmAddSection}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-white cursor-pointer hover:opacity-90 transition-opacity"
+                    style={{ backgroundColor: BTH_GREEN }}
+                  >
+                    Ajouter
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setAddingSection(false); setCustomGroupeText(""); }}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.button
+            key="add-section-btn"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            type="button"
+            onClick={() => setAddingSection(true)}
+            className="flex items-center justify-center gap-2 w-full mb-6 px-4 py-3 border border-dashed border-gray-300 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 transition-all cursor-pointer"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Ajouter un tableau / type d'étude
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       {/* Totaux */}
       <div className="bg-[#F4F6F7] rounded-xl p-5 mb-8">
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Total HT</span>
-            <span className="font-medium text-gray-900">{formatMontant(total_ht)} DZD</span>
+            <span className="font-medium text-gray-900 tnum">{formatMontant(total_ht)} DZD</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">TVA 19%</span>
-            <span className="font-medium text-gray-900">{formatMontant(tva)} DZD</span>
+            <span className="font-medium text-gray-900 tnum">{formatMontant(tva)} DZD</span>
           </div>
           <div className="pt-2 mt-2 border-t border-gray-200 flex justify-between">
             <span className="font-semibold text-gray-900">Total TTC</span>
-            <span className="font-bold text-lg" style={{ color: "#1a2e1e" }}>
+            <span className="font-bold text-lg tnum" style={{ color: BTH_GREEN }}>
               {formatMontant(total_ttc)} DZD
             </span>
           </div>
         </div>
       </div>
 
+      {/* Navigation */}
       <div className="flex justify-between">
         <button
           type="button"
@@ -197,7 +472,7 @@ export default function StepBudget({ data, onBack, onNext }: Props) {
           type="button"
           onClick={handleNext}
           className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90"
-          style={{ backgroundColor: "#1a2e1e" }}
+          style={{ backgroundColor: BTH_GREEN }}
         >
           Prévisualiser
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

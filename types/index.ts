@@ -34,6 +34,7 @@ export interface LigneBudget {
   quantite: number;
   prix_unitaire: number;
   ordre: number;
+  groupe: string;
 }
 
 export interface Soumission {

@@ -53,33 +53,27 @@ function getHypotheses(type: TypeEtude) {
   };
 }
 
-function buildBudgetGroups(
-  lignes: LigneBudget[],
-  s: typeof sanitizeAiText
-): { groupes_budget: BudgetGroupeDoc[]; recap_lignes: BudgetLigneDoc[]; total_ht: number } {
-  const total_ht = lignes.reduce((sum, l) => sum + l.quantite * l.prix_unitaire, 0);
+function buildBudgetGroups(lignes: LigneBudget[]): BudgetGroupeDoc[] {
+  const groupMap = new Map<string, LigneBudget[]>();
+  for (const ligne of lignes) {
+    const key = ligne.groupe || "Mission";
+    if (!groupMap.has(key)) groupMap.set(key, []);
+    groupMap.get(key)!.push(ligne);
+  }
 
-  const groupes_budget: BudgetGroupeDoc[] = [
-    {
-      titre_groupe: "Tableau — Devis de la mission",
-      lignes: lignes.map((l) => ({
+  return Array.from(groupMap.entries()).map(([titre, lines]) => {
+    const sous_total = lines.reduce((s, l) => s + l.quantite * l.prix_unitaire, 0);
+    return {
+      titre_groupe: `Tableau — Devis ${titre}`,
+      lignes: lines.map((l) => ({
         numero: l.numero,
-        designation: s(l.designation),
+        designation: sanitizeAiText(l.designation),
         quantite: l.quantite,
         prix_formate: formatMontant(l.prix_unitaire),
       })),
-      sous_total_formate: formatMontant(total_ht),
-    },
-  ];
-
-  const recap_lignes: BudgetLigneDoc[] = groupes_budget.map((g, i) => ({
-    numero: i + 1,
-    designation: g.titre_groupe.replace(/^Tableau\s*—\s*/i, ""),
-    quantite: 1,
-    prix_formate: g.sous_total_formate,
-  }));
-
-  return { groupes_budget, recap_lignes, total_ht };
+      sous_total_formate: formatMontant(sous_total),
+    };
+  });
 }
 
 function buildFromEditablePreview(
@@ -123,7 +117,14 @@ function buildFromEditablePreview(
   const perimetre_items: ListItem[] = [];
 
   const src = preview.lignes_budget?.length ? preview.lignes_budget : lignes_param;
-  const { groupes_budget, recap_lignes, total_ht } = buildBudgetGroups(src, s);
+  const total_ht = src.reduce((sum, l) => sum + l.quantite * l.prix_unitaire, 0);
+  const groupes_budget = buildBudgetGroups(src);
+  const recap_lignes: BudgetLigneDoc[] = groupes_budget.map((g, i) => ({
+    numero: i + 1,
+    designation: g.titre_groupe.replace(/^Tableau\s*—\s*Devis\s*/i, ""),
+    quantite: 1,
+    prix_formate: g.sous_total_formate,
+  }));
   const tva_rate = (parametres.tva_pct ?? 19) / 100;
   const tva_amt = total_ht * tva_rate;
   const total_ttc = total_ht + tva_amt;
@@ -210,10 +211,14 @@ export function buildDocumentData(
     .filter(Boolean)
     .map((item) => ({ item: sanitizeAiText(item) }));
 
-  const { groupes_budget, recap_lignes, total_ht } = buildBudgetGroups(
-    lignes,
-    sanitizeAiText
-  );
+  const total_ht = soumission.total_ht;
+  const groupes_budget = buildBudgetGroups(lignes);
+  const recap_lignes: BudgetLigneDoc[] = groupes_budget.map((g, i) => ({
+    numero: i + 1,
+    designation: g.titre_groupe.replace(/^Tableau\s*—\s*Devis\s*/i, ""),
+    quantite: 1,
+    prix_formate: g.sous_total_formate,
+  }));
   const tva_amt = soumission.tva;
   const total_ttc = soumission.total_ttc;
 

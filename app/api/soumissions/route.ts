@@ -168,6 +168,7 @@ export async function POST(req: NextRequest) {
           quantite: l.quantite,
           prix_unitaire: l.prix_unitaire,
           ordre: i,
+          groupe: l.groupe ?? "Mission",
         }))
       );
       if (lignesErr) throw lignesErr;

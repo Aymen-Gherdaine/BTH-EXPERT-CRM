@@ -31,7 +31,7 @@ const defaultStep2: FormDataStep2 = {
 
 const defaultStep3: FormDataStep3 = {
   lignes: [
-    { numero: 1, designation: "", quantite: 1, prix_unitaire: 0, ordre: 0 },
+    { numero: 1, designation: "", quantite: 1, prix_unitaire: 0, ordre: 0, groupe: "Mission" },
   ],
 };
 

@@ -64,6 +64,7 @@ export const ligneBudgetSchema = z.object({
   designation: z.string().min(1).max(1000),
   quantite: z.number().min(0),
   prix_unitaire: z.number().min(0),
+  groupe: z.string().max(200).default("Mission"),
 })
 
 export const soumissionCreateSchema = z.object({
