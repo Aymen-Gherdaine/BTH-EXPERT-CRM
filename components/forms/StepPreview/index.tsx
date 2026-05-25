@@ -101,12 +101,12 @@ export default function StepPreview({
             )}
           </AnimatePresence>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <button
             type="button"
             onClick={() => handleExport("docx")}
             disabled={!!exporting}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-50 min-h-[44px]"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 w-full sm:w-auto rounded-lg text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-50 min-h-[44px]"
           >
             {exporting === "docx" ? (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -124,7 +124,7 @@ export default function StepPreview({
             type="button"
             onClick={() => handleExport("pdf")}
             disabled={!!exporting}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium text-white transition-all cursor-pointer disabled:opacity-50 hover:opacity-90 min-h-[44px]"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 w-full sm:w-auto rounded-lg text-sm font-medium text-white transition-all cursor-pointer disabled:opacity-50 hover:opacity-90 min-h-[44px]"
             style={{ backgroundColor: BTH_GREEN }}
           >
             {exporting === "pdf" ? (
@@ -507,11 +507,11 @@ export default function StepPreview({
       </div>
 
       {/* Navigation */}
-      <div className="flex justify-between mt-6">
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 mt-6">
         <button
           type="button"
           onClick={() => requestLeave(onBack)}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all cursor-pointer min-h-[44px]"
+          className="flex items-center justify-center gap-2 px-5 min-h-[44px] w-full sm:w-auto rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -522,7 +522,7 @@ export default function StepPreview({
           type="button"
           onClick={() => { setIsDirty(false); onSave(); }}
           disabled={saving}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90 disabled:opacity-60 min-h-[44px]"
+          className="flex items-center justify-center gap-2 px-6 min-h-[44px] w-full sm:w-auto rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90 disabled:opacity-60"
           style={{ backgroundColor: BTH_GREEN }}
         >
           {saving ? (
