@@ -60,10 +60,13 @@ export const generateSchema = z.object({
 
 // ── Soumission POST ────────────────────────────────────────
 export const ligneBudgetSchema = z.object({
+  id: z.string().uuid().optional().nullable(),
+  soumission_id: z.string().uuid().optional().nullable(),
   numero: z.number().int().min(1),
   designation: z.string().min(1).max(1000),
   quantite: z.number().min(0),
   prix_unitaire: z.number().min(0),
+  ordre: z.number().int().min(0).optional(),
   groupe: z.string().max(200).default("Mission"),
 })
 
@@ -89,9 +92,22 @@ export const soumissionCreateSchema = z.object({
     }),
   }),
   contexte: z.object({
-    section_1: z.string().min(1).max(10000),
-    section_1_1: z.string().min(1).max(10000),
-  }),
+    contexte_paragraphe_1: z.string(),
+    contexte_paragraphe_2: z.string(),
+    objectif_1: z.string(),
+    objectif_2: z.string(),
+    objectif_3: z.string(),
+    objectif_4: z.string(),
+    livrable_1: z.string(),
+    livrable_2: z.string().optional(),
+    livrable_3: z.string().optional(),
+    hypothese_1: z.string(),
+    hypothese_2: z.string(),
+    hypothese_3: z.string(),
+    description_echeancier: z.string(),
+    inclusions_specifiques: z.string(),
+    exclusions_specifiques: z.string(),
+  }).passthrough(),
 })
 
 // ── Client PATCH ──────────────────────────────────────────
