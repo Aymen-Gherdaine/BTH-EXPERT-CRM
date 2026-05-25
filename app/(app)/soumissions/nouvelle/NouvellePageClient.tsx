@@ -197,7 +197,7 @@ export default function NouvellePageClient({ parametres }: Props) {
 
   if (!role) {
     return (
-      <div className="p-8 max-w-4xl mx-auto">
+      <div className="px-4 py-6 md:p-8 max-w-4xl mx-auto">
         <div className="h-8 w-64 bg-gray-100 rounded-xl animate-pulse" />
         <div className="h-4 w-80 bg-gray-50 rounded-lg animate-pulse mt-3" />
         <div className="h-96 bg-white rounded-2xl border border-gray-100 animate-pulse mt-8" />
@@ -206,19 +206,19 @@ export default function NouvellePageClient({ parametres }: Props) {
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Nouvelle soumission</h1>
+    <div className="px-4 py-6 md:p-8 max-w-4xl mx-auto">
+      <div className="mb-4 md:mb-8">
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Nouvelle soumission</h1>
         <p className="text-gray-500 text-sm mt-1">Générez une offre de services professionnelle</p>
       </div>
 
       {/* Stepper */}
-      <div className="flex items-center mb-10">
+      <div className="flex items-center mb-5 md:mb-10">
         {STEPS.map((label, i) => (
           <div key={i} className="flex items-center flex-1 last:flex-none">
             <button
               onClick={() => i < step && goTo(i)}
-              className="flex items-center gap-2 group cursor-pointer"
+              className="flex items-center gap-2 group cursor-pointer min-h-[44px]"
               disabled={i >= step}
             >
               <div
@@ -249,7 +249,7 @@ export default function NouvellePageClient({ parametres }: Props) {
             </button>
             {i < STEPS.length - 1 && (
               <div
-                className={`flex-1 h-0.5 mx-3 transition-colors ${i < step ? "" : "bg-gray-200"}`}
+                className={`flex-1 h-0.5 mx-1.5 sm:mx-3 transition-colors ${i < step ? "" : "bg-gray-200"}`}
                 style={i < step ? { backgroundColor: "#1a2e1e" } : {}}
               />
             )}
