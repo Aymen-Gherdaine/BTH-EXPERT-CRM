@@ -59,7 +59,7 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
   }
 
   return (
-    <form onSubmit={handleSubmit} className="p-8">
+    <form onSubmit={handleSubmit} className="p-5 md:p-8">
       <h2 className="text-lg font-semibold text-gray-900 mb-6">Informations projet</h2>
 
       <div className="space-y-5">
@@ -73,7 +73,7 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
             value={form.titre_projet}
             onChange={(e) => setForm({ ...form, titre_projet: e.target.value })}
             placeholder="ex. Étude environnementale de l'unité SARL SAFMA..."
-            className={`w-full px-4 py-2.5 border rounded-xl text-sm outline-none transition-all focus:ring-2 ${
+            className={`w-full px-4 py-2.5 border rounded-xl text-base md:text-sm outline-none transition-all focus:ring-2 ${
               errors.titre_projet
                 ? "border-red-300 focus:ring-red-100"
                 : "border-gray-200 focus:border-[#1a2e1e] focus:ring-[#1a2e1e]/10"
@@ -94,7 +94,7 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
             value={form.secteur_activite}
             onChange={(e) => setForm({ ...form, secteur_activite: e.target.value })}
             placeholder="ex. Production et stockage de garnitures de frein"
-            className={`w-full px-4 py-2.5 border rounded-xl text-sm outline-none transition-all focus:ring-2 ${
+            className={`w-full px-4 py-2.5 border rounded-xl text-base md:text-sm outline-none transition-all focus:ring-2 ${
               errors.secteur_activite
                 ? "border-red-300 focus:ring-red-100"
                 : "border-gray-200 focus:border-[#1a2e1e] focus:ring-[#1a2e1e]/10"
@@ -115,7 +115,7 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
             onChange={(e) => setForm({ ...form, description_projet: e.target.value })}
             placeholder="Décrivez le projet, les activités, les installations concernées..."
             rows={4}
-            className={`w-full px-4 py-2.5 border rounded-xl text-sm outline-none transition-all focus:ring-2 resize-none ${
+            className={`w-full px-4 py-2.5 border rounded-xl text-base md:text-sm outline-none transition-all focus:ring-2 resize-vertical min-h-[120px] ${
               errors.description_projet
                 ? "border-red-300 focus:ring-red-100"
                 : "border-gray-200 focus:border-[#1a2e1e] focus:ring-[#1a2e1e]/10"
@@ -167,7 +167,7 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
                 key={d}
                 type="button"
                 onClick={() => setForm({ ...form, delai_jours: d })}
-                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer ${
+                className={`px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium border transition-all cursor-pointer ${
                   form.delai_jours === d
                     ? "border-[#1a2e1e] bg-[#1a2e1e]/5 text-[#1a2e1e]"
                     : "border-gray-200 text-gray-600 hover:border-gray-300"
@@ -184,17 +184,17 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
               }
               placeholder="Autre"
               min={1}
-              className="w-20 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-[#1a2e1e]"
+              className="w-24 px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-base md:text-sm outline-none focus:border-[#1a2e1e]"
             />
           </div>
         </div>
       </div>
 
-      <div className="flex justify-between mt-8">
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 mt-6 md:mt-8">
         <button
           type="button"
           onClick={onBack}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 min-h-[44px] w-full sm:w-auto rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-all cursor-pointer"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -205,7 +205,7 @@ export default function StepProjectInfo({ data, loading, onBack, onNext }: Props
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90 disabled:opacity-60"
+          className="flex items-center justify-center gap-2 px-6 min-h-[44px] w-full sm:w-auto rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90 disabled:opacity-60"
           style={{ backgroundColor: "#1a2e1e" }}
         >
           {loading ? (
