@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Client, LigneBudget, Soumission, StatutSoumission, UserRole } from "@/types";
+import { Client, EditablePreview, LigneBudget, Soumission, StatutSoumission, UserRole } from "@/types";
+import type { SoumissionAIContent } from "@/lib/anthropic";
 import { formatMontant, formatDateFr, generateNumeroOffre } from "@/lib/utils";
 
 const STATUTS: StatutSoumission[] = ["Brouillon", "Envoyée", "Acceptée", "Refusée"];
@@ -35,7 +36,7 @@ export default function SoumissionDetailPage() {
   const [soumission, setSoumission] = useState<Soumission | null>(null);
   const [client, setClient] = useState<Client | null>(null);
   const [lignes, setLignes] = useState<LigneBudget[]>([]);
-  const [contexte, setContexte] = useState<{ section_1: string; section_1_1: string } | null>(null);
+  const [contexte, setContexte] = useState<SoumissionAIContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
   const [changingStatut, setChangingStatut] = useState(false);
@@ -132,6 +133,32 @@ export default function SoumissionDetailPage() {
     if (!soumission || !client || !contexte) return;
     setExporting(format);
     try {
+      const editablePreview: EditablePreview = {
+        titre: client.titre,
+        nom_contact: client.nom_contact,
+        poste_contact: client.poste,
+        entreprise: client.entreprise,
+        adresse: client.adresse,
+        ville: client.ville,
+        numero_offre: soumission.numero_offre,
+        date_offre: soumission.date_offre,
+        titre_projet: soumission.titre_projet,
+        intro_paragraphe: "",
+        contexte_paragraphe_1: contexte.contexte_paragraphe_1 ?? "",
+        contexte_paragraphe_2: contexte.contexte_paragraphe_2 ?? "",
+        objectif_1: contexte.objectif_1 ?? "",
+        objectif_2: contexte.objectif_2 ?? "",
+        objectif_3: contexte.objectif_3 ?? "",
+        objectif_4: contexte.objectif_4 ?? "",
+        livrable_1: contexte.livrable_1 ?? "",
+        livrable_2: contexte.livrable_2 ?? "",
+        livrable_3: contexte.livrable_3 ?? "",
+        hypothese_specifique: [contexte.hypothese_1, contexte.hypothese_2, contexte.hypothese_3].filter(Boolean).join("\n"),
+        inclusions_specifiques: contexte.inclusions_specifiques ?? "",
+        exclusions_specifiques: contexte.exclusions_specifiques ?? "",
+        description_echeancier: contexte.description_echeancier ?? "",
+        lignes_budget: lignes,
+      };
       const res = await fetch(`/api/export/${format}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -139,7 +166,7 @@ export default function SoumissionDetailPage() {
           soumission,
           client,
           lignes,
-          contexteData: contexte,
+          editablePreview,
         }),
       });
       if (!res.ok) throw new Error();
@@ -194,10 +221,12 @@ export default function SoumissionDetailPage() {
   const canSeeAmounts = role === "admin" || role === "charge_projet";
   const canManageSoumissions = canSeeAmounts;
 
-  const objectifs = contexte?.section_1_1
-    .split("\n")
-    .filter((l) => l.trim().startsWith("-"))
-    .map((l) => l.replace(/^-\s*/, "").trim()) ?? [];
+  const objectifs = contexte ? [
+    contexte.objectif_1,
+    contexte.objectif_2,
+    contexte.objectif_3,
+    contexte.objectif_4,
+  ].filter(Boolean) : [];
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -414,9 +443,12 @@ export default function SoumissionDetailPage() {
 
             <div className="mb-4">
               <h3 className="text-sm font-semibold mb-2" style={{ color: "#1a2e1e" }}>1. Contexte et objectifs</h3>
-              {contexte.section_1.split("\n").filter(p => p.trim()).map((p, i) => (
-                <p key={i} className="text-sm text-gray-700 mb-2 leading-relaxed">{p.trim()}</p>
-              ))}
+              {contexte.contexte_paragraphe_1 && (
+                <p className="text-sm text-gray-700 mb-2 leading-relaxed">{contexte.contexte_paragraphe_1}</p>
+              )}
+              {contexte.contexte_paragraphe_2 && (
+                <p className="text-sm text-gray-700 mb-2 leading-relaxed">{contexte.contexte_paragraphe_2}</p>
+              )}
             </div>
 
             <div>
