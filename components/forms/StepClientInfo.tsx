@@ -46,7 +46,7 @@ export default function StepClientInfo({ data, onNext }: Props) {
           value={form[key] as string}
           onChange={(e) => setForm({ ...form, [key]: e.target.value })}
           placeholder={placeholder}
-          className={`w-full px-4 py-2.5 border rounded-xl text-sm outline-none transition-all focus:ring-2 ${
+          className={`w-full px-4 py-2.5 border rounded-xl text-base md:text-sm outline-none transition-all focus:ring-2 ${
             errors[key]
               ? "border-red-300 focus:ring-red-100"
               : "border-gray-200 focus:border-[#1a2e1e] focus:ring-[#1a2e1e]/10"
@@ -58,7 +58,7 @@ export default function StepClientInfo({ data, onNext }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="p-8">
+    <form onSubmit={handleSubmit} className="p-5 md:p-8">
       <h2 className="text-lg font-semibold text-gray-900 mb-6">Informations client</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -73,7 +73,7 @@ export default function StepClientInfo({ data, onNext }: Props) {
                 key={t}
                 type="button"
                 onClick={() => setForm({ ...form, titre: t })}
-                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all cursor-pointer ${
+                className={`px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium border transition-all cursor-pointer ${
                   form.titre === t
                     ? "border-[#1a2e1e] bg-[#1a2e1e]/5 text-[#1a2e1e]"
                     : "border-gray-200 text-gray-600 hover:border-gray-300"
@@ -94,10 +94,10 @@ export default function StepClientInfo({ data, onNext }: Props) {
         {field("Ville", "ville", "ex. Oran 31000")}
       </div>
 
-      <div className="flex justify-end mt-8">
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 md:mt-8">
         <button
           type="submit"
-          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90"
+          className="flex items-center justify-center gap-2 px-6 min-h-[44px] w-full sm:w-auto rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90"
           style={{ backgroundColor: "#1a2e1e" }}
         >
           Suivant
