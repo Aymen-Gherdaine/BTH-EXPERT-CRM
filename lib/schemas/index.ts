@@ -155,7 +155,7 @@ export const depenseCreateSchema = z.object({
 // ── Export DOCX / PDF ──────────────────────────────────────
 export const exportDocumentSchema = z.object({
   soumission: z.object({
-    id: z.string().uuid().optional().nullable(),
+    id: z.preprocess(v => (v === "" ? null : v), z.string().uuid().optional().nullable()),
     numero_offre: z.string().min(1),
     titre_projet: z.string().min(1),
   }).passthrough(),
