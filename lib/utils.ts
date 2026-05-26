@@ -7,10 +7,11 @@ export function cn(...inputs: ClassValue[]) {
 
 export function generateNumeroOffre(): string {
   const now = new Date();
-  const dd = String(now.getDate()).padStart(2, "0");
-  const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const yyyy = now.getFullYear();
-  return `T${dd}${mm}${yyyy}`;
+  const day   = String(now.getDate()).padStart(2, "0");
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const year  = now.getFullYear();
+  const rand  = Math.floor(Math.random() * 9000) + 1000;
+  return `T${day}${month}${year}-${rand}`;
 }
 
 export function formatDateFr(dateStr: string): string {
