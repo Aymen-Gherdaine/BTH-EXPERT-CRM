@@ -16,9 +16,9 @@ export default function StepClientInfo({ data, onNext }: Props) {
 
   function validate() {
     const e: Partial<Record<keyof FormDataStep1, string>> = {};
-    if (!form.nom_contact.trim()) e.nom_contact = "Requis";
+    if (!form.nom_contact.trim()) e.nom_contact = "Le nom est requis.";
     if (!form.poste.trim()) e.poste = "Requis";
-    if (!form.entreprise.trim()) e.entreprise = "Requis";
+    if (!form.entreprise.trim()) e.entreprise = "L'entreprise est requise.";
     if (!form.adresse.trim()) e.adresse = "Requis";
     if (!form.ville.trim()) e.ville = "Requis";
     setErrors(e);

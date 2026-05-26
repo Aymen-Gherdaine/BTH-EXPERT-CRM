@@ -180,6 +180,10 @@ export default function StepBudget({ data, generating, onBack, onNext }: Props) 
   }
 
   function validate(): boolean {
+    if (allLignes.length === 0) {
+      setErrors("Ajoutez au moins une ligne de budget avant de continuer.");
+      return false;
+    }
     for (const s of sections) {
       for (const l of s.lignes) {
         if (!l.designation.trim()) {

@@ -45,9 +45,14 @@ export default function StepProjectInfo({ data, onBack, onNext }: Props) {
 
   function validate() {
     const e: Partial<Record<keyof FormDataStep2, string>> = {};
-    if (!form.titre_projet.trim()) e.titre_projet = "Requis";
-    if (!form.secteur_activite.trim()) e.secteur_activite = "Requis";
-    if (!form.description_projet.trim()) e.description_projet = "Requis";
+    if (!form.titre_projet.trim() || form.titre_projet.trim().length < 3)
+      e.titre_projet = "Le titre doit contenir au moins 3 caractères.";
+    if (!form.secteur_activite.trim())
+      e.secteur_activite = "Ce champ est requis.";
+    if (!form.description_projet.trim() || form.description_projet.trim().length < 10)
+      e.description_projet = "La description doit contenir au moins 10 caractères.";
+    if (!form.type_etude)
+      e.type_etude = "Veuillez sélectionner un type d'étude.";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -153,6 +158,9 @@ export default function StepProjectInfo({ data, onBack, onNext }: Props) {
               </button>
             ))}
           </div>
+          {errors.type_etude && (
+            <p className="text-red-500 text-xs mt-1">{errors.type_etude}</p>
+          )}
         </div>
 
         {/* Délai */}
