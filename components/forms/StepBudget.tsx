@@ -4,7 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { FormDataStep3, LigneBudget } from "@/types";
 import { formatMontant } from "@/lib/utils";
-import { CATALOGUE_TACHES, GROUPES_ETUDE } from "@/constants/catalogue-budget";
+import { CATALOGUE_TACHES, GROUPES_ETUDE } from "@/constants/catalogue-budget"
+import GeneratingOverlay from "@/components/ui/GeneratingOverlay";
 
 const BTH_GREEN = "#1a2e1e";
 const CUSTOM_SENTINEL = "__custom__";
@@ -203,6 +204,8 @@ export default function StepBudget({ data, generating, onBack, onNext }: Props) 
   function handleNext() {
     if (validate()) onNext({ lignes: flattenSections(sections) });
   }
+
+  if (generating) return <GeneratingOverlay />
 
   return (
     <div className="p-4 md:p-8">
