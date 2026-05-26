@@ -151,20 +151,25 @@ export default function NouvellePageClient({ parametres }: Props) {
     requestLeave(() => goTo(2));
   }
 
-  async function handleStep2Complete(data: FormDataStep2) {
+  function handleStep2Complete(data: FormDataStep2) {
     setStep2(data);
+    goTo(2);
+  }
+
+  async function handleStep3Complete(data: FormDataStep3) {
+    setStep3(data);
     setGenerating(true);
     setError(null);
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ step1, step2: data }),
+        body: JSON.stringify({ step1, step2, step3: data }),
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       setContexte(json.data);
-      goTo(2);
+      goTo(3);
     } catch {
       setError("Erreur lors de la génération IA. Veuillez réessayer.");
     } finally {
@@ -287,7 +292,6 @@ export default function NouvellePageClient({ parametres }: Props) {
             {step === 1 && (
               <StepProjectInfo
                 data={step2}
-                loading={generating}
                 onBack={() => goTo(0)}
                 onNext={handleStep2Complete}
               />
@@ -295,11 +299,9 @@ export default function NouvellePageClient({ parametres }: Props) {
             {step === 2 && (
               <StepBudget
                 data={step3}
+                generating={generating}
                 onBack={() => goTo(1)}
-                onNext={(data) => {
-                  setStep3(data);
-                  goTo(3);
-                }}
+                onNext={handleStep3Complete}
               />
             )}
             {step === 3 && contexte && (

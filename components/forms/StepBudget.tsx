@@ -17,6 +17,7 @@ type Section = {
 
 interface Props {
   data: FormDataStep3;
+  generating?: boolean;
   onBack: () => void;
   onNext: (data: FormDataStep3) => void;
 }
@@ -71,7 +72,7 @@ const TrashIcon = () => (
   </svg>
 );
 
-export default function StepBudget({ data, onBack, onNext }: Props) {
+export default function StepBudget({ data, generating, onBack, onNext }: Props) {
   const [{ sections, customSet }, setAll] = useState(() => {
     const sections: Section[] =
       data.lignes.length > 0
@@ -624,13 +625,26 @@ export default function StepBudget({ data, onBack, onNext }: Props) {
         <button
           type="button"
           onClick={handleNext}
-          className="flex items-center justify-center gap-2 px-6 min-h-[44px] w-full sm:w-auto rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90"
+          disabled={generating}
+          className="flex items-center justify-center gap-2 px-6 min-h-[44px] w-full sm:w-auto rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90 disabled:opacity-60"
           style={{ backgroundColor: BTH_GREEN }}
         >
-          Prévisualiser
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          {generating ? (
+            <>
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+              </svg>
+              Génération en cours…
+            </>
+          ) : (
+            <>
+              Générer la soumission
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </>
+          )}
         </button>
       </div>
     </div>

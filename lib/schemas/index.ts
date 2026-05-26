@@ -56,6 +56,14 @@ export const generateSchema = z.object({
     type_etude: z.string().min(1).max(100),
     delai_jours: z.number().int().min(1).max(3650),
   }),
+  step3: z.object({
+    lignes: z.array(z.object({
+      designation: z.string(),
+      quantite: z.number(),
+      prix_unitaire: z.number(),
+      groupe: z.string().optional(),
+    })),
+  }).optional(),
 })
 
 // ── Soumission POST ────────────────────────────────────────
