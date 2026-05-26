@@ -101,9 +101,21 @@ function buildFromEditablePreview(
   const salutation = `${titreLong} ${s(preview.nom_contact)}`;
   const salutation_fin = titreLong;
 
-  const callout_objectif = s(
-    preview.callout_objectif ?? preview.contexte_paragraphe_2 ?? ""
-  );
+  const callout_objectif = preview.callout_objectif
+    ? s(preview.callout_objectif)
+    : (() => {
+      const type = soumission.type_etude ?? "";
+      const titre = s(soumission.titre_projet ?? "");
+      return s(
+        `La présente offre de services couvre la réalisation ${
+          type.includes("EIE")
+            ? "de l'Étude d'Impact sur l'Environnement (EIE) et de l'Étude des Dangers (EDD)"
+            : type.includes("Notice")
+            ? "de la Notice d'Impact sur l'Environnement et du rapport sur les produits dangereux"
+            : "des études environnementales et réglementaires"
+        }, nécessaires à la constitution du dossier de demande d'autorisation pour le projet : ${titre}.`
+      );
+    })();
 
   const objectifs_items = toItems(
     preview.objectif_1, preview.objectif_2, preview.objectif_3, preview.objectif_4
@@ -114,7 +126,13 @@ function buildFromEditablePreview(
   const hypotheses_items = splitToItems(preview.hypothese_specifique);
   const inclusions_items = splitToItems(preview.inclusions_specifiques);
   const exclusions_items = splitToItems(preview.exclusions_specifiques);
-  const perimetre_items: ListItem[] = [];
+  const perimetre_items: ListItem[] = preview.perimetre_items?.length
+    ? preview.perimetre_items
+    : (() => {
+      const titre = s(soumission.titre_projet ?? "");
+      if (!titre) return [];
+      return [{ item: `Installation industrielle : ${titre}` }];
+    })();
 
   const src = preview.lignes_budget?.length ? preview.lignes_budget : lignes_param;
   const total_ht = src.reduce((sum, l) => sum + l.quantite * l.prix_unitaire, 0);
@@ -143,7 +161,9 @@ function buildFromEditablePreview(
     objet_ligne1: s(preview.titre_projet),
     salutation,
     salutation_fin,
-    intro_paragraphe: s(preview.intro_paragraphe),
+    intro_paragraphe: preview.intro_paragraphe
+      ? s(preview.intro_paragraphe)
+      : s(`Sarl BTH EXPERT a le plaisir de vous transmettre son offre de services professionnels relative au projet de ${soumission.titre_projet ?? preview.titre_projet ?? ""}.`),
     contexte_paragraphe_1: s(preview.contexte_paragraphe_1),
     contexte_paragraphe_2: s(preview.contexte_paragraphe_2),
     callout_objectif,

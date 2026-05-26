@@ -202,4 +202,5 @@ export type EditablePreview = {
   // Budget lines (editable, replaces step3.lignes as source of truth)
   lignes_budget: LigneBudget[];
   callout_objectif?: string | null;
+  perimetre_items?: Array<{ item: string }> | null;
 };
