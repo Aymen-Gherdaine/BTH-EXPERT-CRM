@@ -176,9 +176,11 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, data: soumission });
   } catch (error) {
-    console.error("Erreur création soumission:", error);
+    console.error("Erreur création soumission détail:",
+      JSON.stringify(error, Object.getOwnPropertyNames(error)))
     return NextResponse.json(
-      { error: "Erreur lors de la création de la soumission" },
+      { error: "Erreur lors de la création de la soumission",
+        detail: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
