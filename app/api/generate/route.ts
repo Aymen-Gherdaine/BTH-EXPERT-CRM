@@ -7,6 +7,8 @@ import { generateSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
 import { checkRateLimit } from "@/lib/rate-limit";
 
+export const maxDuration = 60;
+
 async function getSupabase() {
   const cookieStore = await cookies();
   return createServerClient(
