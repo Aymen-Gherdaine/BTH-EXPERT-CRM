@@ -39,11 +39,16 @@ export async function POST(req: NextRequest) {
     if (!validation.success) return validation.response;
     const { soumission, client, lignes, contexteData, editablePreview } = validation.data;
 
-    const { data: parametres } = await supabase
+    const { data: parametres, error: parametresError } = await supabase
       .from("parametres")
       .select("signataire1_nom, signataire1_titre, signataire2_nom, signataire2_titre, tva_pct, validite_jours, modalites_paiement")
       .eq("id", 1)
       .single();
+
+    if (parametresError || !parametres) {
+      console.error("Parametres fetch failed:", parametresError?.message ?? "no row returned");
+    }
+    console.log("Parametres fetched:", JSON.stringify(parametres));
 
     const data = buildDocumentData(
       soumission as unknown as Parameters<typeof buildDocumentData>[0],
