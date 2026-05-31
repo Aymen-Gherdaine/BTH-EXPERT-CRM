@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { CategorieDepense, Depense } from "@/types";
 import { formatMontant } from "@/lib/utils";
+import { useDynamicPerPage } from "@/hooks/useDynamicPerPage";
 
 const CSS = `
   @keyframes depSk { 0%,100%{opacity:1} 50%{opacity:.42} }
@@ -798,7 +799,6 @@ const EMPTY_FORM: FormState = {
   projet_lie: "",
 };
 
-const PER_PAGE = 10;
 
 function useBp(): Breakpoint {
   const [bp, setBp] = useState<Breakpoint>("mobile");
@@ -1084,6 +1084,9 @@ export default function DepensesPageClient({
 }) {
   const bp = useBp();
   const isDesktop = bp !== "mobile";
+  const gridRef = useRef<HTMLElement>(null);
+  // ref on .depenses-shell; tableHeaderHeight=48 (.depenses-table-head); pagerHeight=52 (footer below content)
+  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 66, tableHeaderHeight: 48, pagerHeight: 52, mobilePerPage: 6 });
 
   const [depenses, setDepenses] = useState<Depense[]>(initialDepenses);
   const [soumissions] = useState<SoumissionOption[]>(initialSoumissions);
@@ -1149,8 +1152,8 @@ export default function DepensesPageClient({
     });
   }, [catFilter, depenses, search, soumissions]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const paginated = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const paginated = filtered.slice((page - 1) * perPage, page * perPage);
   const showPagination = filtered.length > 0 && totalPages > 1;
 
   useEffect(() => setPage(1), [search, catFilter]);
@@ -1396,7 +1399,7 @@ export default function DepensesPageClient({
             </div>
           </div>
 
-          <section className="depenses-shell">
+          <section ref={gridRef} className="depenses-shell">
             {filtered.length === 0 ? (
               <div className="depenses-empty">
                 <div className="depenses-empty-icon">
@@ -1494,7 +1497,7 @@ export default function DepensesPageClient({
                     })}
                   </AnimatePresence>
 
-                  {paginated.length < PER_PAGE && page === totalPages && (
+                  {paginated.length < perPage && page === totalPages && (
                     <div className="depenses-history-end">Fin de l&apos;historique</div>
                   )}
                 </div>
@@ -1578,7 +1581,7 @@ export default function DepensesPageClient({
                   })}
                 </AnimatePresence>
 
-                {paginated.length < PER_PAGE && page === totalPages && (
+                {paginated.length < perPage && page === totalPages && (
                   <div className="depenses-history-end">Fin de l&apos;historique</div>
                 )}
               </div>

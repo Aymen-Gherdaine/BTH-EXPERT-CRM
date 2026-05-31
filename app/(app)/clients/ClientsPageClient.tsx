@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import useSWR from "swr";
 import { Client, Soumission, StatutSoumission, UserRole } from "@/types";
 import { formatDateFr } from "@/lib/utils";
+import { useDynamicPerPage } from "@/hooks/useDynamicPerPage";
 
 /* ── CSS global ─────────────────────────────────────────── */
 const CSS = `
@@ -366,7 +367,6 @@ const CSS = `
   }
 `;
 
-const PAGE_SIZE = 12;
 
 function fmtInt(n: number) {
   return Math.round(n).toLocaleString("fr-DZ", { maximumFractionDigits: 0 });
@@ -655,6 +655,10 @@ export default function ClientsPageClient({
   initialRole: UserRole | null;
 }) {
   const bp = useBp();
+  const isDesktop = bp === "desktop";
+  const gridRef = useRef<HTMLDivElement>(null);
+  // tableHeaderHeight=78: content padding-top(18) + table header(44) + padding-bottom(16)
+  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 78, pagerHeight: 52, mobilePerPage: 6 });
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -711,8 +715,8 @@ export default function ClientsPageClient({
     setDeleteConfirm(D0);
   }
 
-  const totalPages = Math.max(1, Math.ceil(clients.length / PAGE_SIZE));
-  const paginated = clients.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(clients.length / perPage));
+  const paginated = clients.slice((page - 1) * perPage, page * perPage);
   const cityCount = new Set(clients.map(c => c.ville).filter(Boolean)).size;
   const latestClient = clients[0];
   const showPagination = !loading && clients.length > 0 && totalPages > 1;
@@ -779,7 +783,7 @@ export default function ClientsPageClient({
         </div>
 
         {/* ── Content ─────────────────────────────────────── */}
-        <div className="clients-content">
+        <div ref={gridRef} className="clients-content">
           {loading ? (
             bp === "desktop" ? (
               <div style={{ margin: "16px 32px 20px", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden" }}>

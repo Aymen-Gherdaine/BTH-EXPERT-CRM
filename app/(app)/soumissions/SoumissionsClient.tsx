@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Soumission, StatutSoumission } from "@/types";
 import { D0, V0 } from "./types";
 import { CSS, I, fmtInt } from "./constants";
 import { useBp } from "@/hooks/useBp";
+import { useDynamicPerPage } from "@/hooks/useDynamicPerPage";
 import { useSoumissions } from "./hooks/useSoumissions";
 import {
   Ic, FilterDropdown, Pager,
@@ -39,33 +40,8 @@ export default function SoumissionsClient({ initialSoumissions = [] }: { initial
   }
 
   const gridRef = useRef<HTMLDivElement>(null);
-  const [perPage, setPerPage] = useState(9);
-
-  useLayoutEffect(() => {
-    function calc() {
-      if (!isDesktop) {
-        setPerPage(6);
-        return;
-      }
-      const el = gridRef.current;
-      if (!el) return;
-      const avail = el.clientHeight;
-      if (avail === 0) return;
-      if (view === "cards") {
-        const rows = Math.max(1, Math.floor(avail / 172));
-        setPerPage(rows * 3);
-      } else {
-        // 48px header + 48px footer = 96px fixed; row minHeight = 66px
-        const rows = Math.max(1, Math.floor((avail - 96) / 66));
-        setPerPage(rows);
-      }
-    }
-    calc();
-    const ro = new ResizeObserver(calc);
-    if (gridRef.current) ro.observe(gridRef.current);
-    window.addEventListener("resize", calc);
-    return () => { ro.disconnect(); window.removeEventListener("resize", calc); };
-  }, [isDesktop, view]);
+  // tableHeaderHeight=44: PremiumTable header(48)+footer(48)=96, minus pagerHeight(52) already subtracted = 44
+  const perPage = useDynamicPerPage(gridRef, { view, isDesktop, cardHeight: 172, rowHeight: 66, cols: 3, tableHeaderHeight: 44, pagerHeight: 52, mobilePerPage: 6 });
 
   const [q, setQ] = useState("");
   const [filtre, setFiltre] = useState<StatutSoumission | null>(null);
