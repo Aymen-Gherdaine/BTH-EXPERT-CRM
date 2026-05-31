@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Soumission, StatutSoumission } from "@/types";
@@ -38,7 +38,34 @@ export default function SoumissionsClient({ initialSoumissions = [] }: { initial
     localStorage.setItem("soum-view", v);
   }
 
-  const PER_PAGE = !isDesktop ? 6 : view === "cards" ? 9 : 12;
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [perPage, setPerPage] = useState(9);
+
+  useLayoutEffect(() => {
+    function calc() {
+      if (!isDesktop) {
+        setPerPage(6);
+        return;
+      }
+      const el = gridRef.current;
+      if (!el) return;
+      const avail = el.clientHeight;
+      if (avail === 0) return;
+      if (view === "cards") {
+        const rows = Math.max(1, Math.floor(avail / 172));
+        setPerPage(rows * 3);
+      } else {
+        // 48px header + 48px footer = 96px fixed; row minHeight = 66px
+        const rows = Math.max(1, Math.floor((avail - 96) / 66));
+        setPerPage(rows);
+      }
+    }
+    calc();
+    const ro = new ResizeObserver(calc);
+    if (gridRef.current) ro.observe(gridRef.current);
+    window.addEventListener("resize", calc);
+    return () => { ro.disconnect(); window.removeEventListener("resize", calc); };
+  }, [isDesktop, view]);
 
   const [q, setQ] = useState("");
   const [filtre, setFiltre] = useState<StatutSoumission | null>(null);
@@ -55,8 +82,8 @@ export default function SoumissionsClient({ initialSoumissions = [] }: { initial
     return mF && mQ;
   }).map(toView);
 
-  const pageItems = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const pageItems = filtered.slice((page - 1) * perPage, page * perPage);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const hasMobilePagination = !isDesktop && filtered.length > 0 && totalPages > 1;
 
   const counts = Object.fromEntries(
@@ -179,18 +206,18 @@ export default function SoumissionsClient({ initialSoumissions = [] }: { initial
             <>
               {(!isDesktop || view === "cards") ? (
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
-                  <div style={{ flex: 1, overflowY: "auto" }} className="sc">
+                  <div ref={gridRef} style={{ flex: 1, overflow: "hidden" }} className="sc">
                     <CardGrid items={pageItems} isAdmin={isAdmin} onOpen={openDetail} selId={selId} px={px} />
                   </div>
-                  <Pager page={page} total={filtered.length} perPage={PER_PAGE} onPage={setPage} hideWhenSinglePage={true} />
+                  <Pager page={page} total={filtered.length} perPage={perPage} onPage={setPage} hideWhenSinglePage={true} />
                 </div>
               ) : (
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, background: "linear-gradient(180deg, #fffdfa 0%, #ffffff 100%)", margin: "16px 32px 20px", borderRadius: 8, border: "1px solid #e8e2d8", overflow: "hidden", boxShadow: "0 18px 48px rgba(26,46,30,0.07)" }}>
+                <div ref={gridRef} style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, background: "linear-gradient(180deg, #fffdfa 0%, #ffffff 100%)", margin: "16px 32px 20px", borderRadius: 8, border: "1px solid #e8e2d8", overflow: "hidden", boxShadow: "0 18px 48px rgba(26,46,30,0.07)" }}>
                   <PremiumTable
                     items={pageItems} isAdmin={isAdmin} onOpen={openDetail}
                     selId={selId} selected={selected} onToggle={toggleSel}
                     onDuplicate={handleDuplicate} onDelete={handleDelete}
-                    page={page} total={filtered.length} perPage={PER_PAGE} onPage={setPage}
+                    page={page} total={filtered.length} perPage={perPage} onPage={setPage}
                   />
                 </div>
               )}
