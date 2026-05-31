@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { generateDocument } from "@/lib/generate-document";
 import { convertToPdf } from "@/lib/convert-to-pdf";
@@ -7,6 +8,14 @@ import { buildDocumentData } from "@/lib/export-helpers";
 import { Client } from "@/types";
 import { exportDocumentSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
+
+function getAdminSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  );
+}
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -40,14 +49,15 @@ export async function POST(req: NextRequest) {
     if (!validation.success) return validation.response;
     const { soumission, client, lignes, contexteData, editablePreview } = validation.data;
 
-    const { data: parametres, error: parametresError } = await supabase
+    const admin = getAdminSupabase();
+    const { data: parametres, error: parametresError } = await admin
       .from("parametres")
       .select("signataire1_nom, signataire1_titre, signataire2_nom, signataire2_titre, tva_pct, validite_jours, modalites_paiement")
       .eq("id", 1)
       .single();
 
     if (parametresError || !parametres) {
-      console.error("Parametres fetch failed:", parametresError?.message ?? "no row returned");
+      console.error("Parametres fetch failed:", parametresError?.message ?? "no row");
     }
     console.log("Parametres fetched:", JSON.stringify(parametres));
 
