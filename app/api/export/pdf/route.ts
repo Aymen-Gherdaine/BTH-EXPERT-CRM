@@ -3,7 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { generateDocument } from "@/lib/generate-document";
-import { convertToPdf } from "@/lib/convert-to-pdf";
+import { convertDocxToPdf } from "@/lib/convert-to-pdf";
 import { buildDocumentData } from "@/lib/export-helpers";
 import { Client } from "@/types";
 import { exportDocumentSchema } from "@/lib/schemas";
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       editablePreview as unknown as Parameters<typeof buildDocumentData>[5]
     );
     const docxBuffer = generateDocument(data, true);
-    const pdfBuffer = await convertToPdf(docxBuffer);
+    const pdfBuffer = await convertDocxToPdf(docxBuffer);
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
