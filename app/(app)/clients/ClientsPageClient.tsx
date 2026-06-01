@@ -159,7 +159,7 @@ const CSS = `
     flex: 1;
     min-height: 0;
     overflow: visible;
-    padding: 18px clamp(16px, 3vw, 40px) 0;
+    padding: 18px clamp(16px, 3vw, 40px) 18px;
   }
   .clients-list {
     display: flex;
@@ -681,8 +681,8 @@ export default function ClientsPageClient({
   const canSeeAmounts = role === "admin" || role === "charge_projet";
   const clients = clientsRes?.data ?? [];
   const loading = clientsLoading && !clientsRes;
-  // tableHeaderHeight=78: content padding-top(18) + table header(44); pagerHeight:0 fills full height
-  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 78, pagerHeight: 0, mobilePerPage: 6, safetyPx: 24 }, [loading]);
+  // tableHeaderHeight=78: content padding-top(18) + table header(44); pagerHeight=52: pagination bar; safetyPx=42: 24+18 for bottom padding
+  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 78, pagerHeight: 52, mobilePerPage: 6, safetyPx: 42 }, [loading]);
 
   async function toggleExpand(id: string) {
     if (expandedId === id) { setExpandedId(null); return; }
