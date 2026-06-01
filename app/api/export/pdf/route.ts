@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { generateDocument } from "@/lib/generate-document";
 import { convertDocxToPdf } from "@/lib/convert-to-pdf";
 import { buildDocumentData } from "@/lib/export-helpers";
+import { sanitizeFilename } from "@/lib/utils";
 import { Client } from "@/types";
 import { exportDocumentSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
@@ -96,10 +97,12 @@ export async function POST(req: NextRequest) {
     const docxBuffer = generateDocument(data);
     const pdfBuffer = await convertDocxToPdf(docxBuffer);
 
+    const entreprise = (client as { entreprise?: string } | null)?.entreprise ?? "client";
+    const filename = `Soumission ${sanitizeFilename(entreprise)}`;
     return new NextResponse(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="Offre_${soumission.numero_offre}.pdf"`,
+        "Content-Disposition": `attachment; filename="${filename}.pdf"; filename*=UTF-8''${encodeURIComponent(filename + ".pdf")}`,
       },
     });
   } catch (error) {

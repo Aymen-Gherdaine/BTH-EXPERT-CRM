@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { generateDocument } from "@/lib/generate-document";
 import { buildDocumentData } from "@/lib/export-helpers";
+import { sanitizeFilename } from "@/lib/utils";
 import { Client } from "@/types";
 import { exportDocumentSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
@@ -94,10 +95,12 @@ export async function POST(req: NextRequest) {
     );
     const buffer = generateDocument(data);
 
+    const entreprise = (client as { entreprise?: string } | null)?.entreprise ?? "client";
+    const filename = `Soumission ${sanitizeFilename(entreprise)}`;
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "Content-Disposition": `attachment; filename="Offre_${soumission.numero_offre}.docx"`,
+        "Content-Disposition": `attachment; filename="${filename}.docx"; filename*=UTF-8''${encodeURIComponent(filename + ".docx")}`,
       },
     });
   } catch (error) {
