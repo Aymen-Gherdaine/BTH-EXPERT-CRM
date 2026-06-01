@@ -46,26 +46,33 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const validation = validateBody(exportDocumentSchema, body);
     if (!validation.success) return validation.response;
-    const { soumission, client, lignes, contexteData, editablePreview } = validation.data;
+    const { soumission, client, lignes, contexteData, editablePreview, parametres: payloadParametres } = validation.data;
 
     const admin = getAdminSupabase();
-    const { data: parametres, error: parametresError } = await admin
+    const { data: dbParametres, error: parametresError } = await admin
       .from("parametres")
       .select("signataire1_nom, signataire1_titre, signataire2_nom, signataire2_titre, tva_pct, validite_jours, modalites_paiement")
       .eq("id", 1)
       .single();
 
-    if (parametresError || !parametres) {
-      console.error("Parametres fetch failed:", parametresError?.message ?? "no row");
+    if (parametresError || !dbParametres) {
+      console.error("Parametres DB fetch failed:", parametresError?.message ?? "no row");
     }
-    console.log("Parametres fetched:", JSON.stringify(parametres));
+
+    const parametres = {
+      ...dbParametres,
+      signataire1_nom: dbParametres?.signataire1_nom ?? payloadParametres?.signataire1_nom,
+      signataire1_titre: dbParametres?.signataire1_titre ?? payloadParametres?.signataire1_titre,
+      signataire2_nom: dbParametres?.signataire2_nom ?? payloadParametres?.signataire2_nom,
+      signataire2_titre: dbParametres?.signataire2_titre ?? payloadParametres?.signataire2_titre,
+    };
 
     const data = buildDocumentData(
       soumission as unknown as Parameters<typeof buildDocumentData>[0],
       (client ?? {}) as unknown as Client,
       lignes as unknown as Parameters<typeof buildDocumentData>[2],
       contexteData,
-      parametres ?? {},
+      parametres,
       editablePreview as unknown as Parameters<typeof buildDocumentData>[5]
     );
     const buffer = generateDocument(data);

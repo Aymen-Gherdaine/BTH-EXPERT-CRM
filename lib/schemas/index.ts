@@ -168,4 +168,10 @@ export const exportDocumentSchema = z.object({
     section_1_1: z.string(),
   }).optional(),
   editablePreview: z.record(z.string(), z.unknown()).optional(),
+  parametres: z.object({
+    signataire1_nom: z.string().nullable().optional(),
+    signataire1_titre: z.string().nullable().optional(),
+    signataire2_nom: z.string().nullable().optional(),
+    signataire2_titre: z.string().nullable().optional(),
+  }).optional(),
 })

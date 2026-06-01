@@ -66,7 +66,7 @@ export default function StepPreview({
   } = useLeaveGuard({ isDirty, setIsDirty, soumissionId, step2, editablePreview, total_ht, tva, total_ttc });
 
   const { exporting, handleExport } = useExport({
-    editablePreview, soumissionId, clientId, step2, total_ht, tva, total_ttc,
+    editablePreview, soumissionId, clientId, step2, total_ht, tva, total_ttc, parametres,
   });
 
   const hasUnsaved = unsavedSections.size > 0;

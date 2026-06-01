@@ -12,6 +12,12 @@ interface UseExportParams {
   total_ht: number;
   tva: number;
   total_ttc: number;
+  parametres?: {
+    signataire1_nom?: string | null;
+    signataire1_titre?: string | null;
+    signataire2_nom?: string | null;
+    signataire2_titre?: string | null;
+  } | null;
 }
 
 export function useExport({
@@ -22,6 +28,7 @@ export function useExport({
   total_ht,
   tva,
   total_ttc,
+  parametres,
 }: UseExportParams) {
   const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
 
@@ -31,6 +38,7 @@ export function useExport({
       const today = new Date().toISOString().split("T")[0];
       const payload = {
         editablePreview,
+        parametres: parametres ?? undefined,
         soumission: {
           id: soumissionId ?? "preview",
           numero_offre: editablePreview.numero_offre,
