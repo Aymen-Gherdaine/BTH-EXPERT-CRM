@@ -78,13 +78,7 @@ export default function StepBudget({ data, generating, onBack, onNext }: Props) 
     const sections: Section[] =
       data.lignes.length > 0
         ? sectionsFromLignes(data.lignes)
-        : [
-            {
-              id: crypto.randomUUID(),
-              groupe: "Attestation de classification",
-              lignes: [emptyLigne("Attestation de classification")],
-            },
-          ];
+        : [];
     return { sections, customSet: initCustomSet(sections) };
   });
 
@@ -526,75 +520,117 @@ export default function StepBudget({ data, generating, onBack, onNext }: Props) 
         })}
       </AnimatePresence>
 
-      {/* Add section panel */}
-      <AnimatePresence mode="wait">
-        {addingSection ? (
-          <motion.div
-            key="add-section-panel"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="mb-6 overflow-hidden"
-          >
-            <div className="p-4 border border-dashed border-gray-300 rounded-xl bg-gray-50">
-              <p className="text-sm font-medium text-gray-700 mb-3">Type d'étude / tableau à ajouter</p>
-              <div className="flex flex-col gap-3">
-                <select
-                  value={newGroupeChoice}
-                  onChange={(e) => setNewGroupeChoice(e.target.value)}
-                  className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-base md:text-sm bg-white outline-none focus:border-[#1a2e1e] transition-colors cursor-pointer"
-                >
-                  {GROUPES_ETUDE.map((g) => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
-                {newGroupeChoice === "Personnalisé" && (
-                  <input
-                    type="text"
-                    value={customGroupeText}
-                    onChange={(e) => setCustomGroupeText(e.target.value)}
-                    placeholder="Nom du tableau personnalisé..."
-                    className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-base md:text-sm outline-none focus:border-[#1a2e1e] transition-colors"
-                    autoFocus
-                  />
-                )}
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={confirmAddSection}
-                    className="flex-1 sm:flex-none px-4 min-h-[44px] rounded-lg text-sm font-medium text-white cursor-pointer hover:opacity-90 transition-opacity"
-                    style={{ backgroundColor: BTH_GREEN }}
+      {/* Selector when empty / Add section panel when sections exist */}
+      {sections.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          className="mb-6"
+        >
+          <div className="p-4 border border-dashed border-gray-300 rounded-xl bg-gray-50">
+            <p className="text-sm font-medium text-gray-700 mb-3">Choisissez le premier tableau du devis</p>
+            <div className="flex flex-col gap-3">
+              <select
+                value={newGroupeChoice}
+                onChange={(e) => setNewGroupeChoice(e.target.value)}
+                className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-base md:text-sm bg-white outline-none focus:border-[#1a2e1e] transition-colors cursor-pointer"
+              >
+                {GROUPES_ETUDE.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+              {newGroupeChoice === "Personnalisé" && (
+                <input
+                  type="text"
+                  value={customGroupeText}
+                  onChange={(e) => setCustomGroupeText(e.target.value)}
+                  placeholder="Nom du tableau personnalisé..."
+                  className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-base md:text-sm outline-none focus:border-[#1a2e1e] transition-colors"
+                  autoFocus
+                />
+              )}
+              <button
+                type="button"
+                onClick={confirmAddSection}
+                className="px-4 min-h-[44px] rounded-lg text-sm font-medium text-white cursor-pointer hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: BTH_GREEN }}
+              >
+                Créer ce tableau
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      ) : (
+        <AnimatePresence mode="wait">
+          {addingSection ? (
+            <motion.div
+              key="add-section-panel"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="mb-6 overflow-hidden"
+            >
+              <div className="p-4 border border-dashed border-gray-300 rounded-xl bg-gray-50">
+                <p className="text-sm font-medium text-gray-700 mb-3">Type d'étude / tableau à ajouter</p>
+                <div className="flex flex-col gap-3">
+                  <select
+                    value={newGroupeChoice}
+                    onChange={(e) => setNewGroupeChoice(e.target.value)}
+                    className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-base md:text-sm bg-white outline-none focus:border-[#1a2e1e] transition-colors cursor-pointer"
                   >
-                    Ajouter
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setAddingSection(false); setCustomGroupeText(""); }}
-                    className="flex-1 sm:flex-none px-4 min-h-[44px] rounded-lg text-sm font-medium text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
-                  >
-                    Annuler
-                  </button>
+                    {GROUPES_ETUDE.map((g) => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                  {newGroupeChoice === "Personnalisé" && (
+                    <input
+                      type="text"
+                      value={customGroupeText}
+                      onChange={(e) => setCustomGroupeText(e.target.value)}
+                      placeholder="Nom du tableau personnalisé..."
+                      className="w-full px-3 py-2 min-h-[44px] border border-gray-200 rounded-lg text-base md:text-sm outline-none focus:border-[#1a2e1e] transition-colors"
+                      autoFocus
+                    />
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={confirmAddSection}
+                      className="flex-1 sm:flex-none px-4 min-h-[44px] rounded-lg text-sm font-medium text-white cursor-pointer hover:opacity-90 transition-opacity"
+                      style={{ backgroundColor: BTH_GREEN }}
+                    >
+                      Ajouter
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setAddingSection(false); setCustomGroupeText(""); }}
+                      className="flex-1 sm:flex-none px-4 min-h-[44px] rounded-lg text-sm font-medium text-gray-500 border border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.button
-            key="add-section-btn"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            type="button"
-            onClick={() => setAddingSection(true)}
-            className="flex items-center justify-center gap-2 w-full mb-6 px-4 py-3 min-h-[44px] border border-dashed border-gray-300 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 transition-all cursor-pointer"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            Ajouter un tableau / type d'étude
-          </motion.button>
-        )}
-      </AnimatePresence>
+            </motion.div>
+          ) : (
+            <motion.button
+              key="add-section-btn"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              type="button"
+              onClick={() => setAddingSection(true)}
+              className="flex items-center justify-center gap-2 w-full mb-6 px-4 py-3 min-h-[44px] border border-dashed border-gray-300 rounded-xl text-sm text-gray-600 hover:border-gray-400 hover:bg-gray-50 transition-all cursor-pointer"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Ajouter un tableau / type d'étude
+            </motion.button>
+          )}
+        </AnimatePresence>
+      )}
 
       {/* Totaux */}
       <div className="bg-[#F4F6F7] rounded-xl p-4 md:p-5 mb-6 md:mb-8">
