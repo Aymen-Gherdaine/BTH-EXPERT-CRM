@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 
 // 1×1 transparent PNG — fallback when no signature is uploaded
-const EMPTY_PNG = Buffer.from(
+export const EMPTY_PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
   'base64'
 );
@@ -126,8 +126,8 @@ export interface DocumentData {
   signataire_2_titre: string;
 
   // Signature images (Buffer passed directly to ImageModule)
-  signature_1: Buffer | null;
-  signature_2: Buffer | null;
+  signature_1: Buffer;
+  signature_2: Buffer;
 }
 
 export function generateDocument(data: DocumentData, forPdf = false): Buffer {
@@ -181,7 +181,7 @@ export function generateDocument(data: DocumentData, forPdf = false): Buffer {
       return tagValue && tagValue.length > 0 ? tagValue : EMPTY_PNG;
     },
     getSize: (img: Buffer) => {
-      if (img === EMPTY_PNG || img.length <= 70) return [0, 0];
+      if (!img || img === EMPTY_PNG || img.length <= 70) return [1, 1];
       return [150, 55];
     },
   });
@@ -192,7 +192,22 @@ export function generateDocument(data: DocumentData, forPdf = false): Buffer {
     linebreaks: true,
   });
 
-  doc.render(data);
+  try {
+    doc.render(data);
+  } catch (error: unknown) {
+    const e = error as { properties?: { errors?: Array<{ message?: string; properties?: { explanation?: string; context?: string; xtag?: string } }> } };
+    if (e?.properties?.errors) {
+      console.error("Docxtemplater errors:",
+        JSON.stringify(e.properties.errors.map((err) => ({
+          message: err.message,
+          explanation: err.properties?.explanation,
+          context: err.properties?.context,
+          tag: err.properties?.xtag,
+        })), null, 2)
+      );
+    }
+    throw error;
+  }
 
   return doc.getZip().generate({ type: 'nodebuffer' }) as Buffer;
 }

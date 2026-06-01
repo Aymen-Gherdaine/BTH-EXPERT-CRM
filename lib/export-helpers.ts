@@ -1,5 +1,5 @@
 import { Client, EditablePreview, LigneBudget, Soumission, TypeEtude } from "@/types";
-import { DocumentData, nombreEnLettres } from "@/lib/generate-document";
+import { DocumentData, nombreEnLettres, EMPTY_PNG } from "@/lib/generate-document";
 import { formatDateFr, formatMontant } from "@/lib/utils";
 import { sanitizeAiText } from "@/lib/sanitize-ai-text";
 
@@ -195,8 +195,8 @@ function buildFromEditablePreview(
     signataire_1_titre: s(parametres.signataire1_titre ?? ""),
     signataire_2_nom: s(parametres.signataire2_nom ?? ""),
     signataire_2_titre: s(parametres.signataire2_titre ?? ""),
-    signature_1: signatureBuffers?.responsable ?? null,
-    signature_2: signatureBuffers?.autorise ?? null,
+    signature_1: signatureBuffers?.responsable ?? EMPTY_PNG,
+    signature_2: signatureBuffers?.autorise ?? EMPTY_PNG,
   };
 }
 
@@ -291,7 +291,7 @@ export function buildDocumentData(
     signataire_1_titre: sanitizeAiText(parametres.signataire1_titre ?? ""),
     signataire_2_nom: sanitizeAiText(parametres.signataire2_nom ?? ""),
     signataire_2_titre: sanitizeAiText(parametres.signataire2_titre ?? ""),
-    signature_1: signatureBuffers?.responsable ?? null,
-    signature_2: signatureBuffers?.autorise ?? null,
+    signature_1: signatureBuffers?.responsable ?? EMPTY_PNG,
+    signature_2: signatureBuffers?.autorise ?? EMPTY_PNG,
   };
 }
