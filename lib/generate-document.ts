@@ -1,7 +1,15 @@
 import Docxtemplater from 'docxtemplater';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const ImageModule = require('docxtemplater-image-module-free');
 import PizZip from 'pizzip';
 import fs from 'fs';
 import path from 'path';
+
+// 1×1 transparent PNG — fallback when no signature is uploaded
+const EMPTY_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
+  'base64'
+);
 
 const TEMPLATE_PATH = path.join(process.cwd(), 'templates', 'template-standard-v2.docx');
 
@@ -116,6 +124,10 @@ export interface DocumentData {
   signataire_1_titre: string;
   signataire_2_nom: string;
   signataire_2_titre: string;
+
+  // Signature images (Buffer passed directly to ImageModule)
+  signature_1: Buffer | null;
+  signature_2: Buffer | null;
 }
 
 export function generateDocument(data: DocumentData, forPdf = false): Buffer {
@@ -163,7 +175,19 @@ export function generateDocument(data: DocumentData, forPdf = false): Buffer {
 
   zip.file('word/document.xml', docXml);
 
+  const imageModule = new ImageModule({
+    centered: false,
+    getImage: (tagValue: Buffer | null) => {
+      return tagValue && tagValue.length > 0 ? tagValue : EMPTY_PNG;
+    },
+    getSize: (img: Buffer) => {
+      if (img === EMPTY_PNG || img.length <= 70) return [0, 0];
+      return [150, 55];
+    },
+  });
+
   const doc = new Docxtemplater(zip, {
+    modules: [imageModule],
     paragraphLoop: true,
     linebreaks: true,
   });

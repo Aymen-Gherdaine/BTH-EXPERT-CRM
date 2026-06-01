@@ -29,6 +29,14 @@ export function formatMontant(amount: number): string {
   return `${formatted},${decimal}`;
 }
 
+export function sanitizeFilename(name: string): string {
+  return name
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-zA-Z0-9 _-]/g, "")
+    .trim()
+    .slice(0, 80) || "client";
+}
+
 export function calcTotaux(lignes: { quantite: number; prix_unitaire: number }[]) {
   const total_ht = lignes.reduce(
     (sum, l) => sum + l.quantite * l.prix_unitaire,

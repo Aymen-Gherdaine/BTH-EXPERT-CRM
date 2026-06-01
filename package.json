@@ -23,6 +23,7 @@
     "date-fns": "^4.1.0",
     "docx": "^9.5.0",
     "docxtemplater": "^3.68.6",
+    "docxtemplater-image-module-free": "^1.1.1",
     "framer-motion": "^12.9.4",
     "next": "^16.2.6",
     "next-nprogress-bar": "^2.4.7",

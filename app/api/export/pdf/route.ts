@@ -49,10 +49,21 @@ export async function POST(req: NextRequest) {
     if (!validation.success) return validation.response;
     const { soumission, client, lignes, contexteData, editablePreview, parametres: payloadParametres } = validation.data;
 
+    async function fetchSignature(url: string | null | undefined): Promise<Buffer | null> {
+      if (!url) return null;
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        return Buffer.from(await res.arrayBuffer());
+      } catch {
+        return null;
+      }
+    }
+
     const admin = getAdminSupabase();
     const { data: dbParametres, error: parametresError } = await admin
       .from("parametres")
-      .select("signataire1_nom, signataire1_titre, signataire2_nom, signataire2_titre, tva_pct, validite_jours, modalites_paiement")
+      .select("signataire1_nom, signataire1_titre, signataire2_nom, signataire2_titre, tva_pct, validite_jours, modalites_paiement, signature_responsable_url, signature_autorise_url")
       .eq("id", 1)
       .single();
 
@@ -68,15 +79,21 @@ export async function POST(req: NextRequest) {
       signataire2_titre: dbParametres?.signataire2_titre ?? payloadParametres?.signataire2_titre,
     };
 
+    const [sigResponsable, sigAutorise] = await Promise.all([
+      fetchSignature(dbParametres?.signature_responsable_url),
+      fetchSignature(dbParametres?.signature_autorise_url),
+    ]);
+
     const data = buildDocumentData(
       soumission as unknown as Parameters<typeof buildDocumentData>[0],
       (client ?? {}) as unknown as Client,
       lignes as unknown as Parameters<typeof buildDocumentData>[2],
       contexteData,
       parametres,
-      editablePreview as unknown as Parameters<typeof buildDocumentData>[5]
+      editablePreview as unknown as Parameters<typeof buildDocumentData>[5],
+      { responsable: sigResponsable, autorise: sigAutorise }
     );
-    const docxBuffer = generateDocument(data, true);
+    const docxBuffer = generateDocument(data);
     const pdfBuffer = await convertDocxToPdf(docxBuffer);
 
     return new NextResponse(new Uint8Array(pdfBuffer), {
