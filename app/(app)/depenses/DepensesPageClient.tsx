@@ -1085,10 +1085,10 @@ export default function DepensesPageClient({
   const bp = useBp();
   const isDesktop = bp !== "mobile";
   const gridRef = useRef<HTMLElement>(null);
-  // ref on .depenses-shell; tableHeaderHeight=48 (.depenses-table-head); pagerHeight=52 (footer below content)
-  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 66, tableHeaderHeight: 48, pagerHeight: 52, mobilePerPage: 6 });
 
   const [depenses, setDepenses] = useState<Depense[]>(initialDepenses);
+  // ref on .depenses-shell; tableHeaderHeight=48 (.depenses-table-head); pagerHeight=52 (footer below content)
+  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 66, tableHeaderHeight: 48, pagerHeight: 52, mobilePerPage: 6 }, [depenses.length]);
   const [soumissions] = useState<SoumissionOption[]>(initialSoumissions);
   const [userId] = useState<string | null>(initialUserId);
 

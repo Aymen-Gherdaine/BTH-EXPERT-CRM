@@ -159,13 +159,13 @@ const CSS = `
     flex: 1;
     min-height: 0;
     overflow: visible;
-    padding: 18px clamp(16px, 3vw, 40px) 16px;
+    padding: 18px clamp(16px, 3vw, 40px) 0;
   }
   .clients-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
-    padding-bottom: 16px;
+    padding-bottom: 0;
   }
   .clients-empty {
     min-height: 360px;
@@ -204,9 +204,6 @@ const CSS = `
   }
   .clients-pagination {
     flex-shrink: 0;
-    position: sticky;
-    bottom: 0;
-    z-index: 8;
     background: #fbfaf7;
     border-top: 1px solid #e8e2d8;
     display: grid;
@@ -657,8 +654,6 @@ export default function ClientsPageClient({
   const bp = useBp();
   const isDesktop = bp === "desktop";
   const gridRef = useRef<HTMLDivElement>(null);
-  // tableHeaderHeight=78: content padding-top(18) + table header(44) + padding-bottom(16)
-  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 78, pagerHeight: 52, mobilePerPage: 6 });
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -686,6 +681,8 @@ export default function ClientsPageClient({
   const canSeeAmounts = role === "admin" || role === "charge_projet";
   const clients = clientsRes?.data ?? [];
   const loading = clientsLoading && !clientsRes;
+  // tableHeaderHeight=78: content padding-top(18) + table header(44); pagerHeight:0 fills full height
+  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 78, pagerHeight: 0, mobilePerPage: 6 }, [loading]);
 
   async function toggleExpand(id: string) {
     if (expandedId === id) { setExpandedId(null); return; }

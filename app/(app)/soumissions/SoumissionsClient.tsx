@@ -41,7 +41,7 @@ export default function SoumissionsClient({ initialSoumissions = [] }: { initial
 
   const gridRef = useRef<HTMLDivElement>(null);
   // tableHeaderHeight=44: PremiumTable header(48)+footer(48)=96, minus pagerHeight(52) already subtracted = 44
-  const perPage = useDynamicPerPage(gridRef, { view, isDesktop, cardHeight: 172, rowHeight: 66, cols: 3, tableHeaderHeight: 44, pagerHeight: 52, mobilePerPage: 6 });
+  const perPage = useDynamicPerPage(gridRef, { view, isDesktop, cardHeight: 172, rowHeight: 66, cols: 3, tableHeaderHeight: 44, pagerHeight: 52, mobilePerPage: 6 }, [loading]);
 
   const [q, setQ] = useState("");
   const [filtre, setFiltre] = useState<StatutSoumission | null>(null);

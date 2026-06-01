@@ -18,7 +18,8 @@ export function useDynamicPerPage(
     view, isDesktop,
     cardHeight = 172, rowHeight = 66, cols = 3,
     tableHeaderHeight = 48, pagerHeight = 64, mobilePerPage = 6,
-  }: Options
+  }: Options,
+  deps: unknown[] = [],
 ): number {
   const [perPage, setPerPage] = useState(8)
 
@@ -48,7 +49,8 @@ export function useDynamicPerPage(
       window.removeEventListener("resize", calc)
     }
     // Do NOT observe gridRef — that would refire when content changes height → feedback loop
-  }, [view, isDesktop, gridRef, cardHeight, rowHeight, cols, tableHeaderHeight, pagerHeight, mobilePerPage])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, isDesktop, gridRef, cardHeight, rowHeight, cols, tableHeaderHeight, pagerHeight, mobilePerPage, ...deps])
 
   return perPage
 }
