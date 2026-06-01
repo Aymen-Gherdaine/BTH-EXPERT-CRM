@@ -10,6 +10,7 @@ interface Options {
   tableHeaderHeight?: number
   pagerHeight?: number
   mobilePerPage?: number
+  safetyPx?: number
 }
 
 export function useDynamicPerPage(
@@ -18,6 +19,7 @@ export function useDynamicPerPage(
     view, isDesktop,
     cardHeight = 172, rowHeight = 66, cols = 3,
     tableHeaderHeight = 48, pagerHeight = 64, mobilePerPage = 6,
+    safetyPx = 0,
   }: Options,
   deps: unknown[] = [],
 ): number {
@@ -31,7 +33,7 @@ export function useDynamicPerPage(
 
       // Measure from container top to viewport bottom — stable, independent of content
       const top = el.getBoundingClientRect().top
-      const avail = window.innerHeight - top - pagerHeight
+      const avail = window.innerHeight - top - pagerHeight - safetyPx
 
       if (view === "cards") {
         const rows = Math.max(1, Math.floor(avail / cardHeight))
