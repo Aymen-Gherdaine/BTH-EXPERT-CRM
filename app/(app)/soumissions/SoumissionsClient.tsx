@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { Soumission, StatutSoumission } from "@/types";
+import { Soumission, StatutSoumission, UserRole } from "@/types";
 import { D0, V0 } from "./types";
 import { CSS, I, fmtInt } from "./constants";
 import { useBp } from "@/hooks/useBp";
@@ -15,7 +15,13 @@ import {
   DeleteModal, VersementModal,
 } from "./components";
 
-export default function SoumissionsClient({ initialSoumissions = [] }: { initialSoumissions?: Soumission[] }) {
+export default function SoumissionsClient({
+  initialSoumissions = [],
+  initialRole,
+}: {
+  initialSoumissions?: Soumission[];
+  initialRole?: UserRole | null;
+}) {
   const bp = useBp();
   const isDesktop = bp === "desktop";
 
@@ -27,7 +33,7 @@ export default function SoumissionsClient({ initialSoumissions = [] }: { initial
     selected,
     openDetail, closeDetail, handleStatut, openVersementFor,
     handleSaveVersement, handleDelete, confirmDelete, handleDuplicate, toggleSel,
-  } = useSoumissions(initialSoumissions);
+  } = useSoumissions(initialSoumissions, initialRole ?? undefined);
 
   const [view, setView] = useState<"cards" | "table">("cards");
   useEffect(() => {

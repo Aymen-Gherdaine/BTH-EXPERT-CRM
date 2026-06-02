@@ -4,7 +4,17 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState, useTransition } from "react";
+import { preload } from "swr";
+import { fetcher } from "@/lib/fetcher";
 import type { UserRole } from "@/types";
+
+const PREFETCH_MAP: Record<string, string[]> = {
+  "/dashboard":   ["/api/dashboard", "/api/soumissions", "/api/me", "/api/prospects?statut=actif"],
+  "/soumissions": ["/api/soumissions", "/api/me"],
+  "/clients":     ["/api/clients"],
+  "/prospection": ["/api/prospects?statut=actif"],
+  "/depenses":    ["/api/depenses", "/api/soumissions"],
+};
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -107,6 +117,10 @@ export default function BottomNav({ role }: { role: UserRole }) {
             <Link
               key={href}
               href={href}
+              onTouchStart={() => {
+                router.prefetch(href);
+                (PREFETCH_MAP[href] ?? []).forEach(key => preload(key, fetcher));
+              }}
               onClick={(event) => {
                 if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                 event.preventDefault();

@@ -4,10 +4,20 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
+import { preload } from "swr";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { fetcher } from "@/lib/fetcher";
 import { useSidebar } from "./SidebarContext";
 import type { UserRole } from "@/types";
 import type { User } from "@supabase/supabase-js";
+
+const PREFETCH_MAP: Record<string, string[]> = {
+  "/dashboard":   ["/api/dashboard", "/api/soumissions", "/api/me", "/api/prospects?statut=actif"],
+  "/soumissions": ["/api/soumissions", "/api/me"],
+  "/clients":     ["/api/clients"],
+  "/prospection": ["/api/prospects?statut=actif"],
+  "/depenses":    ["/api/depenses", "/api/soumissions"],
+};
 
 // ─── Icons ───────────────────────────────────────────────────────────────────
 
@@ -105,6 +115,11 @@ function SidebarInner({
     : user ? getInitials(user) : "";
 
   useEffect(() => {
+    ["/dashboard", "/soumissions", "/clients"].forEach(href => router.prefetch(href));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     setPendingHref(null);
   }, [pathname]);
 
@@ -187,7 +202,10 @@ function SidebarInner({
                   <Link
                     key={href}
                     href={href}
-                    onMouseEnter={() => router.prefetch(href)}
+                    onMouseEnter={() => {
+                      router.prefetch(href);
+                      (PREFETCH_MAP[href] ?? []).forEach(key => preload(key, fetcher));
+                    }}
                     onClick={(event) => {
                       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0) return;
                       event.preventDefault();

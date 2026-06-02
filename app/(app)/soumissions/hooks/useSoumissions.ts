@@ -3,17 +3,20 @@
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { Soumission, StatutSoumission } from "@/types";
+import { Soumission, StatutSoumission, UserRole } from "@/types";
 import { SoumissionView, ApiListResponse, MeResponse, VersementState, V0, DeleteState, D0 } from "../types";
 
-export function useSoumissions(initialSoumissions: Soumission[] = []) {
+export function useSoumissions(initialSoumissions: Soumission[] = [], initialRole?: UserRole) {
   const router = useRouter();
 
   const { data: soumissionsRes, isLoading: soumissionsLoading, mutate: mutateSoumissions } =
     useSWR<ApiListResponse<Soumission>>("/api/soumissions", {
       fallbackData: { data: initialSoumissions },
     });
-  const { data: meRes, isLoading: meLoading } = useSWR<MeResponse>("/api/me");
+  const { data: meRes, isLoading: meLoading } = useSWR<MeResponse>("/api/me", {
+    fallbackData: initialRole ? { role: initialRole } : undefined,
+    revalidateOnMount: !initialRole,
+  });
 
   const role = meRes?.role ?? "admin";
   const isAdmin = role === "admin" || role === "charge_projet";

@@ -8,6 +8,7 @@ import useSWR from "swr";
 import { DashboardStats, Prospect, Soumission, UserRole, Visite } from "@/types";
 import { formatMontant } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 
 type OverdueProspect = Prospect & { _lastVisit: Visite };
 type ApiListResponse<T> = { data?: T[] };
@@ -624,14 +625,38 @@ function Chart({ rows }: { rows: ChartRow[] }) {
   );
 }
 
-export default function DashboardClient() {
+type Props = {
+  initialProfile?: MeResponse;
+  initialStats?: DashboardStats;
+  initialSoumissions?: Soumission[];
+  initialProspects?: Prospect[];
+};
+
+export default function DashboardClient({
+  initialProfile,
+  initialStats,
+  initialSoumissions = [],
+  initialProspects = [],
+}: Props) {
   const bp = useBp();
   const isMobile = bp === "mobile";
 
-  const { data: meRes, isLoading: meLoading } = useSWR<MeResponse>("/api/me");
-  const { data: stats, isLoading: statsLoading } = useSWR<DashboardStats>("/api/dashboard");
-  const { data: soumRes, isLoading: soumissionsLoading } = useSWR<ApiListResponse<Soumission>>("/api/soumissions");
-  const { data: prospectsRes, isLoading: prospectsLoading } = useSWR<ApiListResponse<Prospect>>("/api/prospects?statut=actif");
+  const { data: meRes, isLoading: meLoading } = useSWR<MeResponse>("/api/me", {
+    fallbackData: initialProfile,
+    revalidateOnMount: !initialProfile,
+  });
+  const { data: stats, isLoading: statsLoading } = useSWR<DashboardStats>("/api/dashboard", {
+    fallbackData: initialStats,
+    revalidateOnMount: !initialStats,
+  });
+  const { data: soumRes, isLoading: soumissionsLoading } = useSWR<ApiListResponse<Soumission>>("/api/soumissions", {
+    fallbackData: { data: initialSoumissions },
+    revalidateOnMount: false,
+  });
+  const { data: prospectsRes, isLoading: prospectsLoading } = useSWR<ApiListResponse<Prospect>>("/api/prospects?statut=actif", {
+    fallbackData: { data: initialProspects },
+    revalidateOnMount: false,
+  });
 
   const role = meRes?.role ?? "admin";
   const userName = meRes?.full_name || "Utilisateur";
@@ -642,10 +667,11 @@ export default function DashboardClient() {
   const allSoumissions = useMemo(() => soumRes?.data ?? [], [soumRes]);
   const recents = useMemo(() => allSoumissions.slice(0, 5), [allSoumissions]);
   const prospects = useMemo(() => prospectsRes?.data ?? [], [prospectsRes]);
-  const loading = (meLoading && !meRes)
+  const rawLoading = (meLoading && !meRes)
     || (statsLoading && !stats)
     || (soumissionsLoading && !soumRes)
     || (prospectsLoading && !prospectsRes);
+  const loading = useDelayedLoading(rawLoading);
 
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
   const firstOfMonth = useMemo(() => {
