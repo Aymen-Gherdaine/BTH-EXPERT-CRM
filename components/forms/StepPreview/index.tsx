@@ -84,7 +84,8 @@ export default function StepPreview({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                 d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
-            Survolez une section pour la modifier
+            <span className="hidden sm:inline">Survolez une section pour la modifier</span>
+            <span className="sm:hidden">Touchez une section pour la modifier</span>
           </p>
           <AnimatePresence>
             {hasUnsaved && (
@@ -461,7 +462,7 @@ export default function StepPreview({
             type="button"
             onClick={() => setShowRegenerateModal(true)}
             disabled={regenerating}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 border border-dashed border-gray-300 hover:border-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-50 min-h-[44px]"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-500 border border-dashed border-gray-300 hover:border-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-all cursor-pointer disabled:opacity-50 min-h-[44px] w-full sm:w-auto"
           >
             {regenerating ? (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -492,7 +493,7 @@ export default function StepPreview({
         />
 
         {/* Signataires */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 grid grid-cols-2 gap-6">
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5 py-4 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <div>
             <p className="text-xs text-gray-400 mb-2">Responsable de l'offre :</p>
             <p className="font-semibold text-sm" style={{ color: BTH_GREEN }}>{parametres?.signataire1_nom ?? "—"}</p>
