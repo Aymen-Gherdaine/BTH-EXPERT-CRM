@@ -119,9 +119,63 @@ export interface DocumentData {
   signataire_2_titre: string;
 }
 
+/**
+ * Centers the paragraph containing each signature marker.
+ * Must be called BEFORE placeSignature so the marker is still present.
+ */
+function centerSignatureMarkers(zip: PizZip): void {
+  let xml = zip.file('word/document.xml')!.asText();
+  let changed = false;
+
+  for (const marker of ['@@SIG1@@', '@@SIG2@@']) {
+    const idx = xml.indexOf(marker);
+    if (idx === -1) continue;
+
+    // Walk backwards to find the nearest <w:p> or <w:p ...> opening tag
+    let pStart = -1;
+    for (let i = idx - 1; i >= 0; i--) {
+      if (xml[i] !== '<') continue;
+      const chunk = xml.slice(i, i + 5);
+      if (chunk === '<w:p>' || chunk === '<w:p ') { pStart = i; break; }
+    }
+    if (pStart === -1) continue;
+
+    const pOpenEnd = xml.indexOf('>', pStart) + 1;
+    // Boundary of the current paragraph (start of the next <w:p)
+    const nextPTag = xml.indexOf('<w:p', pOpenEnd);
+
+    const pPrStart = xml.indexOf('<w:pPr', pStart);
+    const hasPPr = pPrStart !== -1 && (nextPTag === -1 || pPrStart < nextPTag);
+
+    if (!hasPPr) {
+      // No <w:pPr> at all — insert one with centering right after <w:p...>
+      xml = xml.slice(0, pOpenEnd) + '<w:pPr><w:jc w:val="center"/></w:pPr>' + xml.slice(pOpenEnd);
+      changed = true;
+    } else {
+      const pPrOpenEnd = xml.indexOf('>', pPrStart) + 1;
+      const isSelfClosing = xml.slice(pPrStart, pPrOpenEnd).endsWith('/>');
+      const checkEnd = isSelfClosing ? pPrOpenEnd : xml.indexOf('</w:pPr>', pPrStart);
+
+      if (!xml.slice(pPrStart, checkEnd).includes('<w:jc ')) {
+        if (isSelfClosing) {
+          // <w:pPr/> → expand to full element with centering
+          xml = xml.slice(0, pPrStart) + '<w:pPr><w:jc w:val="center"/></w:pPr>' + xml.slice(pPrOpenEnd);
+        } else {
+          // Insert <w:jc> as first child inside <w:pPr>
+          xml = xml.slice(0, pPrOpenEnd) + '<w:jc w:val="center"/>' + xml.slice(pPrOpenEnd);
+        }
+        changed = true;
+      }
+    }
+  }
+
+  if (changed) zip.file('word/document.xml', xml);
+}
+
 export function generateDocument(
   data: DocumentData,
-  signatures?: { responsable?: Buffer | null; autorise?: Buffer | null }
+  signatures?: { responsable?: Buffer | null; autorise?: Buffer | null },
+  forPdf = false
 ): Buffer {
   const templateBuffer = fs.readFileSync(TEMPLATE_PATH);
   const zip = new PizZip(templateBuffer);
@@ -132,6 +186,40 @@ export function generateDocument(
     /<w:sdt><w:sdtPr>(?:(?!<\/w:sdt>)[\s\S])*?<w:date\b(?:(?!<\/w:sdt>)[\s\S])*?<\/w:sdtPr><w:sdtContent>((?:(?!<\/w:sdt>)[\s\S])*?)<\/w:sdtContent><\/w:sdt>/g,
     '$1'
   );
+
+  if (forPdf) {
+    // LibreOffice (Cloudmersive) does not render Word headers — copy the logo drawing
+    // from header1.xml into the document body so it appears in the PDF output.
+    const headerXml = zip.files['word/header1.xml']?.asText() ?? '';
+    const headerRelsXml = zip.files['word/_rels/header1.xml.rels']?.asText() ?? '';
+
+    const drawingMatch = /<w:drawing>[\s\S]*?<\/w:drawing>/.exec(headerXml);
+    const embedMatch = drawingMatch ? /r:embed="([^"]+)"/.exec(drawingMatch[0]) : null;
+
+    if (drawingMatch && embedMatch) {
+      const headerRId = embedMatch[1];
+      const targetMatch = new RegExp(`Id="${headerRId}"[^>]*Target="([^"]+)"`).exec(headerRelsXml);
+      const headerTarget = targetMatch ? /Target="([^"]+)"/.exec(targetMatch[0])?.[1] ?? '' : '';
+      const imgTarget = headerTarget.startsWith('../') ? headerTarget.slice(3) : headerTarget;
+
+      if (imgTarget) {
+        const newRId = 'rIdLogoBody';
+        let docRelsXml = zip.files['word/_rels/document.xml.rels'].asText();
+        if (!docRelsXml.includes(newRId)) {
+          docRelsXml = docRelsXml.replace(
+            '</Relationships>',
+            `<Relationship Id="${newRId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${imgTarget}"/></Relationships>`
+          );
+          zip.file('word/_rels/document.xml.rels', docRelsXml);
+        }
+
+        const bodyDrawing = drawingMatch[0].replace(`r:embed="${headerRId}"`, `r:embed="${newRId}"`);
+        const logoPara = `<w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r>${bodyDrawing}</w:r></w:p>`;
+        docXml = docXml.replace('<w:body>', `<w:body>${logoPara}`);
+      }
+    }
+  }
+
   zip.file('word/document.xml', docXml);
 
   const doc = new Docxtemplater(zip, {
@@ -158,8 +246,11 @@ export function generateDocument(
 
   const renderedZip = doc.getZip();
 
-  placeSignature(renderedZip, "@@SIG1@@", signatures?.responsable ?? null);
-  placeSignature(renderedZip, "@@SIG2@@", signatures?.autorise ?? null);
+  // Center signature paragraphs before injecting images
+  centerSignatureMarkers(renderedZip);
+
+  placeSignature(renderedZip, '@@SIG1@@', signatures?.responsable ?? null);
+  placeSignature(renderedZip, '@@SIG2@@', signatures?.autorise ?? null);
 
   return renderedZip.generate({ type: 'nodebuffer' }) as Buffer;
 }
