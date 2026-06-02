@@ -120,10 +120,10 @@ export interface DocumentData {
 }
 
 /**
- * Centers the paragraph containing each signature marker.
+ * Adds vertical centering to the table cell containing each signature marker.
  * Must be called BEFORE placeSignature so the marker is still present.
  */
-function centerSignatureMarkers(zip: PizZip): void {
+function verticalCenterSignatureCells(zip: PizZip): void {
   let xml = zip.file('word/document.xml')!.asText();
   let changed = false;
 
@@ -131,38 +131,36 @@ function centerSignatureMarkers(zip: PizZip): void {
     const idx = xml.indexOf(marker);
     if (idx === -1) continue;
 
-    // Walk backwards to find the nearest <w:p> or <w:p ...> opening tag
-    let pStart = -1;
+    // Walk backwards to find the nearest <w:tc> opening tag
+    let tcStart = -1;
     for (let i = idx - 1; i >= 0; i--) {
       if (xml[i] !== '<') continue;
-      const chunk = xml.slice(i, i + 5);
-      if (chunk === '<w:p>' || chunk === '<w:p ') { pStart = i; break; }
+      if (xml.slice(i, i + 5) === '<w:tc' && (xml[i + 5] === '>' || xml[i + 5] === ' ')) {
+        tcStart = i;
+        break;
+      }
     }
-    if (pStart === -1) continue;
+    if (tcStart === -1) continue;
 
-    const pOpenEnd = xml.indexOf('>', pStart) + 1;
-    // Boundary of the current paragraph (start of the next <w:p)
-    const nextPTag = xml.indexOf('<w:p', pOpenEnd);
+    const tcOpenEnd = xml.indexOf('>', tcStart) + 1;
+    const nextTc = xml.indexOf('<w:tc', tcOpenEnd);
+    const tcPrStart = xml.indexOf('<w:tcPr', tcStart);
+    const hasTcPr = tcPrStart !== -1 && (nextTc === -1 || tcPrStart < nextTc);
 
-    const pPrStart = xml.indexOf('<w:pPr', pStart);
-    const hasPPr = pPrStart !== -1 && (nextPTag === -1 || pPrStart < nextPTag);
-
-    if (!hasPPr) {
-      // No <w:pPr> at all — insert one with centering right after <w:p...>
-      xml = xml.slice(0, pOpenEnd) + '<w:pPr><w:jc w:val="center"/></w:pPr>' + xml.slice(pOpenEnd);
+    if (!hasTcPr) {
+      xml = xml.slice(0, tcOpenEnd) + '<w:tcPr><w:vAlign w:val="center"/></w:tcPr>' + xml.slice(tcOpenEnd);
       changed = true;
     } else {
-      const pPrOpenEnd = xml.indexOf('>', pPrStart) + 1;
-      const isSelfClosing = xml.slice(pPrStart, pPrOpenEnd).endsWith('/>');
-      const checkEnd = isSelfClosing ? pPrOpenEnd : xml.indexOf('</w:pPr>', pPrStart);
+      const tcPrOpenEnd = xml.indexOf('>', tcPrStart) + 1;
+      const isSelfClosing = xml.slice(tcPrStart, tcPrOpenEnd).endsWith('/>');
+      const tcPrCloseIdx = xml.indexOf('</w:tcPr>', tcPrStart);
+      const checkEnd = isSelfClosing ? tcPrOpenEnd : tcPrCloseIdx;
 
-      if (!xml.slice(pPrStart, checkEnd).includes('<w:jc ')) {
+      if (!xml.slice(tcPrStart, checkEnd).includes('<w:vAlign')) {
         if (isSelfClosing) {
-          // <w:pPr/> → expand to full element with centering
-          xml = xml.slice(0, pPrStart) + '<w:pPr><w:jc w:val="center"/></w:pPr>' + xml.slice(pPrOpenEnd);
+          xml = xml.slice(0, tcPrStart) + '<w:tcPr><w:vAlign w:val="center"/></w:tcPr>' + xml.slice(tcPrOpenEnd);
         } else {
-          // Insert <w:jc> as first child inside <w:pPr>
-          xml = xml.slice(0, pPrOpenEnd) + '<w:jc w:val="center"/>' + xml.slice(pPrOpenEnd);
+          xml = xml.slice(0, tcPrCloseIdx) + '<w:vAlign w:val="center"/>' + xml.slice(tcPrCloseIdx);
         }
         changed = true;
       }
@@ -174,8 +172,7 @@ function centerSignatureMarkers(zip: PizZip): void {
 
 export function generateDocument(
   data: DocumentData,
-  signatures?: { responsable?: Buffer | null; autorise?: Buffer | null },
-  forPdf = false
+  signatures?: { responsable?: Buffer | null; autorise?: Buffer | null }
 ): Buffer {
   const templateBuffer = fs.readFileSync(TEMPLATE_PATH);
   const zip = new PizZip(templateBuffer);
@@ -186,39 +183,6 @@ export function generateDocument(
     /<w:sdt><w:sdtPr>(?:(?!<\/w:sdt>)[\s\S])*?<w:date\b(?:(?!<\/w:sdt>)[\s\S])*?<\/w:sdtPr><w:sdtContent>((?:(?!<\/w:sdt>)[\s\S])*?)<\/w:sdtContent><\/w:sdt>/g,
     '$1'
   );
-
-  if (forPdf) {
-    // LibreOffice (Cloudmersive) does not render Word headers — copy the logo drawing
-    // from header1.xml into the document body so it appears in the PDF output.
-    const headerXml = zip.files['word/header1.xml']?.asText() ?? '';
-    const headerRelsXml = zip.files['word/_rels/header1.xml.rels']?.asText() ?? '';
-
-    const drawingMatch = /<w:drawing>[\s\S]*?<\/w:drawing>/.exec(headerXml);
-    const embedMatch = drawingMatch ? /r:embed="([^"]+)"/.exec(drawingMatch[0]) : null;
-
-    if (drawingMatch && embedMatch) {
-      const headerRId = embedMatch[1];
-      const targetMatch = new RegExp(`Id="${headerRId}"[^>]*Target="([^"]+)"`).exec(headerRelsXml);
-      const headerTarget = targetMatch ? /Target="([^"]+)"/.exec(targetMatch[0])?.[1] ?? '' : '';
-      const imgTarget = headerTarget.startsWith('../') ? headerTarget.slice(3) : headerTarget;
-
-      if (imgTarget) {
-        const newRId = 'rIdLogoBody';
-        let docRelsXml = zip.files['word/_rels/document.xml.rels'].asText();
-        if (!docRelsXml.includes(newRId)) {
-          docRelsXml = docRelsXml.replace(
-            '</Relationships>',
-            `<Relationship Id="${newRId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${imgTarget}"/></Relationships>`
-          );
-          zip.file('word/_rels/document.xml.rels', docRelsXml);
-        }
-
-        const bodyDrawing = drawingMatch[0].replace(`r:embed="${headerRId}"`, `r:embed="${newRId}"`);
-        const logoPara = `<w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r>${bodyDrawing}</w:r></w:p>`;
-        docXml = docXml.replace('<w:body>', `<w:body>${logoPara}`);
-      }
-    }
-  }
 
   zip.file('word/document.xml', docXml);
 
@@ -246,8 +210,8 @@ export function generateDocument(
 
   const renderedZip = doc.getZip();
 
-  // Center signature paragraphs before injecting images
-  centerSignatureMarkers(renderedZip);
+  // Vertically center the table cells containing the signature markers
+  verticalCenterSignatureCells(renderedZip);
 
   placeSignature(renderedZip, '@@SIG1@@', signatures?.responsable ?? null);
   placeSignature(renderedZip, '@@SIG2@@', signatures?.autorise ?? null);
