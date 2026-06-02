@@ -90,10 +90,9 @@ export async function POST(req: NextRequest) {
       lignes as unknown as Parameters<typeof buildDocumentData>[2],
       contexteData,
       parametres,
-      editablePreview as unknown as Parameters<typeof buildDocumentData>[5],
-      { responsable: sigResponsable, autorise: sigAutorise }
+      editablePreview as unknown as Parameters<typeof buildDocumentData>[5]
     );
-    const buffer = generateDocument(data);
+    const buffer = generateDocument(data, { responsable: sigResponsable, autorise: sigAutorise });
 
     const entreprise = (client as { entreprise?: string } | null)?.entreprise ?? "client";
     const filename = `Soumission ${sanitizeFilename(entreprise)}`;

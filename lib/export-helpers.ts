@@ -1,5 +1,5 @@
 import { Client, EditablePreview, LigneBudget, Soumission, TypeEtude } from "@/types";
-import { DocumentData, nombreEnLettres, EMPTY_PNG } from "@/lib/generate-document";
+import { DocumentData, nombreEnLettres } from "@/lib/generate-document";
 import { formatDateFr, formatMontant } from "@/lib/utils";
 import { sanitizeAiText } from "@/lib/sanitize-ai-text";
 
@@ -15,11 +15,6 @@ export type Parametres = {
   modalites_paiement?: string | null;
   signature_responsable_url?: string | null;
   signature_autorise_url?: string | null;
-};
-
-export type SignatureBuffers = {
-  responsable: Buffer | null;
-  autorise: Buffer | null;
 };
 
 // Derived types for structural compatibility with non-exported interfaces in generate-document
@@ -87,8 +82,7 @@ function buildFromEditablePreview(
   preview: EditablePreview,
   soumission: Soumission,
   lignes_param: LigneBudget[],
-  parametres: Parametres,
-  signatureBuffers?: SignatureBuffers | null
+  parametres: Parametres
 ): DocumentData {
   const s = sanitizeAiText;
 
@@ -195,8 +189,6 @@ function buildFromEditablePreview(
     signataire_1_titre: s(parametres.signataire1_titre ?? ""),
     signataire_2_nom: s(parametres.signataire2_nom ?? ""),
     signataire_2_titre: s(parametres.signataire2_titre ?? ""),
-    signature_1: signatureBuffers?.responsable ?? EMPTY_PNG,
-    signature_2: signatureBuffers?.autorise ?? EMPTY_PNG,
   };
 }
 
@@ -206,11 +198,10 @@ export function buildDocumentData(
   lignes: LigneBudget[],
   contexteData: ContexteData | null | undefined,
   parametres: Parametres,
-  editablePreview?: EditablePreview,
-  signatureBuffers?: SignatureBuffers | null
+  editablePreview?: EditablePreview
 ): DocumentData {
   if (editablePreview) {
-    return buildFromEditablePreview(editablePreview, soumission, lignes, parametres, signatureBuffers);
+    return buildFromEditablePreview(editablePreview, soumission, lignes, parametres);
   }
 
   // Legacy path — used by [id] page exports that don't have editablePreview
@@ -291,7 +282,5 @@ export function buildDocumentData(
     signataire_1_titre: sanitizeAiText(parametres.signataire1_titre ?? ""),
     signataire_2_nom: sanitizeAiText(parametres.signataire2_nom ?? ""),
     signataire_2_titre: sanitizeAiText(parametres.signataire2_titre ?? ""),
-    signature_1: signatureBuffers?.responsable ?? EMPTY_PNG,
-    signature_2: signatureBuffers?.autorise ?? EMPTY_PNG,
   };
 }

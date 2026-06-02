@@ -1,20 +1,13 @@
 import Docxtemplater from 'docxtemplater';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const ImageModule = require('docxtemplater-image-module-free');
 import PizZip from 'pizzip';
 import fs from 'fs';
 import path from 'path';
-
-// 1×1 transparent PNG — fallback when no signature is uploaded
-export const EMPTY_PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=',
-  'base64'
-);
+import { placeSignature } from '@/lib/inject-signature';
 
 const TEMPLATE_PATH = path.join(process.cwd(), 'templates', 'template-standard-v2.docx');
 
 function formatMontant(n: number): string {
-  return n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return n.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 }
 
 const UNITES = ['', 'un', 'deux', 'trois', 'quatre', 'cinq', 'six', 'sept', 'huit', 'neuf',
@@ -124,13 +117,12 @@ export interface DocumentData {
   signataire_1_titre: string;
   signataire_2_nom: string;
   signataire_2_titre: string;
-
-  // Signature images (Buffer passed directly to ImageModule)
-  signature_1: Buffer;
-  signature_2: Buffer;
 }
 
-export function generateDocument(data: DocumentData, forPdf = false): Buffer {
+export function generateDocument(
+  data: DocumentData,
+  signatures?: { responsable?: Buffer | null; autorise?: Buffer | null }
+): Buffer {
   const templateBuffer = fs.readFileSync(TEMPLATE_PATH);
   const zip = new PizZip(templateBuffer);
 
@@ -140,54 +132,9 @@ export function generateDocument(data: DocumentData, forPdf = false): Buffer {
     /<w:sdt><w:sdtPr>(?:(?!<\/w:sdt>)[\s\S])*?<w:date\b(?:(?!<\/w:sdt>)[\s\S])*?<\/w:sdtPr><w:sdtContent>((?:(?!<\/w:sdt>)[\s\S])*?)<\/w:sdtContent><\/w:sdt>/g,
     '$1'
   );
-
-  if (forPdf) {
-    // Cloudmersive doesn't render Word headers, so copy the logo from header1.xml into the body.
-    const headerXml = zip.files['word/header1.xml']?.asText() ?? '';
-    const headerRelsXml = zip.files['word/_rels/header1.xml.rels']?.asText() ?? '';
-
-    const drawingMatch = /<w:drawing>[\s\S]*?<\/w:drawing>/.exec(headerXml);
-    const embedMatch = drawingMatch ? /r:embed="([^"]+)"/.exec(drawingMatch[0]) : null;
-
-    if (drawingMatch && embedMatch) {
-      const headerRId = embedMatch[1];
-      const targetMatch = new RegExp(`Id="${headerRId}"[^>]*Target="([^"]+)"`).exec(headerRelsXml);
-      const headerTarget = targetMatch ? /Target="([^"]+)"/.exec(targetMatch[0])?.[1] ?? '' : '';
-      const imgTarget = headerTarget.startsWith('../') ? headerTarget.slice(3) : headerTarget;
-
-      if (imgTarget) {
-        const newRId = 'rIdLogoBody';
-        let docRelsXml = zip.files['word/_rels/document.xml.rels'].asText();
-        if (!docRelsXml.includes(newRId)) {
-          docRelsXml = docRelsXml.replace(
-            '</Relationships>',
-            `<Relationship Id="${newRId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="${imgTarget}"/></Relationships>`
-          );
-          zip.file('word/_rels/document.xml.rels', docRelsXml);
-        }
-
-        const bodyDrawing = drawingMatch[0].replace(`r:embed="${headerRId}"`, `r:embed="${newRId}"`);
-        const logoPara = `<w:p><w:pPr><w:jc w:val="right"/></w:pPr><w:r>${bodyDrawing}</w:r></w:p>`;
-        docXml = docXml.replace('<w:body>', `<w:body>${logoPara}`);
-      }
-    }
-  }
-
   zip.file('word/document.xml', docXml);
 
-  const imageModule = new ImageModule({
-    centered: false,
-    getImage: (tagValue: Buffer | null) => {
-      return tagValue && tagValue.length > 0 ? tagValue : EMPTY_PNG;
-    },
-    getSize: (img: Buffer) => {
-      if (!img || img === EMPTY_PNG || img.length <= 70) return [1, 1];
-      return [150, 55];
-    },
-  });
-
   const doc = new Docxtemplater(zip, {
-    modules: [imageModule],
     paragraphLoop: true,
     linebreaks: true,
   });
@@ -209,7 +156,12 @@ export function generateDocument(data: DocumentData, forPdf = false): Buffer {
     throw error;
   }
 
-  return doc.getZip().generate({ type: 'nodebuffer' }) as Buffer;
+  const renderedZip = doc.getZip();
+
+  placeSignature(renderedZip, "@@SIG1@@", signatures?.responsable ?? null);
+  placeSignature(renderedZip, "@@SIG2@@", signatures?.autorise ?? null);
+
+  return renderedZip.generate({ type: 'nodebuffer' }) as Buffer;
 }
 
 export { formatMontant };

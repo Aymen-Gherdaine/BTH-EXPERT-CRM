@@ -91,10 +91,9 @@ export async function POST(req: NextRequest) {
       lignes as unknown as Parameters<typeof buildDocumentData>[2],
       contexteData,
       parametres,
-      editablePreview as unknown as Parameters<typeof buildDocumentData>[5],
-      { responsable: sigResponsable, autorise: sigAutorise }
+      editablePreview as unknown as Parameters<typeof buildDocumentData>[5]
     );
-    const docxBuffer = generateDocument(data);
+    const docxBuffer = generateDocument(data, { responsable: sigResponsable, autorise: sigAutorise });
     const pdfBuffer = await convertDocxToPdf(docxBuffer);
 
     const entreprise = (client as { entreprise?: string } | null)?.entreprise ?? "client";
