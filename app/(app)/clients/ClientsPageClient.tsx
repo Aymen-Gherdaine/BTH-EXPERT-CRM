@@ -13,15 +13,10 @@ const CSS = `
   @keyframes sk { 0%,100%{opacity:1} 50%{opacity:.4} }
   .sk { animation: sk 1.5s ease-in-out infinite; }
   .clients-shell {
-    height: 100%;
-    min-height: 100%;
     background: linear-gradient(180deg, #ffffff 0%, #faf8f5 38%, #f7f2ea 100%);
     color: #1a1714;
-    display: flex;
-    flex-direction: column;
   }
   .clients-header {
-    flex-shrink: 0;
     padding: 24px clamp(16px, 3vw, 40px) 18px;
     border-bottom: 1px solid #e8e2d8;
     background: rgba(255,255,255,.92);
@@ -156,8 +151,6 @@ const CSS = `
     box-shadow: 0 0 0 4px rgba(26,46,30,.10);
   }
   .clients-content {
-    flex: 1;
-    min-height: 0;
     overflow: visible;
     padding: 18px clamp(16px, 3vw, 40px) 18px;
   }
@@ -203,7 +196,6 @@ const CSS = `
     border-bottom: 1px solid #e8e2d8;
   }
   .clients-pagination {
-    flex-shrink: 0;
     background: #fbfaf7;
     border-top: 1px solid #e8e2d8;
     display: grid;
@@ -223,10 +215,6 @@ const CSS = `
     justify-content: center;
   }
   @media (max-width: 767px) {
-    .clients-shell {
-      min-height: 100%;
-      height: auto;
-    }
     .clients-shell.clients-has-mobile-pagination {
       padding-bottom: calc(62px + env(safe-area-inset-bottom));
     }
