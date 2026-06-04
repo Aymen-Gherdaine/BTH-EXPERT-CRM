@@ -44,7 +44,9 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from("depenses")
     .select("*, profiles(full_name), soumissions(id, titre_projet, numero_offre, total_ht)")
-    .order("date_depense", { ascending: false });
+    .order("date_depense", { ascending: false })
+    // Garde-fou volume — voir note dans /api/soumissions.
+    .limit(1000);
 
   if (role === "commercial") query = query.eq("employe_id", user.id);
   if (categorie) query = query.eq("categorie", categorie);

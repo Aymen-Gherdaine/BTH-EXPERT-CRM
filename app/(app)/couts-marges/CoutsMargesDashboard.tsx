@@ -69,7 +69,7 @@ const CSS = `
     align-items: center;
     gap: 10px;
     margin-bottom: 8px;
-    color: #a8874e;
+    color: #7c6238;
     font-size: 11px;
     font-weight: 700;
   }

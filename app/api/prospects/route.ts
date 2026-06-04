@@ -36,7 +36,9 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from("prospects")
     .select("*, visites(id, date_visite, resultat, date_prochaine_action, action_requise, created_at)")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    // Garde-fou volume — voir note dans /api/soumissions.
+    .limit(1000);
 
   if (statut) query = query.eq("statut_global", statut);
 

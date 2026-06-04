@@ -47,7 +47,7 @@ const CSS = `
     align-items: center;
     gap: 10px;
     margin-bottom: 8px;
-    color: #a8874e;
+    color: #7c6238;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: .28em;

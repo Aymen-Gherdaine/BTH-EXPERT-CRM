@@ -37,7 +37,7 @@ const CSS = `
     align-items: center;
     gap: 10px;
     margin-bottom: 7px;
-    color: #a8874e;
+    color: #7c6238;
     font-size: 11px;
     font-weight: 800;
   }
@@ -436,7 +436,7 @@ const CSS = `
     height: 54px;
     border-radius: 16px;
     background: #f5f0e8;
-    color: #a8874e;
+    color: #7c6238;
     display: flex;
     align-items: center;
     justify-content: center;
