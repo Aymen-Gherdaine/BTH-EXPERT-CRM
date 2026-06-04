@@ -31,9 +31,12 @@ export function useDynamicPerPage(
 
   useLayoutEffect(() => {
     function calc() {
+      // Mobile : valeur fixe, indépendante d'un conteneur mesuré (la vue cartes
+      // n'attache pas gridRef). À traiter AVANT le null-check du ref, sinon
+      // perPage reste bloqué sur initialPerPage et la pagination disparaît.
+      if (!isDesktop) { setPerPage(mobilePerPage); return }
       const el = gridRef.current
       if (!el) return
-      if (!isDesktop) { setPerPage(mobilePerPage); return }
 
       // Measure from container top to viewport bottom — stable, independent of content
       const top = el.getBoundingClientRect().top

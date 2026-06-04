@@ -1053,9 +1053,6 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSe
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: idx * 0.04, duration: 0.22, ease: "easeOut" }}
       className={`clients-client-card ${isExpanded ? "clients-expanded" : ""}`}
       style={{
         background: "white", borderRadius: 16, overflow: "hidden",
