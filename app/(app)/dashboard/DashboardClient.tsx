@@ -626,7 +626,7 @@ function Chart({ rows }: { rows: ChartRow[] }) {
   );
 }
 
-type Props = {
+type DashboardClientProps = {
   initialProfile?: MeResponse;
   initialStats?: DashboardStats;
   initialSoumissions?: Soumission[];
@@ -638,7 +638,7 @@ export default function DashboardClient({
   initialStats,
   initialSoumissions = [],
   initialProspects = [],
-}: Props) {
+}: DashboardClientProps) {
   const bp = useBp();
   const isMobile = bp === "mobile";
 
@@ -684,7 +684,7 @@ export default function DashboardClient({
     || (statsLoading && !stats)
     || (soumissionsLoading && !soumRes)
     || (prospectsLoading && !prospectsRes);
-  const loading = useDelayedLoading(rawLoading);
+  const loading = useDelayedLoading(rawLoading, 300);
 
   const today = useMemo(() => new Date().toISOString().split("T")[0], []);
   const firstOfMonth = useMemo(() => {
