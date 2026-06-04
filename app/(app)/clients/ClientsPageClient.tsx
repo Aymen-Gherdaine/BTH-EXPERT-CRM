@@ -648,7 +648,7 @@ export default function ClientsPageClient({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const { data: expandedSoumRes, isLoading: expandedSoumLoading } = useSWR<ApiListResponse<Soumission>>(
     expandedId ? `/api/soumissions?client_id=${expandedId}` : null,
-    { keepPreviousData: false }
+    { revalidateOnMount: true, keepPreviousData: false }
   );
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteState>(D0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
