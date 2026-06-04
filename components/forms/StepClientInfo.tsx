@@ -17,10 +17,10 @@ export default function StepClientInfo({ data, onNext }: Props) {
   function validate() {
     const e: Partial<Record<keyof FormDataStep1, string>> = {};
     if (!form.nom_contact.trim()) e.nom_contact = "Le nom est requis.";
-    if (!form.poste.trim()) e.poste = "Requis";
+    if (!form.poste.trim()) e.poste = "Le poste est requis.";
     if (!form.entreprise.trim()) e.entreprise = "L'entreprise est requise.";
-    if (!form.adresse.trim()) e.adresse = "Requis";
-    if (!form.ville.trim()) e.ville = "Requis";
+    if (!form.adresse.trim()) e.adresse = "L'adresse est requise.";
+    if (!form.ville.trim()) e.ville = "La ville est requise.";
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -36,13 +36,20 @@ export default function StepClientInfo({ data, onNext }: Props) {
     placeholder?: string,
     required = true
   ) {
+    const fieldId = `field-${key}`;
+    const errId = `${fieldId}-error`;
     return (
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">
-          {label} {required && <span className="text-red-400">*</span>}
+        <label htmlFor={fieldId} className="block text-sm font-medium text-gray-700 mb-1.5">
+          {label} {required && <span className="text-red-400" aria-hidden="true">*</span>}
         </label>
         <input
+          id={fieldId}
           type="text"
+          required={required}
+          aria-required={required}
+          aria-invalid={!!errors[key]}
+          aria-describedby={errors[key] ? errId : undefined}
           value={form[key] as string}
           onChange={(e) => setForm({ ...form, [key]: e.target.value })}
           placeholder={placeholder}
@@ -52,7 +59,11 @@ export default function StepClientInfo({ data, onNext }: Props) {
               : "border-gray-200 focus:border-[#1a2e1e] focus:ring-[#1a2e1e]/10"
           }`}
         />
-        {errors[key] && <p className="text-red-500 text-xs mt-1">{errors[key]}</p>}
+        {errors[key] && (
+          <p id={errId} role="alert" className="text-red-500 text-xs mt-1">
+            {errors[key]}
+          </p>
+        )}
       </div>
     );
   }

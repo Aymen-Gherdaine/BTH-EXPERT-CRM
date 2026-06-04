@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { StatutSoumission, LigneBudget } from "@/types";
@@ -19,6 +20,15 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
 }) {
   const pct = o && o.total_ttc > 0 ? ((o.versement_recu ?? 0) / o.total_ttc) * 100 : 0;
   const next = o ? (NEXT_ST[o.statut] ?? []) : [];
+
+  // Échap pour fermer le panneau de détail
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   const sk = (h: number) => (
     <div style={{ height: h, borderRadius: 10, background: "#f3f4f6" }} className="sk" />
@@ -50,7 +60,7 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
                 </div>
               </div>
             </div>
-            <button onClick={onClose} style={{
+            <button onClick={onClose} aria-label="Fermer le détail" style={{
               width: 30, height: 30, borderRadius: 8, background: "#f6f6f4",
               border: "1px solid #e5e7eb", display: "flex", alignItems: "center",
               justifyContent: "center", color: "#6b7280", flexShrink: 0, cursor: "pointer",
@@ -192,6 +202,7 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
         style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,.10)" }} />
       <motion.div
+        role="dialog" aria-modal="true" aria-label="Détail soumission"
         initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 280 }}
         style={{
@@ -202,7 +213,7 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
       >
         <div style={{ padding: "14px 22px", borderBottom: "1px solid #e5e7eb", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <p style={{ fontWeight: 700, fontSize: 14, color: "#111827", letterSpacing: "-0.3px" }}>Détail soumission</p>
-          <button onClick={onClose} style={{ width: 28, height: 28, borderRadius: 7, background: "#f6f6f4", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", cursor: "pointer" }}>
+          <button onClick={onClose} aria-label="Fermer le détail" style={{ width: 28, height: 28, borderRadius: 7, background: "#f6f6f4", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", cursor: "pointer" }}>
             <Ic d={I.x} z={12} w={2.5} />
           </button>
         </div>
@@ -216,11 +227,21 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
         style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,.38)", backdropFilter: "blur(4px)" }} />
       <motion.div
+        role="dialog" aria-modal="true" aria-label="Détail soumission"
         initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }}
         transition={{ type: "spring", damping: 28, stiffness: 320 }}
         style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 201, background: "white", borderRadius: "20px 20px 0 0", maxHeight: "min(90dvh, 760px)", display: "flex", flexDirection: "column" }}
       >
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e5e7eb", margin: "12px auto 0", flexShrink: 0 }} />
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e5e7eb", margin: "12px auto 0" }} />
+          <button onClick={onClose} aria-label="Fermer le détail" style={{
+            position: "absolute", top: 8, right: 14, width: 30, height: 30, borderRadius: 8,
+            background: "#f6f6f4", border: "1px solid #e5e7eb", display: "flex",
+            alignItems: "center", justifyContent: "center", color: "#6b7280", cursor: "pointer",
+          }}>
+            <Ic d={I.x} z={13} w={2.5} />
+          </button>
+        </div>
         {body}
       </motion.div>
     </>

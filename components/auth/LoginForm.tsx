@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -51,10 +51,11 @@ function Field({ label, type: t0, placeholder, value, onChange, icon, toggleable
   const [focused, setFocused] = useState(false);
   const [showPw,  setShowPw]  = useState(false);
   const type = toggleable ? (showPw ? "text" : "password") : t0;
+  const inputId = useId();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <label style={{ fontFamily: FONT, fontSize: 13.5, fontWeight: 600,
+      <label htmlFor={inputId} style={{ fontFamily: FONT, fontSize: 13.5, fontWeight: 600,
         color: focused ? "#1a2e1e" : "#111827", transition: "color .15s" }}>
         {label}
       </label>
@@ -64,6 +65,7 @@ function Field({ label, type: t0, placeholder, value, onChange, icon, toggleable
           <Ic d={icon} z={16} />
         </div>
         <input
+          id={inputId}
           type={type}
           placeholder={placeholder}
           value={value}
@@ -244,7 +246,7 @@ function FormContent({
                 value={forgotEmail} onChange={setForgotEmail} icon={I.mail} autoComplete="email" />
 
               {error && (
-                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                <motion.div role="alert" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                   style={{ padding: "10px 14px", borderRadius: 9,
                     background: "#fef2f2", border: "1px solid #fecaca" }}>
                   <p style={{ fontFamily: FONT, fontSize: 13, color: "#dc2626", fontWeight: 500 }}>{error}</p>
@@ -298,7 +300,7 @@ function FormContent({
             </div>
 
             {error && (
-              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+              <motion.div role="alert" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                 style={{ padding: "10px 14px", borderRadius: 9,
                   background: "#fef2f2", border: "1px solid #fecaca" }}>
                 <p style={{ fontFamily: FONT, fontSize: 13, color: "#dc2626", fontWeight: 500 }}>{error}</p>

@@ -7,6 +7,7 @@ import useSWR from "swr";
 import { Client, Soumission, StatutSoumission, UserRole } from "@/types";
 import { formatDateFr } from "@/lib/utils";
 import { useDynamicPerPage } from "@/hooks/useDynamicPerPage";
+import { useToast } from "@/components/ui/Toast";
 
 /* ── CSS global ─────────────────────────────────────────── */
 const CSS = `
@@ -36,7 +37,7 @@ const CSS = `
     align-items: center;
     gap: 10px;
     margin-bottom: 8px;
-    color: #a8874e;
+    color: #7c6238;
     font-size: 11px;
     font-weight: 800;
   }
@@ -669,6 +670,7 @@ export default function ClientsPageClient({
   );
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteState>(D0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const toast = useToast();
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -701,15 +703,23 @@ export default function ClientsPageClient({
   }
 
   async function confirmDelete() {
-    setDeletingId(deleteConfirm.id);
-    await fetch(`/api/clients/${deleteConfirm.id}`, { method: "DELETE" });
-    mutateClients(
-      current => ({ data: (current?.data ?? []).filter(c => c.id !== deleteConfirm.id) }),
-      { revalidate: false }
-    );
-    if (expandedId === deleteConfirm.id) setExpandedId(null);
-    setDeletingId(null);
-    setDeleteConfirm(D0);
+    const targetId = deleteConfirm.id;
+    setDeletingId(targetId);
+    try {
+      const res = await fetch(`/api/clients/${targetId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("delete failed");
+      mutateClients(
+        current => ({ data: (current?.data ?? []).filter(c => c.id !== targetId) }),
+        { revalidate: false }
+      );
+      if (expandedId === targetId) setExpandedId(null);
+      setDeleteConfirm(D0);
+      toast.success("Client supprimé.");
+    } catch {
+      toast.error("La suppression a échoué. Le client a peut-être des soumissions liées.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   const totalPages = Math.max(1, Math.ceil(clients.length / perPage));

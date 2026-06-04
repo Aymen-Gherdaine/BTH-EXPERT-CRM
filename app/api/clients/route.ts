@@ -33,7 +33,9 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from("clients")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    // Garde-fou volume — voir note dans /api/soumissions.
+    .limit(1000);
 
   if (q) {
     query = query.or(`entreprise.ilike.%${q}%,nom_contact.ilike.%${q}%`);

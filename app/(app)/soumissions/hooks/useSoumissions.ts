@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { Soumission, StatutSoumission, UserRole } from "@/types";
 import { SoumissionView, ApiListResponse, MeResponse, VersementState, V0, DeleteState, D0 } from "../types";
+import { useToast } from "@/components/ui/Toast";
 
 export function useSoumissions(initialSoumissions: Soumission[] = [], initialRole?: UserRole) {
   const router = useRouter();
+  const toast = useToast();
 
   const { data: soumissionsRes, isLoading: soumissionsLoading, mutate: mutateSoumissions } =
     useSWR<ApiListResponse<Soumission>>("/api/soumissions", {
@@ -88,6 +90,7 @@ export function useSoumissions(initialSoumissions: Soumission[] = [], initialRol
       // Revert
       mutateSoumissions({ data: prevSoumissions }, { revalidate: false });
       if (selDetail?.id === id) setSelDetail(prevDetail);
+      toast.error("Le statut n'a pas pu être mis à jour. Réessayez.");
     }
   }
 
@@ -113,10 +116,12 @@ export function useSoumissions(initialSoumissions: Soumission[] = [], initialRol
         body: JSON.stringify({ versement_recu: montant }),
       });
       if (!res.ok) throw new Error("patch failed");
+      toast.success("Versement enregistré.");
     } catch {
       // Revert
       mutateSoumissions({ data: prevSoumissions }, { revalidate: false });
       if (selDetail?.id === targetId) setSelDetail(prevDetail);
+      toast.error("Le versement n'a pas pu être enregistré. Réessayez.");
     } finally {
       setSavingVersement(false);
     }
@@ -143,9 +148,11 @@ export function useSoumissions(initialSoumissions: Soumission[] = [], initialRol
     try {
       const res = await fetch(`/api/soumissions/${targetId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("delete failed");
+      toast.success("Soumission supprimée.");
     } catch {
       // Revert
       mutateSoumissions({ data: prevSoumissions }, { revalidate: false });
+      toast.error("La suppression a échoué. Réessayez.");
     } finally {
       setDeletingId(null);
     }
