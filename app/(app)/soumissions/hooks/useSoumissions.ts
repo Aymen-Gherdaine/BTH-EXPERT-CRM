@@ -64,31 +64,62 @@ export function useSoumissions(initialSoumissions: Soumission[] = [], initialRol
   }
 
   async function handleStatut(id: string, statut: StatutSoumission) {
-    await fetch(`/api/soumissions/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ statut }),
-    });
+    // Snapshot for rollback
+    const prevSoumissions = soumissionsRes?.data ?? [];
+    const prevDetail = selDetail;
+
+    // Optimistic update — immediate
     updateSoumissions(prev => prev.map(s => s.id === id ? { ...s, statut } : s));
     if (selDetail?.id === id) setSelDetail(prev => prev ? { ...prev, statut } : null);
     if (statut === "Acceptée") {
-      const s = soumissions.find(x => x.id === id);
+      const s = prevSoumissions.find(x => x.id === id);
       openVersementFor(id, s?.titre_projet ?? "", s?.total_ttc ?? 0, s?.versement_recu ?? 0);
+    }
+
+    // Background fetch — fire and forget
+    try {
+      const res = await fetch(`/api/soumissions/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ statut }),
+      });
+      if (!res.ok) throw new Error("patch failed");
+    } catch {
+      // Revert
+      mutateSoumissions({ data: prevSoumissions }, { revalidate: false });
+      if (selDetail?.id === id) setSelDetail(prevDetail);
     }
   }
 
   async function handleSaveVersement() {
     const montant = parseFloat(versementInput.replace(/\s/g, "").replace(",", ".")) || 0;
+    const targetId = versement.id;
+
+    // Snapshot for rollback
+    const prevSoumissions = soumissionsRes?.data ?? [];
+    const prevDetail = selDetail;
+
+    // Optimistic update — immediate
+    updateSoumissions(prev => prev.map(s => s.id === targetId ? { ...s, versement_recu: montant } : s));
+    if (selDetail?.id === targetId) setSelDetail(prev => prev ? { ...prev, versement_recu: montant } : null);
+    setVersement(V0);   // close modal immediately
+
+    // Background save
     setSavingVersement(true);
-    await fetch(`/api/soumissions/${versement.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ versement_recu: montant }),
-    });
-    updateSoumissions(prev => prev.map(s => s.id === versement.id ? { ...s, versement_recu: montant } : s));
-    if (selDetail?.id === versement.id) setSelDetail(prev => prev ? { ...prev, versement_recu: montant } : null);
-    setSavingVersement(false);
-    setVersement(V0);
+    try {
+      const res = await fetch(`/api/soumissions/${targetId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ versement_recu: montant }),
+      });
+      if (!res.ok) throw new Error("patch failed");
+    } catch {
+      // Revert
+      mutateSoumissions({ data: prevSoumissions }, { revalidate: false });
+      if (selDetail?.id === targetId) setSelDetail(prevDetail);
+    } finally {
+      setSavingVersement(false);
+    }
   }
 
   function handleDelete(s: SoumissionView) {
@@ -96,12 +127,28 @@ export function useSoumissions(initialSoumissions: Soumission[] = [], initialRol
   }
 
   async function confirmDelete() {
-    setDeletingId(deleteConfirm.id);
-    await fetch(`/api/soumissions/${deleteConfirm.id}`, { method: "DELETE" });
-    updateSoumissions(prev => prev.filter(s => s.id !== deleteConfirm.id));
-    if (selId === deleteConfirm.id) closeDetail();
-    setDeletingId(null);
-    setDeleteConfirm(D0);
+    const targetId = deleteConfirm.id;
+
+    // Snapshot
+    const prevSoumissions = soumissionsRes?.data ?? [];
+
+    // Optimistic update — immediate
+    const wasSelected = selId === targetId;
+    updateSoumissions(prev => prev.filter(s => s.id !== targetId));
+    if (wasSelected) closeDetail();
+    setDeleteConfirm(D0);     // close confirm modal immediately
+
+    // Background delete
+    setDeletingId(targetId);
+    try {
+      const res = await fetch(`/api/soumissions/${targetId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("delete failed");
+    } catch {
+      // Revert
+      mutateSoumissions({ data: prevSoumissions }, { revalidate: false });
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   const handleDuplicate = (s: SoumissionView) => router.push(`/soumissions/${s.id}?duplicate=1`);
