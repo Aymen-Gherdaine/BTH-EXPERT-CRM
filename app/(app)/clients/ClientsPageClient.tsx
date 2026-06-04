@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import useSWR from "swr";
@@ -723,8 +723,14 @@ export default function ClientsPageClient({
   }
 
   const totalPages = Math.max(1, Math.ceil(clients.length / perPage));
-  const paginated = clients.slice((page - 1) * perPage, page * perPage);
-  const cityCount = new Set(clients.map(c => c.ville).filter(Boolean)).size;
+  const paginated = useMemo(
+    () => clients.slice((page - 1) * perPage, page * perPage),
+    [clients, page, perPage]
+  );
+  const cityCount = useMemo(
+    () => new Set(clients.map(c => c.ville).filter(Boolean)).size,
+    [clients]
+  );
   const latestClient = clients[0];
   const showPagination = !loading && clients.length > 0 && totalPages > 1;
 

@@ -167,7 +167,7 @@ export default function Header() {
                        text-white font-semibold text-[12px] cursor-pointer bth-focus overflow-hidden"
           >
             {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+              <img src={avatarUrl} alt="" width={32} height={32} loading="lazy" decoding="async" className="w-full h-full object-cover" />
             ) : (
               initials || <div className="w-3.5 h-3.5 rounded-full bg-white/30" />
             )}
@@ -188,7 +188,7 @@ export default function Header() {
                 <div className="flex items-center gap-[10px] px-4 py-3.5 border-b border-bth-hairline">
                   <div className="w-8 h-8 rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0 overflow-hidden">
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+                      <img src={avatarUrl} alt="" width={32} height={32} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     ) : (
                       initials
                     )}
