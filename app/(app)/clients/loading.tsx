@@ -37,7 +37,8 @@ export default function ClientsLoading() {
 
       {/* ── Table ─────────────────────────────────────────── */}
       <div className="flex-1 overflow-hidden px-[clamp(16px,3vw,40px)] py-[18px]">
-        <div className="rounded-[16px] border border-[#e8e2d8] overflow-hidden bg-white">
+        <div className="overflow-x-auto">
+        <div className="min-w-[740px] rounded-[16px] border border-[#e8e2d8] overflow-hidden bg-white">
 
           {/* Table header */}
           <div
@@ -83,6 +84,7 @@ export default function ClientsLoading() {
               </div>
             </div>
           ))}
+        </div>
         </div>
 
         {/* Pagination */}

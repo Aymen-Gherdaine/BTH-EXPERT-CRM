@@ -4,6 +4,10 @@ export default function DashboardLoading() {
       <style>{`
         @keyframes sk { 0%,100%{opacity:1}50%{opacity:.45} }
         .sk { animation: sk 1.5s ease-in-out infinite; }
+        @media (max-width: 639px) {
+          .dash-exec { grid-template-columns: minmax(0,1fr) !important; }
+          .dash-cards { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+        }
       `}</style>
 
       {/* Hero */}
@@ -27,7 +31,7 @@ export default function DashboardLoading() {
       {/* Body */}
       <div style={{ padding: "18px clamp(16px,3vw,40px) 96px", width: "min(100%,1540px)", margin: "0 auto" }}>
         {/* Executive row */}
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1.06fr) minmax(290px,.94fr)", gap: 14, marginBottom: 14 }}>
+        <div className="dash-exec" style={{ display: "grid", gridTemplateColumns: "minmax(0,1.06fr) minmax(290px,.94fr)", gap: 14, marginBottom: 14 }}>
           {/* Panel */}
           <div className="sk" style={{ border: "1px solid #e8e2d8", background: "rgba(255,255,255,.88)", borderRadius: 16, padding: 18, minHeight: 220 }}>
             <div style={{ height: 10, width: 88, borderRadius: 5, background: "#e8e2d8", marginBottom: 9 }} />
@@ -36,7 +40,7 @@ export default function DashboardLoading() {
             <div style={{ height: 12, width: "90%", borderRadius: 5, background: "#ede8e0" }} />
           </div>
           {/* KPI grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10 }}>
+          <div className="dash-cards" style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 10 }}>
             {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="sk" style={{ border: "1px solid #e8e2d8", background: "rgba(255,255,255,.88)", borderRadius: 16, padding: 15, minHeight: 96 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 10, background: "#e8e2d8", marginBottom: 14 }} />

@@ -45,7 +45,31 @@ export default function SoumissionsLoading() {
 
       {/* ── Table ───────────────────────────────────────────── */}
       <div className="flex-1 overflow-hidden px-6 md:px-10 py-5">
-        <div className="rounded-xl border border-[#e8e2d8] overflow-hidden bg-white">
+
+        {/* Mobile card skeletons (< sm) */}
+        <div className="flex flex-col gap-3 sm:hidden">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="rounded-xl border border-[#e8e2d8] bg-white animate-pulse"
+              style={{ height: 172 }}
+            >
+              <div className="flex flex-col justify-between h-full p-4">
+                <div className="flex flex-col gap-2">
+                  <div className="h-3 w-3/4 rounded bg-[#e8e2d8]" />
+                  <div className="h-2.5 w-20 rounded bg-[#f5f0e8]" />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="h-5 w-20 rounded bg-[#e8e2d8]" />
+                  <div className="h-3 w-24 rounded bg-[#e8e2d8]" />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop table skeleton (>= sm) */}
+        <div className="hidden sm:block rounded-xl border border-[#e8e2d8] overflow-hidden bg-white">
 
           {/* Table header */}
           <div
