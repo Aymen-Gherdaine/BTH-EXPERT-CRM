@@ -646,8 +646,10 @@ export default function ClientsPageClient({
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [soumMap, setSoumMap] = useState<Record<string, Soumission[]>>({});
-  const [loadingS, setLoadingS] = useState<string | null>(null);
+  const { data: expandedSoumRes, isLoading: expandedSoumLoading } = useSWR<ApiListResponse<Soumission>>(
+    expandedId ? `/api/soumissions?client_id=${expandedId}` : null,
+    { keepPreviousData: false }
+  );
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteState>(D0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -672,15 +674,8 @@ export default function ClientsPageClient({
   // tableHeaderHeight=78: content padding-top(18) + table header(44); pagerHeight=52: pagination bar height
   const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 78, pagerHeight: 52, mobilePerPage: 6, safetyPx: 24 }, [loading]);
 
-  async function toggleExpand(id: string) {
-    if (expandedId === id) { setExpandedId(null); return; }
-    setExpandedId(id);
-    if (soumMap[id]) return;
-    setLoadingS(id);
-    const res = await fetch(`/api/soumissions?client_id=${id}`);
-    const json = await res.json();
-    setSoumMap(prev => ({ ...prev, [id]: json.data ?? [] }));
-    setLoadingS(null);
+  function toggleExpand(id: string) {
+    setExpandedId(prev => (prev === id ? null : id));
   }
 
   function askDelete(c: ClientWithSoumissions, e: React.MouseEvent) {
@@ -805,8 +800,8 @@ export default function ClientsPageClient({
             <ClientsTable
               clients={paginated}
               expandedId={expandedId}
-              soumMap={soumMap}
-              loadingS={loadingS}
+              expandedSoumissions={expandedSoumRes?.data ?? []}
+              expandedSoumLoading={expandedSoumLoading}
               canSeeAmounts={canSeeAmounts}
               onToggle={toggleExpand}
               onDelete={askDelete}
@@ -818,8 +813,8 @@ export default function ClientsPageClient({
                   <ClientCard
                     key={client.id} client={client} idx={idx}
                     isExpanded={expandedId === client.id}
-                    soumissions={soumMap[client.id] ?? []}
-                    isLoadingSoum={loadingS === client.id}
+                    soumissions={expandedId === client.id ? (expandedSoumRes?.data ?? []) : []}
+                    isLoadingSoum={expandedId === client.id && expandedSoumLoading}
                     canSeeAmounts={canSeeAmounts}
                     onToggle={() => toggleExpand(client.id)}
                     onDelete={askDelete}
@@ -1241,11 +1236,11 @@ function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, canSee
 /* ══════════════════════════════════════════════════════════
    CLIENTS TABLE (desktop)
 ══════════════════════════════════════════════════════════ */
-function ClientsTable({ clients, expandedId, soumMap, loadingS, canSeeAmounts, onToggle, onDelete }: {
+function ClientsTable({ clients, expandedId, expandedSoumissions, expandedSoumLoading, canSeeAmounts, onToggle, onDelete }: {
   clients: ClientWithSoumissions[];
   expandedId: string | null;
-  soumMap: Record<string, Soumission[]>;
-  loadingS: string | null;
+  expandedSoumissions: Soumission[];
+  expandedSoumLoading: boolean;
   canSeeAmounts: boolean;
   onToggle: (id: string) => void;
   onDelete: (c: ClientWithSoumissions, e: React.MouseEvent) => void;
@@ -1288,8 +1283,8 @@ function ClientsTable({ clients, expandedId, soumMap, loadingS, canSeeAmounts, o
             key={client.id}
             client={client}
             isExpanded={expandedId === client.id}
-            soumissions={soumMap[client.id] ?? []}
-            isLoadingSoum={loadingS === client.id}
+            soumissions={expandedId === client.id ? expandedSoumissions : []}
+            isLoadingSoum={expandedId === client.id && expandedSoumLoading}
             canSeeAmounts={canSeeAmounts}
             onToggle={() => onToggle(client.id)}
             onDelete={onDelete}
