@@ -317,7 +317,7 @@ function SidebarInner({
         {user ? (
           <button
             onClick={() => setDropdownOpen(v => !v)}
-            className="w-full flex items-center gap-3 px-4 py-[15px]
+            className="w-full flex items-center gap-3 px-4 py-[15px] cursor-pointer
                        hover:bg-bth-n-50 transition-colors duration-100 bth-focus"
           >
             {/* 34px avatar with online status dot */}

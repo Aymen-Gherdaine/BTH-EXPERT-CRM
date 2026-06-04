@@ -202,17 +202,24 @@ const CSS = `
     grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: 12px;
-    padding: 10px clamp(16px, 3vw, 40px);
+    height: 40px;
+    padding: 0 clamp(16px, 3vw, 40px);
+    flex-shrink: 0;
   }
   .clients-page-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 9999px;
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
     border: 1px solid #e8e2d8;
     background: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: background 150ms, border-color 150ms;
+  }
+  .clients-page-btn:not(:disabled):hover {
+    background: #f0ebe3;
+    border-color: #d0c9be;
   }
   @media (max-width: 767px) {
     .clients-shell.clients-has-mobile-pagination {
@@ -671,8 +678,8 @@ export default function ClientsPageClient({
   const canSeeAmounts = role === "admin" || role === "charge_projet";
   const clients = clientsRes?.data ?? [];
   const loading = clientsLoading && !clientsRes;
-  // tableHeaderHeight=78: content padding-top(18) + table header(44); pagerHeight=52: pagination bar height
-  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 78, pagerHeight: 52, mobilePerPage: 6, safetyPx: 24 }, [loading]);
+  // tableHeaderHeight=78: content padding-top(18) + table header(44); pagerHeight=40: pagination bar height
+  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 78, pagerHeight: 40, mobilePerPage: 6, safetyPx: 24 }, [loading]);
 
   function toggleExpand(id: string) {
     setExpandedId(prev => (prev === id ? null : id));
@@ -828,27 +835,27 @@ export default function ClientsPageClient({
         {/* ── Pagination ────────────────────── */}
         {showPagination && (
           <div className="clients-pagination">
-            <span style={{ fontSize: 12, color: "#887f74" }}>
-              <strong style={{ color: "#1a1714", fontWeight: 700 }}>{clients.length}</strong>
+            <span style={{ fontSize: 11, color: "#a09690", letterSpacing: "0.01em" }}>
+              <strong style={{ color: "#1a1714", fontWeight: 600 }}>{clients.length}</strong>
               {" "}client{clients.length !== 1 ? "s" : ""}
             </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <motion.button whileTap={{ scale: 0.94 }}
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <motion.button whileTap={{ scale: 0.93 }}
                 onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
                 className="clients-page-btn"
-                style={{ color: page <= 1 ? "#d0c9be" : "#1a2e1e", cursor: page <= 1 ? "default" : "pointer" }}
+                style={{ color: page <= 1 ? "#d0c9be" : "#3d5c41", cursor: page <= 1 ? "default" : "pointer" }}
               >
-                <Ic d={I.chevL} z={14} />
+                <Ic d={I.chevL} z={12} />
               </motion.button>
-              <span style={{ fontSize: 11.5, color: "#1a1714", fontWeight: 700, minWidth: 76, textAlign: "center", userSelect: "none" }}>
-                Page {page} / {totalPages}
+              <span style={{ fontSize: 11, color: "#887f74", fontWeight: 500, minWidth: 52, textAlign: "center", userSelect: "none", letterSpacing: "0.02em" }}>
+                {page} / {totalPages}
               </span>
-              <motion.button whileTap={{ scale: 0.94 }}
+              <motion.button whileTap={{ scale: 0.93 }}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
                 className="clients-page-btn"
-                style={{ color: page >= totalPages ? "#d0c9be" : "#1a2e1e", cursor: page >= totalPages ? "default" : "pointer" }}
+                style={{ color: page >= totalPages ? "#d0c9be" : "#3d5c41", cursor: page >= totalPages ? "default" : "pointer" }}
               >
-                <Ic d={I.chevR} z={14} />
+                <Ic d={I.chevR} z={12} />
               </motion.button>
             </div>
             <div className="clients-pagination-spacer" />
