@@ -352,7 +352,7 @@ export default function SoumissionDetailPage() {
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 border border-gray-200 transition-all cursor-pointer disabled:opacity-50 min-h-[40px] min-w-[40px] flex items-center justify-center"
+              className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 border border-gray-200 transition-all cursor-pointer disabled:opacity-50 min-h-[40px] min-w-[40px] hidden sm:flex items-center justify-center"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -425,10 +425,6 @@ export default function SoumissionDetailPage() {
             transition={{ delay: 0.2 }}
             className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6"
           >
-            <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Contenu généré par IA</h2>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[#1a2e1e]/10 text-[#1a2e1e] font-medium">Claude AI</span>
-            </div>
 
             <div className="mb-4">
               <h3 className="text-sm font-semibold mb-2" style={{ color: "#1a2e1e" }}>1. Contexte et objectifs</h3>
