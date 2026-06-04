@@ -1,8 +1,7 @@
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 import DashboardClient from "./DashboardClient";
-import type { DashboardStats, Soumission, Prospect } from "@/types";
-import type { UserRole } from "@/types";
+import type { DashboardStats, Soumission, Prospect, UserRole } from "@/types";
 
 function buildSupabase(cookieStore: Awaited<ReturnType<typeof cookies>>) {
   return createServerClient(
@@ -11,7 +10,13 @@ function buildSupabase(cookieStore: Awaited<ReturnType<typeof cookies>>) {
     {
       cookies: {
         getAll() { return cookieStore.getAll(); },
-        setAll() {},
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {}
+        },
       },
     }
   );
@@ -48,10 +53,9 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
-      initialProfile={{
-        role: (profileRes.data?.role ?? "admin") as UserRole,
-        full_name: profileRes.data?.full_name ?? null,
-      }}
+      initialProfile={profileRes.data
+        ? { role: profileRes.data.role as UserRole, full_name: profileRes.data.full_name ?? null }
+        : undefined}
       initialStats={initialStats}
       initialSoumissions={allSoumissions}
       initialProspects={(prospectsRes.data ?? []) as Prospect[]}
