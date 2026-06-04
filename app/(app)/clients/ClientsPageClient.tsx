@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import useSWR from "swr";
@@ -555,14 +555,16 @@ interface ClientWithSoumissions extends Client {
 }
 
 type ApiListResponse<T> = { data?: T[] };
+type ClientsPageResponse = { data?: ClientWithSoumissions[]; total?: number; cityCount?: number };
 
 /* ── Status config ──────────────────────────────────────── */
 type StCfg = { dot: string; bgBadge: string; textBadge: string; border: string; accentBar: string };
+// Palette de marque — alignée sur les statuts soumissions (constants.ts ST) et le dashboard.
 const ST: Record<StatutSoumission, StCfg> = {
-  Brouillon: { dot: "#94a3b8", bgBadge: "#f8fafc", textBadge: "#475569", border: "#e2e8f0", accentBar: "#94a3b8" },
-  Envoyée:   { dot: "#3b82f6", bgBadge: "#eff6ff", textBadge: "#2563eb", border: "#bfdbfe", accentBar: "#3b82f6" },
-  Acceptée:  { dot: "#22c55e", bgBadge: "#f0fdf4", textBadge: "#15803d", border: "#bbf7d0", accentBar: "#22c55e" },
-  Refusée:   { dot: "#f43f5e", bgBadge: "#fff1f2", textBadge: "#be123c", border: "#fecdd3", accentBar: "#f43f5e" },
+  Brouillon: { dot: "#b0a898", bgBadge: "#f5f0e8", textBadge: "#635c54", border: "#e8e2d8", accentBar: "#b0a898" },
+  Envoyée:   { dot: "#3a7ca5", bgBadge: "#eaf2f7", textBadge: "#3a7ca5", border: "#d3e3ee", accentBar: "#3a7ca5" },
+  Acceptée:  { dot: "#3a7a50", bgBadge: "#eaf3ed", textBadge: "#3a7a50", border: "#d2e4d8", accentBar: "#3a7a50" },
+  Refusée:   { dot: "#c44a3a", bgBadge: "#f9eeec", textBadge: "#c44a3a", border: "#f0d3ce", accentBar: "#c44a3a" },
 };
 
 /* ── Icon ───────────────────────────────────────────────── */
@@ -652,9 +654,15 @@ function useBp() {
 ══════════════════════════════════════════════════════════ */
 export default function ClientsPageClient({
   initialClients,
+  initialTotal,
+  initialCityCount,
+  initialPageSize,
   initialRole,
 }: {
   initialClients: ClientWithSoumissions[];
+  initialTotal: number;
+  initialCityCount: number;
+  initialPageSize: number;
   initialRole: UserRole | null;
 }) {
   const bp = useBp();
@@ -671,6 +679,8 @@ export default function ClientsPageClient({
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteState>(D0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const toast = useToast();
+  // "Dernière entrée" = client le plus récent (page 1, tri desc) — mémorisé
+  const latestRef = useRef<ClientWithSoumissions | null>(initialClients[0] ?? null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -679,19 +689,30 @@ export default function ClientsPageClient({
 
   useEffect(() => { setPage(1); }, [debouncedSearch]);
 
-  const clientsUrl = debouncedSearch ? `/api/clients?q=${encodeURIComponent(debouncedSearch)}` : "/api/clients";
+  // Taille de page : remplit la fenêtre (desktop/tablette, pas de scroll), 10/page mobile (scroll).
+  // tableHeaderHeight=44: ligne d'en-tête sticky ; pagerHeight=40: barre de pagination.
+  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 44, pagerHeight: 40, mobilePerPage: 10, safetyPx: 20 }, []);
+
+  // SWR paginé serveur : la réponse EST déjà la page courante.
+  const clientsUrl = `/api/clients?page=${page}&pageSize=${perPage}${debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ""}`;
+  const isInitialKey = page === 1 && !debouncedSearch && perPage === initialPageSize;
   const { data: clientsRes, isLoading: clientsLoading, mutate: mutateClients } =
-    useSWR<ApiListResponse<ClientWithSoumissions>>(
+    useSWR<ClientsPageResponse>(
       clientsUrl,
-      { fallbackData: debouncedSearch ? undefined : { data: initialClients } }
+      {
+        fallbackData: isInitialKey
+          ? { data: initialClients, total: initialTotal, cityCount: initialCityCount }
+          : undefined,
+        keepPreviousData: true,
+      }
     );
 
   const role = initialRole;
   const canSeeAmounts = role === "admin" || role === "charge_projet";
   const clients = clientsRes?.data ?? [];
+  const total = clientsRes?.total ?? initialTotal;
+  const cityCount = clientsRes?.cityCount ?? initialCityCount;
   const loading = clientsLoading && !clientsRes;
-  // tableHeaderHeight=44: sticky header row; pagerHeight=40: pagination bar inside outer wrapper
-  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 44, pagerHeight: 40, mobilePerPage: 6, safetyPx: 20 }, [loading]);
 
   function toggleExpand(id: string) {
     setExpandedId(prev => (prev === id ? null : id));
@@ -708,12 +729,10 @@ export default function ClientsPageClient({
     try {
       const res = await fetch(`/api/clients/${targetId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("delete failed");
-      mutateClients(
-        current => ({ data: (current?.data ?? []).filter(c => c.id !== targetId) }),
-        { revalidate: false }
-      );
       if (expandedId === targetId) setExpandedId(null);
       setDeleteConfirm(D0);
+      // Revalide la page courante (total + remplissage corrects après suppression)
+      await mutateClients();
       toast.success("Client supprimé.");
     } catch {
       toast.error("La suppression a échoué. Le client a peut-être des soumissions liées.");
@@ -722,17 +741,22 @@ export default function ClientsPageClient({
     }
   }
 
-  const totalPages = Math.max(1, Math.ceil(clients.length / perPage));
-  const paginated = useMemo(
-    () => clients.slice((page - 1) * perPage, page * perPage),
-    [clients, page, perPage]
-  );
-  const cityCount = useMemo(
-    () => new Set(clients.map(c => c.ville).filter(Boolean)).size,
-    [clients]
-  );
-  const latestClient = clients[0];
-  const showPagination = !loading && clients.length > 0 && totalPages > 1;
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(1, perPage)));
+  // La réponse serveur est déjà la page courante — pas de slice client.
+  const paginated = clients;
+
+  // Mémorise le client le plus récent (page 1, sans recherche) pour "Dernière entrée"
+  useEffect(() => {
+    if (page === 1 && !debouncedSearch && clients.length > 0) latestRef.current = clients[0];
+  }, [page, debouncedSearch, clients]);
+  const latestClient = latestRef.current;
+
+  // Recadre la page si elle dépasse le total (ex. fenêtre agrandie → page plus grande)
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const showPagination = !loading && total > 0 && totalPages > 1;
 
   return (
     <>
@@ -746,7 +770,7 @@ export default function ClientsPageClient({
               <div className="clients-kicker">Portefeuille</div>
               <h1 className="clients-title">Clients</h1>
               <p className="clients-subtitle">
-                {clients.length} client{clients.length !== 1 ? "s" : ""} enregistré{clients.length !== 1 ? "s" : ""}, suivi commercial et historique des soumissions.
+                {total} client{total !== 1 ? "s" : ""} enregistré{total !== 1 ? "s" : ""}, suivi commercial et historique des soumissions.
               </p>
             </div>
             <a href="/api/clients/export" target="_blank" rel="noreferrer" className="clients-export">
@@ -758,7 +782,7 @@ export default function ClientsPageClient({
           <div className="clients-summary">
             <div className="clients-stat">
               <div className="clients-stat-label">Base clients</div>
-              <div className="clients-stat-value">{clients.length}</div>
+              <div className="clients-stat-value">{total}</div>
               <div className="clients-stat-note">contacts actifs</div>
             </div>
             <div className="clients-stat">
@@ -812,7 +836,7 @@ export default function ClientsPageClient({
                 ))}
               </div>
             )
-          ) : clients.length === 0 ? (
+          ) : total === 0 ? (
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 24px" }}>
               <div className="clients-empty" style={{ width: "100%", maxWidth: 480 }}>
                 <div className="clients-empty-icon">
@@ -897,8 +921,8 @@ export default function ClientsPageClient({
         {showPagination && bp !== "desktop" && (
           <div className="clients-pagination">
             <span style={{ fontSize: 11, color: "#a09690", letterSpacing: "0.01em" }}>
-              <strong style={{ color: "#1a1714", fontWeight: 600 }}>{clients.length}</strong>
-              {" "}client{clients.length !== 1 ? "s" : ""}
+              <strong style={{ color: "#1a1714", fontWeight: 600 }}>{total}</strong>
+              {" "}client{total !== 1 ? "s" : ""}
             </span>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <motion.button whileTap={{ scale: 0.93 }}

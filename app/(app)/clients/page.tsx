@@ -24,15 +24,34 @@ export default async function ClientsPage() {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  const [clientsResult, profileResult] = await Promise.all([
-    supabase.from("clients").select("*").order("created_at", { ascending: false }),
+  // Page 1 (taille = défaut du hook viewport-fit) pour data au premier paint.
+  const SSR_PAGE_SIZE = 8;
+  const [clientsResult, villesResult, profileResult] = await Promise.all([
+    supabase
+      .from("clients")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(0, SSR_PAGE_SIZE - 1),
+    supabase.from("clients").select("ville").limit(5000),
     user
       ? supabase.from("profiles").select("role").eq("id", user.id).single()
       : Promise.resolve({ data: null }),
   ]);
 
   const initialClients = clientsResult.data ?? [];
+  const initialTotal = clientsResult.count ?? initialClients.length;
+  const initialCityCount = new Set(
+    (villesResult.data ?? []).map(r => r.ville).filter(Boolean)
+  ).size;
   const initialRole = (profileResult.data?.role ?? null) as UserRole | null;
 
-  return <ClientsPageClient initialClients={initialClients} initialRole={initialRole} />;
+  return (
+    <ClientsPageClient
+      initialClients={initialClients}
+      initialTotal={initialTotal}
+      initialCityCount={initialCityCount}
+      initialPageSize={SSR_PAGE_SIZE}
+      initialRole={initialRole}
+    />
+  );
 }
