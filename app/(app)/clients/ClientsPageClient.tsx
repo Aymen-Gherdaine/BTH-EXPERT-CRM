@@ -656,13 +656,13 @@ export default function ClientsPageClient({
   initialClients,
   initialTotal,
   initialCityCount,
-  initialPageSize,
+  initialPerPage,
   initialRole,
 }: {
   initialClients: ClientWithSoumissions[];
   initialTotal: number;
   initialCityCount: number;
-  initialPageSize: number;
+  initialPerPage: number;
   initialRole: UserRole | null;
 }) {
   const bp = useBp();
@@ -689,19 +689,26 @@ export default function ClientsPageClient({
 
   useEffect(() => { setPage(1); }, [debouncedSearch]);
 
-  // Taille de page : remplit la fenêtre (desktop/tablette, pas de scroll), 10/page mobile (scroll).
-  // tableHeaderHeight=44: ligne d'en-tête sticky ; pagerHeight=40: barre de pagination.
-  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 44, pagerHeight: 40, mobilePerPage: 10, safetyPx: 20 }, []);
+  // Taille de page : remplit la fenêtre (desktop/tablette, sans scroll), 10/page mobile (scroll).
+  // rowHeight=64 (minHeight réel) ; safetyPx=28 → arrondi conservateur = jamais de
+  // ligne coupée ni de scroll interne. immediate=true → mesure avant paint (pas de saut).
+  // initialPerPage doit matcher le rendu SSR (évite un mismatch d'hydratation).
+  const perPage = useDynamicPerPage(
+    gridRef,
+    { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 44, pagerHeight: 40, mobilePerPage: 10, safetyPx: 28, initialPerPage, immediate: true },
+    []
+  );
 
-  // SWR paginé serveur : la réponse EST déjà la page courante.
+  // SWR paginé serveur. Pour la page 1 sans recherche, on sert la tranche du buffer
+  // SSR (initialClients) à la taille mesurée → AUCUN re-fetch visible, donc pas de saut.
   const clientsUrl = `/api/clients?page=${page}&pageSize=${perPage}${debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ""}`;
-  const isInitialKey = page === 1 && !debouncedSearch && perPage === initialPageSize;
+  const canSeedFromBuffer = page === 1 && !debouncedSearch && perPage <= initialClients.length;
   const { data: clientsRes, isLoading: clientsLoading, mutate: mutateClients } =
     useSWR<ClientsPageResponse>(
       clientsUrl,
       {
-        fallbackData: isInitialKey
-          ? { data: initialClients, total: initialTotal, cityCount: initialCityCount }
+        fallbackData: canSeedFromBuffer
+          ? { data: initialClients.slice(0, perPage), total: initialTotal, cityCount: initialCityCount }
           : undefined,
         keepPreviousData: true,
       }

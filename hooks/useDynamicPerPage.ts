@@ -11,6 +11,10 @@ interface Options {
   pagerHeight?: number
   mobilePerPage?: number
   safetyPx?: number
+  /** Valeur initiale (doit matcher le rendu SSR pour éviter un mismatch d'hydratation) */
+  initialPerPage?: number
+  /** Mesure synchrone dans useLayoutEffect (avant paint) → supprime le "saut" post-hydratation */
+  immediate?: boolean
 }
 
 export function useDynamicPerPage(
@@ -19,11 +23,11 @@ export function useDynamicPerPage(
     view, isDesktop,
     cardHeight = 172, rowHeight = 66, cols = 3,
     tableHeaderHeight = 48, pagerHeight = 64, mobilePerPage = 6,
-    safetyPx = 0,
+    safetyPx = 0, initialPerPage = 8, immediate = false,
   }: Options,
   deps: unknown[] = [],
 ): number {
-  const [perPage, setPerPage] = useState(8)
+  const [perPage, setPerPage] = useState(initialPerPage)
 
   useLayoutEffect(() => {
     function calc() {
@@ -43,7 +47,9 @@ export function useDynamicPerPage(
         setPerPage(rows)
       }
     }
-    // Double rAF lets the layout stabilise before measuring
+    // Mesure synchrone optionnelle (avant paint) pour éviter un reflow visible,
+    // puis double rAF pour re-stabiliser une fois le layout définitif.
+    if (immediate) calc()
     const id = requestAnimationFrame(() => requestAnimationFrame(calc))
     window.addEventListener("resize", calc)
     return () => {
@@ -52,7 +58,7 @@ export function useDynamicPerPage(
     }
     // Do NOT observe gridRef — that would refire when content changes height → feedback loop
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, isDesktop, gridRef, cardHeight, rowHeight, cols, tableHeaderHeight, pagerHeight, mobilePerPage, ...deps])
+  }, [view, isDesktop, gridRef, cardHeight, rowHeight, cols, tableHeaderHeight, pagerHeight, mobilePerPage, immediate, ...deps])
 
   return perPage
 }

@@ -24,14 +24,16 @@ export default async function ClientsPage() {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Page 1 (taille = défaut du hook viewport-fit) pour data au premier paint.
-  const SSR_PAGE_SIZE = 8;
+  // Buffer page 1 (généreux) : le client le découpe à la taille mesurée sans
+  // re-fetch → aucun "saut". SSR_PERPAGE = nombre rendu côté serveur (avant mesure).
+  const SSR_BUFFER = 40;
+  const SSR_PERPAGE = 12;
   const [clientsResult, villesResult, profileResult] = await Promise.all([
     supabase
       .from("clients")
       .select("*", { count: "exact" })
       .order("created_at", { ascending: false })
-      .range(0, SSR_PAGE_SIZE - 1),
+      .range(0, SSR_BUFFER - 1),
     supabase.from("clients").select("ville").limit(5000),
     user
       ? supabase.from("profiles").select("role").eq("id", user.id).single()
@@ -50,7 +52,7 @@ export default async function ClientsPage() {
       initialClients={initialClients}
       initialTotal={initialTotal}
       initialCityCount={initialCityCount}
-      initialPageSize={SSR_PAGE_SIZE}
+      initialPerPage={SSR_PERPAGE}
       initialRole={initialRole}
     />
   );
