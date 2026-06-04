@@ -149,7 +149,7 @@
 
   * {
     scrollbar-width: thin;
-    scrollbar-color: #C9A96E #f5f0e8;
+    scrollbar-color: #1a2e1e #f5f0e8;
   }
 
   *::-webkit-scrollbar {
@@ -162,13 +162,13 @@
   }
 
   *::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, #1a2e1e 0%, #C9A96E 100%);
+    background: #1a2e1e;
     border: 2px solid #f5f0e8;
     border-radius: 9999px;
   }
 
   *::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(180deg, #1f4429 0%, #a8874e 100%);
+    background: #2b5c3c;
   }
 
   @media (max-width: 767px) {
@@ -191,7 +191,7 @@
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: #C9A96E #f5f0e8;
+    scrollbar-color: #1a2e1e #f5f0e8;
   }
 
   .bth-focus:focus-visible {
