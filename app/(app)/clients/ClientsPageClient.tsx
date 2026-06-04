@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import useSWR from "swr";
+import useSWR, { preload } from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { Client, Soumission, StatutSoumission, UserRole } from "@/types";
 import { formatDateFr } from "@/lib/utils";
 import { useDynamicPerPage } from "@/hooks/useDynamicPerPage";
@@ -13,6 +14,21 @@ import { useToast } from "@/components/ui/Toast";
 const CSS = `
   @keyframes sk { 0%,100%{opacity:1} 50%{opacity:.4} }
   .sk { animation: sk 1.5s ease-in-out infinite; }
+  /* Barre de progression indéterminée (hauteur réservée → aucun décalage) */
+  .clients-progress { position: relative; height: 2px; flex-shrink: 0; overflow: hidden; }
+  .clients-progress::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 35%;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, transparent, #3a7a50, transparent);
+    opacity: 0; transition: opacity .2s ease;
+  }
+  .clients-progress[data-active="1"]::before {
+    opacity: 1; animation: clients-progress-slide 1.1s cubic-bezier(.4,0,.2,1) infinite;
+  }
+  @keyframes clients-progress-slide {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(400%); }
+  }
   .clients-shell {
     background: linear-gradient(180deg, #ffffff 0%, #faf8f5 38%, #f7f2ea 100%);
     color: #1a1714;
@@ -701,9 +717,11 @@ export default function ClientsPageClient({
 
   // SWR paginé serveur. Pour la page 1 sans recherche, on sert la tranche du buffer
   // SSR (initialClients) à la taille mesurée → AUCUN re-fetch visible, donc pas de saut.
-  const clientsUrl = `/api/clients?page=${page}&pageSize=${perPage}${debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ""}`;
+  const buildUrl = (p: number) =>
+    `/api/clients?page=${p}&pageSize=${perPage}${debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ""}`;
+  const clientsUrl = buildUrl(page);
   const canSeedFromBuffer = page === 1 && !debouncedSearch && perPage <= initialClients.length;
-  const { data: clientsRes, isLoading: clientsLoading, mutate: mutateClients } =
+  const { data: clientsRes, isLoading: clientsLoading, isValidating, mutate: mutateClients } =
     useSWR<ClientsPageResponse>(
       clientsUrl,
       {
@@ -711,6 +729,8 @@ export default function ClientsPageClient({
           ? { data: initialClients.slice(0, perPage), total: initialTotal, cityCount: initialCityCount }
           : undefined,
         keepPreviousData: true,
+        // Données SSR fraîches → pas de revalidation (ni barre) au tout premier paint
+        revalidateOnMount: !canSeedFromBuffer,
       }
     );
 
@@ -764,6 +784,17 @@ export default function ClientsPageClient({
   }, [page, totalPages]);
 
   const showPagination = !loading && total > 0 && totalPages > 1;
+
+  // Préchargement des pages adjacentes → clic suivant/précédent instantané (cache chaud)
+  useEffect(() => {
+    if (loading || perPage <= 0) return;
+    if (page < totalPages) preload(buildUrl(page + 1), fetcher);
+    if (page > 1) preload(buildUrl(page - 1), fetcher);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, perPage, totalPages, debouncedSearch, loading]);
+
+  // Mise à jour en arrière-plan (données déjà visibles) → repère subtil, jamais d'écran blanc
+  const updating = isValidating && !loading;
 
   return (
     <>
@@ -828,6 +859,8 @@ export default function ClientsPageClient({
 
         {/* ── Content ─────────────────────────────────────── */}
         <div className="clients-content">
+          {/* Repère de mise à jour (recherche / changement de page non préchargé) */}
+          <div className="clients-progress" data-active={updating ? "1" : "0"} aria-hidden="true" />
           {loading ? (
             bp === "desktop" ? (
               <div style={{ flex: 1, margin: "16px 32px 20px", borderRadius: 8, border: "1px solid #e8e2d8", overflow: "hidden", boxShadow: "0 18px 48px rgba(26,46,30,0.07)" }}>
