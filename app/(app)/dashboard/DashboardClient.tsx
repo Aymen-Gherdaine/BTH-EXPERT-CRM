@@ -8,6 +8,7 @@ import useSWR from "swr";
 import { DashboardStats, Prospect, Soumission, UserRole, Visite } from "@/types";
 import { formatMontant } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
+import { fetcher } from "@/lib/fetcher";
 import { useDelayedLoading } from "@/hooks/useDelayedLoading";
 
 type OverdueProspect = Prospect & { _lastVisit: Visite };
@@ -641,22 +642,34 @@ export default function DashboardClient({
   const bp = useBp();
   const isMobile = bp === "mobile";
 
-  const { data: meRes, isLoading: meLoading } = useSWR<MeResponse>("/api/me", {
-    fallbackData: initialProfile,
-    revalidateOnMount: !initialProfile,
-  });
-  const { data: stats, isLoading: statsLoading } = useSWR<DashboardStats>("/api/dashboard", {
-    fallbackData: initialStats,
-    revalidateOnMount: !initialStats,
-  });
-  const { data: soumRes, isLoading: soumissionsLoading } = useSWR<ApiListResponse<Soumission>>("/api/soumissions", {
-    fallbackData: { data: initialSoumissions },
-    revalidateOnMount: false,
-  });
-  const { data: prospectsRes, isLoading: prospectsLoading } = useSWR<ApiListResponse<Prospect>>("/api/prospects?statut=actif", {
-    fallbackData: { data: initialProspects },
-    revalidateOnMount: false,
-  });
+  const hasSSR = !!initialProfile;
+
+  const { data: meRes, isLoading: meLoading } = useSWR<MeResponse>(
+    "/api/me",
+    fetcher,
+    { fallbackData: initialProfile ?? undefined, revalidateOnMount: !hasSSR }
+  );
+  const { data: stats, isLoading: statsLoading } = useSWR<DashboardStats>(
+    "/api/dashboard",
+    fetcher,
+    { fallbackData: initialStats ?? undefined, revalidateOnMount: !hasSSR }
+  );
+  const { data: soumRes, isLoading: soumissionsLoading } = useSWR<ApiListResponse<Soumission>>(
+    "/api/soumissions",
+    fetcher,
+    {
+      fallbackData: initialSoumissions ? { data: initialSoumissions } : undefined,
+      revalidateOnMount: !hasSSR,
+    }
+  );
+  const { data: prospectsRes, isLoading: prospectsLoading } = useSWR<ApiListResponse<Prospect>>(
+    "/api/prospects?statut=actif",
+    fetcher,
+    {
+      fallbackData: initialProspects ? { data: initialProspects } : undefined,
+      revalidateOnMount: !hasSSR,
+    }
+  );
 
   const role = meRes?.role ?? "admin";
   const userName = meRes?.full_name || "Utilisateur";
