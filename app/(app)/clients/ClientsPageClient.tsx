@@ -784,6 +784,10 @@ export default function ClientsPageClient({
   }, [page, totalPages]);
 
   const showPagination = !loading && total > 0 && totalPages > 1;
+  // Mobile : la barre du bas reste affichée tant qu'il y a des clients (compteur
+  // permanent, fixé en bas). Les boutons de page n'apparaissent que s'il y a
+  // plusieurs pages.
+  const showMobileBar = !loading && total > 0;
 
   // Préchargement des pages adjacentes → clic suivant/précédent instantané (cache chaud)
   useEffect(() => {
@@ -799,7 +803,7 @@ export default function ClientsPageClient({
   return (
     <>
       <style>{CSS}</style>
-      <div className={`clients-shell ${showPagination && bp !== "desktop" ? "clients-has-mobile-pagination" : ""}`}>
+      <div className={`clients-shell ${showMobileBar && bp !== "desktop" ? "clients-has-mobile-pagination" : ""}`}>
 
         {/* ── Header ──────────────────────────────────────── */}
         <div className="clients-header">
@@ -958,31 +962,35 @@ export default function ClientsPageClient({
         </div>
 
         {/* ── Pagination mobile (fixed) ──────────────────────── */}
-        {showPagination && bp !== "desktop" && (
+        {showMobileBar && bp !== "desktop" && (
           <div className="clients-pagination">
             <span style={{ fontSize: 11, color: "#a09690", letterSpacing: "0.01em" }}>
               <strong style={{ color: "#1a1714", fontWeight: 600 }}>{total}</strong>
               {" "}client{total !== 1 ? "s" : ""}
             </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <motion.button whileTap={{ scale: 0.93 }}
-                onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
-                className="clients-page-btn"
-                style={{ color: page <= 1 ? "#d0c9be" : "#3d5c41", cursor: page <= 1 ? "default" : "pointer" }}
-              >
-                <Ic d={I.chevL} z={12} />
-              </motion.button>
-              <span style={{ fontSize: 11, color: "#887f74", fontWeight: 500, minWidth: 52, textAlign: "center", userSelect: "none", letterSpacing: "0.02em" }}>
-                {page} / {totalPages}
-              </span>
-              <motion.button whileTap={{ scale: 0.93 }}
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
-                className="clients-page-btn"
-                style={{ color: page >= totalPages ? "#d0c9be" : "#3d5c41", cursor: page >= totalPages ? "default" : "pointer" }}
-              >
-                <Ic d={I.chevR} z={12} />
-              </motion.button>
-            </div>
+            {totalPages > 1 ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <motion.button whileTap={{ scale: 0.93 }}
+                  onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+                  className="clients-page-btn"
+                  style={{ color: page <= 1 ? "#d0c9be" : "#3d5c41", cursor: page <= 1 ? "default" : "pointer" }}
+                >
+                  <Ic d={I.chevL} z={12} />
+                </motion.button>
+                <span style={{ fontSize: 11, color: "#887f74", fontWeight: 500, minWidth: 52, textAlign: "center", userSelect: "none", letterSpacing: "0.02em" }}>
+                  {page} / {totalPages}
+                </span>
+                <motion.button whileTap={{ scale: 0.93 }}
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
+                  className="clients-page-btn"
+                  style={{ color: page >= totalPages ? "#d0c9be" : "#3d5c41", cursor: page >= totalPages ? "default" : "pointer" }}
+                >
+                  <Ic d={I.chevR} z={12} />
+                </motion.button>
+              </div>
+            ) : (
+              <div />
+            )}
             <div className="clients-pagination-spacer" />
           </div>
         )}
