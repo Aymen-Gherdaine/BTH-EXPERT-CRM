@@ -15,11 +15,15 @@ const CSS = `
   .clients-shell {
     background: linear-gradient(180deg, #ffffff 0%, #faf8f5 38%, #f7f2ea 100%);
     color: #1a1714;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
   .clients-header {
     padding: 24px clamp(16px, 3vw, 40px) 18px;
     border-bottom: 1px solid #e8e2d8;
     background: rgba(255,255,255,.92);
+    flex-shrink: 0;
   }
   .clients-header-top {
     display: grid;
@@ -151,8 +155,11 @@ const CSS = `
     box-shadow: 0 0 0 4px rgba(26,46,30,.10);
   }
   .clients-content {
-    overflow: visible;
-    padding: 18px clamp(16px, 3vw, 40px) 18px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
   }
   .clients-list {
     display: flex;
@@ -185,11 +192,12 @@ const CSS = `
     margin-bottom: 18px;
   }
   .clients-table-shell {
-    border-radius: 16px;
-    border: 1px solid #e8e2d8;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     overflow: hidden;
     background: #ffffff;
-    box-shadow: 0 20px 50px rgba(26,46,30,.07);
   }
   .clients-table-head {
     background: #fbfaf7;
@@ -203,7 +211,7 @@ const CSS = `
     align-items: center;
     gap: 12px;
     height: 40px;
-    padding: 0 clamp(16px, 3vw, 40px);
+    padding: 0 24px;
     flex-shrink: 0;
   }
   .clients-page-btn {
@@ -283,6 +291,8 @@ const CSS = `
     }
     .clients-content {
       padding: 14px 14px 12px;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
     .clients-list {
       gap: 12px;
@@ -678,8 +688,8 @@ export default function ClientsPageClient({
   const canSeeAmounts = role === "admin" || role === "charge_projet";
   const clients = clientsRes?.data ?? [];
   const loading = clientsLoading && !clientsRes;
-  // tableHeaderHeight=78: content padding-top(18) + table header(44); pagerHeight=40: pagination bar height
-  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 78, pagerHeight: 40, mobilePerPage: 6, safetyPx: 24 }, [loading]);
+  // tableHeaderHeight=44: sticky header row; pagerHeight=40: pagination bar inside outer wrapper
+  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 44, pagerHeight: 40, mobilePerPage: 6, safetyPx: 20 }, [loading]);
 
   function toggleExpand(id: string) {
     setExpandedId(prev => (prev === id ? null : id));
@@ -770,49 +780,84 @@ export default function ClientsPageClient({
         </div>
 
         {/* ── Content ─────────────────────────────────────── */}
-        <div ref={gridRef} className="clients-content">
+        <div className="clients-content">
           {loading ? (
             bp === "desktop" ? (
-              <div style={{ margin: "16px 32px 20px", borderRadius: 16, border: "1px solid #e5e7eb", overflow: "hidden" }}>
-                <div className="sk" style={{ height: 44, background: "#fafafa", borderBottom: "1.5px solid #e5e7eb" }} />
+              <div style={{ flex: 1, margin: "16px 32px 20px", borderRadius: 8, border: "1px solid #e8e2d8", overflow: "hidden", boxShadow: "0 18px 48px rgba(26,46,30,0.07)" }}>
+                <div className="sk" style={{ height: 44, background: "#fbfaf7", borderBottom: "1px solid #e8e2d8" }} />
                 {[1, 2, 3, 4, 5].map(i => (
-                  <div key={i} className="sk" style={{ height: 64, background: "white", borderBottom: "1px solid #f1f5f9" }} />
+                  <div key={i} className="sk" style={{ height: 64, background: "white", borderBottom: "1px solid #f1ece4" }} />
                 ))}
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "14px 14px 12px" }}>
                 {[1, 2, 3, 4, 5].map(i => (
-                  <div key={i} className="sk" style={{
-                    height: 82, borderRadius: 14,
-                    background: "white", border: "1px solid #ededeb",
-                  }} />
+                  <div key={i} className="sk" style={{ height: 82, borderRadius: 14, background: "white", border: "1px solid #ededeb" }} />
                 ))}
               </div>
             )
           ) : clients.length === 0 ? (
-            <div className="clients-empty">
-              <div className="clients-empty-icon">
-                <Ic d={I.user} z={28} s="white" />
+            <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 24px" }}>
+              <div className="clients-empty" style={{ width: "100%", maxWidth: 480 }}>
+                <div className="clients-empty-icon">
+                  <Ic d={I.user} z={28} s="white" />
+                </div>
+                <p style={{ fontSize: 17, fontWeight: 700, color: "#1a1714", marginBottom: 8 }}>
+                  Aucun client
+                </p>
+                <p style={{ fontSize: 14, color: "#887f74", lineHeight: 1.6, maxWidth: 340 }}>
+                  {search
+                    ? "Aucun résultat pour cette recherche."
+                    : "Les clients sont créés automatiquement lors d'une soumission."}
+                </p>
               </div>
-              <p style={{ fontSize: 17, fontWeight: 700, color: "#1a1714", marginBottom: 8 }}>
-                Aucun client
-              </p>
-              <p style={{ fontSize: 14, color: "#887f74", lineHeight: 1.6, maxWidth: 340 }}>
-                {search
-                  ? "Aucun résultat pour cette recherche."
-                  : "Les clients sont créés automatiquement lors d'une soumission."}
-              </p>
             </div>
           ) : bp === "desktop" ? (
-            <ClientsTable
-              clients={paginated}
-              expandedId={expandedId}
-              expandedSoumissions={expandedSoumRes?.data ?? []}
-              expandedSoumLoading={expandedSoumLoading}
-              canSeeAmounts={canSeeAmounts}
-              onToggle={toggleExpand}
-              onDelete={askDelete}
-            />
+            <div ref={gridRef} style={{
+              flex: 1, display: "flex", flexDirection: "column", minHeight: 0,
+              margin: "16px 32px 20px", borderRadius: 8,
+              border: "1px solid #e8e2d8", overflow: "hidden",
+              boxShadow: "0 18px 48px rgba(26,46,30,0.07)",
+              background: "linear-gradient(180deg, #fffdfa 0%, #ffffff 100%)",
+            }}>
+              <ClientsTable
+                clients={paginated}
+                expandedId={expandedId}
+                expandedSoumissions={expandedSoumRes?.data ?? []}
+                expandedSoumLoading={expandedSoumLoading}
+                canSeeAmounts={canSeeAmounts}
+                onToggle={toggleExpand}
+                onDelete={askDelete}
+              />
+              {showPagination && (
+                <div className="clients-pagination">
+                  <span style={{ fontSize: 11, color: "#a09690", letterSpacing: "0.01em" }}>
+                    <strong style={{ color: "#1a1714", fontWeight: 600 }}>{clients.length}</strong>
+                    {" "}client{clients.length !== 1 ? "s" : ""}
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <motion.button whileTap={{ scale: 0.93 }}
+                      onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+                      className="clients-page-btn"
+                      style={{ color: page <= 1 ? "#d0c9be" : "#3d5c41", cursor: page <= 1 ? "default" : "pointer" }}
+                    >
+                      <Ic d={I.chevL} z={12} />
+                    </motion.button>
+                    <span style={{ fontSize: 11, color: "#887f74", fontWeight: 500, minWidth: 52, textAlign: "center", userSelect: "none", letterSpacing: "0.02em" }}>
+                      {page} / {totalPages}
+                    </span>
+                    <motion.button whileTap={{ scale: 0.93 }}
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
+                      className="clients-page-btn"
+                      style={{ color: page >= totalPages ? "#d0c9be" : "#3d5c41", cursor: page >= totalPages ? "default" : "pointer" }}
+                    >
+                      <Ic d={I.chevR} z={12} />
+                    </motion.button>
+                  </div>
+                  <div className="clients-pagination-spacer" />
+                </div>
+              )}
+            </div>
           ) : (
             <div className="clients-list">
               <AnimatePresence>
@@ -832,8 +877,8 @@ export default function ClientsPageClient({
           )}
         </div>
 
-        {/* ── Pagination ────────────────────── */}
-        {showPagination && (
+        {/* ── Pagination mobile (fixed) ──────────────────────── */}
+        {showPagination && bp !== "desktop" && (
           <div className="clients-pagination">
             <span style={{ fontSize: 11, color: "#a09690", letterSpacing: "0.01em" }}>
               <strong style={{ color: "#1a1714", fontWeight: 600 }}>{clients.length}</strong>
@@ -1284,7 +1329,7 @@ function ClientsTable({ clients, expandedId, expandedSoumissions, expandedSoumLo
         ))}
       </div>
       {/* Rows */}
-      <div>
+      <div style={{ flex: 1, overflowY: "auto" }}>
         {clients.map(client => (
           <ClientTableRow
             key={client.id}
