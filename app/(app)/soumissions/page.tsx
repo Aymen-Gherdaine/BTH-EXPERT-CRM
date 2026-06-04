@@ -11,7 +11,13 @@ export default async function SoumissionsPage() {
     {
       cookies: {
         getAll() { return cookieStore.getAll(); },
-        setAll() {},
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {}
+        },
       },
     }
   );
@@ -25,8 +31,13 @@ export default async function SoumissionsPage() {
       : Promise.resolve({ data: null }),
   ]);
 
-  const initialSoumissions: Soumission[] = soumRes.data ?? [];
+  const initialSoumissions: Soumission[] = (soumRes.data ?? []) as Soumission[];
   const initialRole = (profileRes.data?.role ?? null) as UserRole | null;
 
-  return <SoumissionsClient initialSoumissions={initialSoumissions} initialRole={initialRole} />;
+  return (
+    <SoumissionsClient
+      initialSoumissions={initialSoumissions}
+      initialRole={initialRole}
+    />
+  );
 }
