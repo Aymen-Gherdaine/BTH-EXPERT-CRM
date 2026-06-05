@@ -711,7 +711,7 @@ export default function ClientsPageClient({
   // initialPerPage doit matcher le rendu SSR (évite un mismatch d'hydratation).
   const perPage = useDynamicPerPage(
     gridRef,
-    { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 44, pagerHeight: 40, mobilePerPage: 10, safetyPx: 28, initialPerPage, immediate: true },
+    { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 44, pagerHeight: 40, mobilePerPage: 6, safetyPx: 28, initialPerPage, immediate: true },
     []
   );
 
