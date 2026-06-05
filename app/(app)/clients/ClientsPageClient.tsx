@@ -248,62 +248,65 @@ const CSS = `
   }
   @media (max-width: 767px) {
     .clients-shell.clients-has-mobile-pagination {
-      padding-bottom: calc(62px + env(safe-area-inset-bottom));
+      padding-bottom: calc(68px + env(safe-area-inset-bottom));
     }
+    /* Header compact mobile : moins d'espace en haut → les clients visibles d'emblée */
     .clients-header {
-      padding: 18px 14px 16px;
+      padding: 14px 14px 12px;
     }
     .clients-header-top {
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 12px;
+      align-items: center;
     }
+    .clients-kicker { margin-bottom: 5px; }
     .clients-title {
-      font-size: 25px;
+      font-size: 22px;
     }
-    .clients-subtitle {
-      max-width: 24rem;
-      font-size: 13px;
-      line-height: 1.45;
-    }
+    /* Sous-titre redondant masqué sur mobile (les mini-stats portent l'info) */
+    .clients-subtitle { display: none; }
     .clients-export {
       width: auto;
       justify-content: center;
       padding: 0 13px;
-      height: 38px;
+      height: 36px;
     }
+    /* 2 mini-stats sur une fine rangée (la 3e « Dernière entrée » est masquée :
+       déjà visible en tête de liste) */
     .clients-summary {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+      gap: 8px;
       overflow: visible;
-      padding-bottom: 4px;
+      padding-bottom: 0;
+      margin-top: 12px;
     }
     .clients-stat {
-      min-height: 88px;
+      min-height: 0;
       border-radius: 12px;
-      padding: 13px 14px;
+      padding: 9px 12px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       min-width: 0;
     }
-    .clients-stat:last-child { grid-column: 1 / -1; }
+    .clients-stat:last-child { display: none; }
     .clients-stat-label {
-      font-size: 11px;
-      line-height: 1.25;
+      font-size: 10.5px;
+      line-height: 1.2;
       white-space: nowrap;
     }
     .clients-stat-value {
-      margin-top: 9px;
-      font-size: 17px;
+      margin-top: 3px;
+      font-size: 18px;
       line-height: 1.05;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .clients-stat-note {
-      margin-top: 7px;
-      font-size: 12px;
-      line-height: 1.25;
+      margin-top: 2px;
+      font-size: 11px;
+      line-height: 1.2;
       white-space: nowrap;
     }
     .clients-content {
@@ -371,9 +374,14 @@ const CSS = `
       white-space: normal !important;
       line-height: 1.35;
     }
+    /* Pagination mobile identique à Soumissions : flex, fond clair, fixée en bas */
     .clients-pagination {
-      grid-template-columns: 1fr auto;
-      padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: auto;
+      background: #fffdfa;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
       position: fixed;
       left: 0;
       right: 0;
@@ -381,7 +389,6 @@ const CSS = `
       z-index: 19;
       box-shadow: 0 -10px 28px rgba(26,46,30,.06);
     }
-    .clients-pagination-spacer { display: none; }
     .clients-modal-actions { flex-direction: column-reverse; }
   }
 `;
@@ -961,37 +968,31 @@ export default function ClientsPageClient({
           )}
         </div>
 
-        {/* ── Pagination mobile (fixed) ──────────────────────── */}
+        {/* ── Pagination mobile (style Soumissions / Pager) ──── */}
         {showMobileBar && bp !== "desktop" && (
           <div className="clients-pagination">
-            <span style={{ fontSize: 11, color: "#a09690", letterSpacing: "0.01em" }}>
-              <strong style={{ color: "#1a1714", fontWeight: 600 }}>{total}</strong>
-              {" "}client{total !== 1 ? "s" : ""}
+            <span style={{ fontSize: 12, color: "#6b7280" }}>
+              <strong style={{ color: "#111827" }}>{(page - 1) * perPage + 1}–{Math.min(page * perPage, total)}</strong>
+              {" "}sur{" "}
+              <strong style={{ color: "#111827" }}>{total}</strong>
             </span>
-            {totalPages > 1 ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <motion.button whileTap={{ scale: 0.93 }}
-                  onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
-                  className="clients-page-btn"
-                  style={{ color: page <= 1 ? "#d0c9be" : "#3d5c41", cursor: page <= 1 ? "default" : "pointer" }}
-                >
-                  <Ic d={I.chevL} z={12} />
-                </motion.button>
-                <span style={{ fontSize: 11, color: "#887f74", fontWeight: 500, minWidth: 52, textAlign: "center", userSelect: "none", letterSpacing: "0.02em" }}>
-                  {page} / {totalPages}
-                </span>
-                <motion.button whileTap={{ scale: 0.93 }}
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
-                  className="clients-page-btn"
-                  style={{ color: page >= totalPages ? "#d0c9be" : "#3d5c41", cursor: page >= totalPages ? "default" : "pointer" }}
-                >
-                  <Ic d={I.chevR} z={12} />
-                </motion.button>
-              </div>
-            ) : (
-              <div />
-            )}
-            <div className="clients-pagination-spacer" />
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <motion.button whileTap={{ scale: 0.94 }}
+                onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
+                style={{ width: 32, height: 32, borderRadius: 9999, border: "1px solid #e8e2d8", background: "white", display: "flex", alignItems: "center", justifyContent: "center", color: page <= 1 ? "#d0c9be" : "#1a2e1e", cursor: page <= 1 ? "default" : "pointer" }}
+              >
+                <Ic d={I.chevL} z={13} />
+              </motion.button>
+              <span style={{ fontSize: 12, color: "#374151", fontWeight: 500, minWidth: 76, textAlign: "center", userSelect: "none" }}>
+                Page {page} / {totalPages}
+              </span>
+              <motion.button whileTap={{ scale: 0.94 }}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
+                style={{ width: 32, height: 32, borderRadius: 9999, border: "1px solid #e8e2d8", background: "white", display: "flex", alignItems: "center", justifyContent: "center", color: page >= totalPages ? "#d0c9be" : "#1a2e1e", cursor: page >= totalPages ? "default" : "pointer" }}
+              >
+                <Ic d={I.chevR} z={13} />
+              </motion.button>
+            </div>
           </div>
         )}
 
