@@ -356,6 +356,7 @@ const CSS = `
     }
     .clients-pagination {
       grid-template-columns: 1fr auto;
+      height: auto;
       padding: 10px 14px calc(20px + env(safe-area-inset-bottom));
       position: fixed;
       left: 0;
