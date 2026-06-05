@@ -420,7 +420,7 @@ export default function LoginForm() {
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: .45, delay: .15, ease: [.25, .46, .45, .94] }}
             style={{ flex: 1, background: "white", borderRadius: "24px 24px 0 0",
-              marginTop: -20, padding: "36px 24px 40px",
+              marginTop: -20, padding: "48px 24px 40px",
               boxShadow: "0 -4px 24px rgba(0,0,0,.06)" }}>
             <FormContent {...shared} btnHeight={52} btnRadius={13} btnFontSize={16} />
           </motion.div>
