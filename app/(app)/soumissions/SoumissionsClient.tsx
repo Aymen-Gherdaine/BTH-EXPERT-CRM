@@ -104,7 +104,7 @@ export default function SoumissionsClient({
             <div style={{ minWidth: 0 }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
                 <span style={{ width: 28, height: 1, background: "#c9a96e", display: "inline-block" }} />
-                <span style={{ fontSize: 11, fontWeight: 800, color: "#7c6238" }}>Commercial</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: "#7c6238" }}>Offres</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <h1 className="submission-title" style={{ fontWeight: 700, fontSize: isDesktop ? 22 : 20, color: "#1a1714", letterSpacing: 0, lineHeight: 1.05, margin: 0 }}>
