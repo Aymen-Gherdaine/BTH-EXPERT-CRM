@@ -132,11 +132,13 @@ export const CSS = `
   }
 `;
 
+// Palette de marque — alignée sur dashboard STATUS_CLASSES (bth-info/success/error,
+// tints ~12% sur blanc). Remplace les anciennes couleurs Tailwind froides hors-charte.
 export const ST: Record<StatutSoumission, StCfg> = {
-  Brouillon: { accent: "#94a3b8", bgBadge: "#f8fafc", textBadge: "#475569", dot: "#94a3b8", border: "#e2e8f0" },
-  Envoyée:   { accent: "#3b82f6", bgBadge: "#eff6ff", textBadge: "#2563eb", dot: "#3b82f6", border: "#bfdbfe" },
-  Acceptée:  { accent: "#16a34a", bgBadge: "#f0fdf4", textBadge: "#15803d", dot: "#22c55e", border: "#bbf7d0" },
-  Refusée:   { accent: "#e11d48", bgBadge: "#fff1f2", textBadge: "#be123c", dot: "#f43f5e", border: "#fecdd3" },
+  Brouillon: { accent: "#887f74", bgBadge: "#f5f0e8", textBadge: "#635c54", dot: "#b0a898", border: "#e8e2d8" },
+  Envoyée:   { accent: "#3a7ca5", bgBadge: "#eaf2f7", textBadge: "#3a7ca5", dot: "#3a7ca5", border: "#d3e3ee" },
+  Acceptée:  { accent: "#3a7a50", bgBadge: "#eaf3ed", textBadge: "#3a7a50", dot: "#3a7a50", border: "#d2e4d8" },
+  Refusée:   { accent: "#c44a3a", bgBadge: "#f9eeec", textBadge: "#c44a3a", dot: "#c44a3a", border: "#f0d3ce" },
 };
 
 export const NEXT_ST: Record<StatutSoumission, StatutSoumission[]> = {

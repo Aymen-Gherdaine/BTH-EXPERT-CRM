@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Soumission, StatutSoumission, UserRole } from "@/types";
@@ -55,28 +55,41 @@ export default function SoumissionsClient({
 
   useEffect(() => { setPage(1); }, [filtre, q, view]);
 
-  const filtered = soumissions.filter(s => {
-    const mF = !filtre || s.statut === filtre;
-    const mQ = !q
-      || s.titre_projet.toLowerCase().includes(q.toLowerCase())
-      || (s.client?.entreprise ?? "").toLowerCase().includes(q.toLowerCase())
-      || s.numero_offre.toLowerCase().includes(q.toLowerCase());
-    return mF && mQ;
-  }).map(toView);
+  // Filtrage mémoïsé — ne se recalcule que si data / recherche / filtre changent
+  // (avant : refait à chaque render, dont chaque frappe clavier).
+  const filtered = useMemo(() => {
+    const ql = q.toLowerCase();
+    return soumissions.filter(s => {
+      const mF = !filtre || s.statut === filtre;
+      const mQ = !ql
+        || s.titre_projet.toLowerCase().includes(ql)
+        || (s.client?.entreprise ?? "").toLowerCase().includes(ql)
+        || s.numero_offre.toLowerCase().includes(ql);
+      return mF && mQ;
+    }).map(toView);
+  }, [soumissions, q, filtre, toView]);
 
-  const pageItems = filtered.slice((page - 1) * perPage, page * perPage);
+  const pageItems = useMemo(
+    () => filtered.slice((page - 1) * perPage, page * perPage),
+    [filtered, page, perPage]
+  );
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const hasMobilePagination = !isDesktop && filtered.length > 0 && totalPages > 1;
 
-  const counts = Object.fromEntries(
-    (["Brouillon", "Envoyée", "Acceptée", "Refusée"] as StatutSoumission[]).map(s => [
-      s, soumissions.filter(x => x.statut === s).length,
-    ])
-  ) as Partial<Record<StatutSoumission, number>>;
-
-  const totalTTC   = soumissions.reduce((s, o) => s + o.total_ttc, 0);
-  const nbAccepted = soumissions.filter(o => o.statut === "Acceptée").length;
-  const totalVerse = soumissions.reduce((s, o) => s + (o.versement_recu ?? 0), 0);
+  // Agrégats KPI / compteurs mémoïsés sur la liste source uniquement.
+  const { counts, totalTTC, nbAccepted, totalVerse } = useMemo(() => {
+    const counts = Object.fromEntries(
+      (["Brouillon", "Envoyée", "Acceptée", "Refusée"] as StatutSoumission[]).map(s => [
+        s, soumissions.filter(x => x.statut === s).length,
+      ])
+    ) as Partial<Record<StatutSoumission, number>>;
+    return {
+      counts,
+      totalTTC:   soumissions.reduce((s, o) => s + o.total_ttc, 0),
+      nbAccepted: soumissions.filter(o => o.statut === "Acceptée").length,
+      totalVerse: soumissions.reduce((s, o) => s + (o.versement_recu ?? 0), 0),
+    };
+  }, [soumissions]);
 
   const px = isDesktop ? 32 : 14;
 

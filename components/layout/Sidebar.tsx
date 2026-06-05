@@ -202,6 +202,7 @@ function SidebarInner({
                   <Link
                     key={href}
                     href={href}
+                    prefetch={true}
                     onMouseEnter={() => {
                       router.prefetch(href);
                       (PREFETCH_MAP[href] ?? []).forEach(key => preload(key, fetcher));
