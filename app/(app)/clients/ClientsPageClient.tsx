@@ -231,7 +231,7 @@ const CSS = `
   }
   @media (max-width: 767px) {
     .clients-shell.clients-has-mobile-pagination {
-      padding-bottom: calc(62px + env(safe-area-inset-bottom));
+      padding-bottom: calc(72px + env(safe-area-inset-bottom));
     }
     .clients-header {
       padding: 18px 14px 16px;
@@ -356,7 +356,7 @@ const CSS = `
     }
     .clients-pagination {
       grid-template-columns: 1fr auto;
-      padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+      padding: 10px 14px calc(20px + env(safe-area-inset-bottom));
       position: fixed;
       left: 0;
       right: 0;
