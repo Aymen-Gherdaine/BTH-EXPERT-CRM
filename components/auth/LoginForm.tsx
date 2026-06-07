@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useId } from "react";
+import { useState, useEffect, useLayoutEffect, useId } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -8,10 +8,16 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 const FONT = `var(--font-inter)`;
 const CSS  = `*, *::before, *::after { box-sizing: border-box; } button { cursor: pointer; -webkit-tap-highlight-color: transparent; }`;
 
+// On the server useLayoutEffect doesn't exist — fall back to useEffect (no-op during SSR).
+// On the client useLayoutEffect fires synchronously before the browser paints, which
+// prevents the visible layout shift caused by the mobile→desktop state update.
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
 /* ── Breakpoint ─────────────────────────────────────────── */
 function useBp(): "mobile" | "desktop" {
   const [bp, set] = useState<"mobile" | "desktop">("mobile");
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const h = () => set(window.innerWidth >= 768 ? "desktop" : "mobile");
     h();
     window.addEventListener("resize", h);
