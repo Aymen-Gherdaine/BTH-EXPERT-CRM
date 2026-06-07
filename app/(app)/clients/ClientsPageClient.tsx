@@ -1008,7 +1008,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSe
         onClick={onToggle}
         style={{
           display: "flex", alignItems: "center", gap: 12,
-          padding: "13px 12px 13px 16px",
+          padding: "13px 10px 13px 16px",
           cursor: "pointer",
           background: hov && !isExpanded ? "#fffdfa" : "white",
           transition: "background 0.12s",
@@ -1068,13 +1068,13 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSe
         </div>
 
         {/* Actions */}
-        <div className="clients-card-actions" style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+        <div className="clients-card-actions" style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, paddingRight: 4 }}>
           <button
             className="clients-card-delete"
             title="Supprimer le client"
             onClick={e => onDelete(client, e)}
             style={{
-              width: 32, height: 32, borderRadius: 9999,
+              width: 38, height: 38, borderRadius: 9999,
               background: hov ? "#fff2ed" : "#fbfaf7",
               border: `1px solid ${hov ? "#f0b9ad" : "#e8e2d8"}`,
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -1082,21 +1082,21 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSe
               cursor: "pointer", transition: "all 0.15s",
             }}
           >
-            <Ic d={I.trash} z={13} />
+            <Ic d={I.trash} z={14} />
           </button>
 
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.22 }}
             style={{
-              width: 32, height: 32, borderRadius: 9999,
+              width: 38, height: 38, borderRadius: 9999,
               background: isExpanded ? "#1a2e1e" : "#f8fafc",
               border: `1px solid ${isExpanded ? "#1a2e1e" : "#e8e2d8"}`,
               display: "flex", alignItems: "center", justifyContent: "center",
               transition: "background 0.2s, border-color 0.2s",
             }}
           >
-            <Ic d={I.chevD} z={15} s={isExpanded ? "white" : "#9ca3af"} />
+            <Ic d={I.chevD} z={16} s={isExpanded ? "white" : "#9ca3af"} />
           </motion.div>
         </div>
       </div>

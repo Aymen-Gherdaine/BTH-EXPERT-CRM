@@ -33,30 +33,21 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
       ) : (
         <>
           {/* Header */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
-            <div style={{ flex: 1, paddingRight: 10, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <span style={{ fontFamily: "var(--font-inter)", fontSize: 11, color: "#9ca3af", letterSpacing: "0.05em" }}>{o.numero_offre}</span>
-                <StatusBadge st={o.statut} sm />
-              </div>
-              <p style={{ fontWeight: 700, fontSize: 17, color: "#111827", letterSpacing: 0, lineHeight: 1.3, marginBottom: 10 }}>
-                {o.titre_projet}
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Avatar name={o._cn} size={28} />
-                <div>
-                  <p style={{ fontSize: 12.5, fontWeight: 600, color: "#111827" }}>{o._cn}</p>
-                  <p style={{ fontSize: 11, color: "#9ca3af" }}>{o._contact} · {formatDateFr(o.date_offre)}</p>
-                </div>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontFamily: "var(--font-inter)", fontSize: 11, color: "#9ca3af", letterSpacing: "0.05em" }}>{o.numero_offre}</span>
+              <StatusBadge st={o.statut} sm />
+            </div>
+            <p style={{ fontWeight: 700, fontSize: 17, color: "#111827", letterSpacing: 0, lineHeight: 1.3, marginBottom: 10 }}>
+              {o.titre_projet}
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Avatar name={o._cn} size={28} />
+              <div>
+                <p style={{ fontSize: 12.5, fontWeight: 600, color: "#111827" }}>{o._cn}</p>
+                <p style={{ fontSize: 11, color: "#9ca3af" }}>{o._contact} · {formatDateFr(o.date_offre)}</p>
               </div>
             </div>
-            <button onClick={onClose} style={{
-              width: 30, height: 30, borderRadius: 8, background: "#f6f6f4",
-              border: "1px solid #e5e7eb", display: "flex", alignItems: "center",
-              justifyContent: "center", color: "#6b7280", flexShrink: 0, cursor: "pointer",
-            }}>
-              <Ic d={I.x} z={13} w={2.5} />
-            </button>
           </div>
 
           {/* Status change */}
@@ -220,7 +211,12 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
         transition={{ type: "spring", damping: 28, stiffness: 320 }}
         style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 201, background: "white", borderRadius: "20px 20px 0 0", maxHeight: "min(90dvh, 760px)", display: "flex", flexDirection: "column" }}
       >
-        <div style={{ width: 36, height: 4, borderRadius: 2, background: "#e5e7eb", margin: "12px auto 0", flexShrink: 0 }} />
+        <div style={{ display: "flex", alignItems: "center", padding: "12px 16px 0", flexShrink: 0, position: "relative" }}>
+          <div style={{ position: "absolute", left: "50%", transform: "translateX(-50%)", width: 36, height: 4, borderRadius: 2, background: "#e5e7eb" }} />
+          <button onClick={onClose} style={{ marginLeft: "auto", width: 28, height: 28, borderRadius: 7, background: "#f6f6f4", border: "1px solid #e5e7eb", display: "flex", alignItems: "center", justifyContent: "center", color: "#6b7280", cursor: "pointer" }}>
+            <Ic d={I.x} z={12} w={2.5} />
+          </button>
+        </div>
         {body}
       </motion.div>
     </>
