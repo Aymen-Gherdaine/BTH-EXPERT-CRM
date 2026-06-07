@@ -43,30 +43,21 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
       ) : (
         <>
           {/* Header */}
-          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
-            <div style={{ flex: 1, paddingRight: 10, minWidth: 0 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <span style={{ fontFamily: "var(--font-inter)", fontSize: 11, color: "#9ca3af", letterSpacing: "0.05em" }}>{o.numero_offre}</span>
-                <StatusBadge st={o.statut} sm />
-              </div>
-              <p style={{ fontWeight: 700, fontSize: 17, color: "#111827", letterSpacing: 0, lineHeight: 1.3, marginBottom: 10 }}>
-                {o.titre_projet}
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Avatar name={o._cn} size={28} />
-                <div>
-                  <p style={{ fontSize: 12.5, fontWeight: 600, color: "#111827" }}>{o._cn}</p>
-                  <p style={{ fontSize: 11, color: "#9ca3af" }}>{o._contact} · {formatDateFr(o.date_offre)}</p>
-                </div>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontFamily: "var(--font-inter)", fontSize: 11, color: "#9ca3af", letterSpacing: "0.05em" }}>{o.numero_offre}</span>
+              <StatusBadge st={o.statut} sm />
+            </div>
+            <p style={{ fontWeight: 700, fontSize: 17, color: "#111827", letterSpacing: 0, lineHeight: 1.3, marginBottom: 10 }}>
+              {o.titre_projet}
+            </p>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Avatar name={o._cn} size={28} />
+              <div>
+                <p style={{ fontSize: 12.5, fontWeight: 600, color: "#111827" }}>{o._cn}</p>
+                <p style={{ fontSize: 11, color: "#9ca3af" }}>{o._contact} · {formatDateFr(o.date_offre)}</p>
               </div>
             </div>
-            <button onClick={onClose} aria-label="Fermer le détail" style={{
-              width: 30, height: 30, borderRadius: 8, background: "#f6f6f4",
-              border: "1px solid #e5e7eb", display: "flex", alignItems: "center",
-              justifyContent: "center", color: "#6b7280", flexShrink: 0, cursor: "pointer",
-            }}>
-              <Ic d={I.x} z={13} w={2.5} />
-            </button>
           </div>
 
           {/* Status change */}

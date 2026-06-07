@@ -54,6 +54,7 @@ export default function SoumissionsClient({
   const [page, setPage] = useState(1);
 
   useEffect(() => { setPage(1); }, [filtre, q, view]);
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
 
   // Filtrage mémoïsé — ne se recalcule que si data / recherche / filtre changent
   // (avant : refait à chaque render, dont chaque frappe clavier).
