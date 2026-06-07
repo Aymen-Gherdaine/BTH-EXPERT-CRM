@@ -54,7 +54,6 @@ export default function SoumissionsClient({
   const [page, setPage] = useState(1);
 
   useEffect(() => { setPage(1); }, [filtre, q, view]);
-  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
 
   // Filtrage mémoïsé — ne se recalcule que si data / recherche / filtre changent
   // (avant : refait à chaque render, dont chaque frappe clavier).
@@ -75,6 +74,8 @@ export default function SoumissionsClient({
     [filtered, page, perPage]
   );
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
   const hasMobilePagination = !isDesktop && filtered.length > 0 && totalPages > 1;
 
   // Agrégats KPI / compteurs mémoïsés sur la liste source uniquement.
