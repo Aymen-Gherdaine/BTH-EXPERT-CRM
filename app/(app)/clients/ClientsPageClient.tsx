@@ -324,7 +324,7 @@ const CSS = `
     }
     .clients-card-main {
       display: grid !important;
-      grid-template-columns: 48px minmax(0, 1fr) 36px;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
       align-items: center !important;
       gap: 10px !important;
       min-height: 90px;
@@ -1151,13 +1151,13 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSe
         </div>
 
         {/* Actions */}
-        <div className="clients-card-actions" style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+        <div className="clients-card-actions" style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, paddingRight: 4 }}>
           <button
             className="clients-card-delete"
             title="Supprimer le client"
             onClick={e => onDelete(client, e)}
             style={{
-              width: 32, height: 32, borderRadius: 9999,
+              width: 38, height: 38, borderRadius: 9999,
               background: hov ? "#fff2ed" : "#fbfaf7",
               border: `1px solid ${hov ? "#f0b9ad" : "#e8e2d8"}`,
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -1165,21 +1165,21 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSe
               cursor: "pointer", transition: "all 0.15s",
             }}
           >
-            <Ic d={I.trash} z={13} />
+            <Ic d={I.trash} z={17} />
           </button>
 
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.22 }}
             style={{
-              width: 32, height: 32, borderRadius: 9999,
+              width: 38, height: 38, borderRadius: 9999,
               background: isExpanded ? "#1a2e1e" : "#f8fafc",
               border: `1px solid ${isExpanded ? "#1a2e1e" : "#e8e2d8"}`,
               display: "flex", alignItems: "center", justifyContent: "center",
               transition: "background 0.2s, border-color 0.2s",
             }}
           >
-            <Ic d={I.chevD} z={15} s={isExpanded ? "white" : "#9ca3af"} />
+            <Ic d={I.chevD} z={19} s={isExpanded ? "white" : "#9ca3af"} />
           </motion.div>
         </div>
       </div>
