@@ -7,6 +7,8 @@ import Link from "next/link";
 import { Client, EditablePreview, LigneBudget, Soumission, StatutSoumission, UserRole } from "@/types";
 import type { SoumissionAIContent } from "@/lib/anthropic";
 import { formatMontant, formatDateFr, generateNumeroOffre } from "@/lib/utils";
+import { DeleteState, D0 } from "../types";
+import { DeleteModal } from "../components/DeleteModal";
 
 const STATUTS: StatutSoumission[] = ["Brouillon", "Envoyée", "Acceptée", "Refusée"];
 
@@ -41,6 +43,8 @@ export default function SoumissionDetailPage() {
   const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
   const [changingStatut, setChangingStatut] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteState>(D0);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showStatutMenu, setShowStatutMenu] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
   const [role, setRole] = useState<UserRole | null>(null);
@@ -185,12 +189,23 @@ export default function SoumissionDetailPage() {
     setChangingStatut(false);
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!soumission) return;
-    if (!confirm("Supprimer cette soumission définitivement ?")) return;
+    setDeleteConfirm({ open: true, id: soumission.id, label: soumission.titre_projet });
+  }
+
+  async function confirmDelete() {
+    const targetId = deleteConfirm.id;
+    setDeletingId(targetId);
     setDeleting(true);
-    await fetch(`/api/soumissions/${soumission.id}`, { method: "DELETE" });
-    router.push("/soumissions");
+    try {
+      await fetch(`/api/soumissions/${targetId}`, { method: "DELETE" });
+      router.push("/soumissions");
+    } finally {
+      setDeletingId(null);
+      setDeleting(false);
+      setDeleteConfirm(D0);
+    }
   }
 
   if (loading) {
@@ -535,6 +550,13 @@ export default function SoumissionDetailPage() {
           </motion.div>
         )}
       </div>
+
+      <DeleteModal
+        deleteConfirm={deleteConfirm}
+        onCancel={() => setDeleteConfirm(D0)}
+        onConfirm={confirmDelete}
+        deletingId={deletingId}
+      />
     </div>
   );
 }
