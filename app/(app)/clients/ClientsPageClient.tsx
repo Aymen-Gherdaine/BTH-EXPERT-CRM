@@ -324,7 +324,7 @@ const CSS = `
     }
     .clients-card-main {
       display: grid !important;
-      grid-template-columns: 48px minmax(0, 1fr) 36px;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
       align-items: center !important;
       gap: 10px !important;
       min-height: 90px;
@@ -1165,7 +1165,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSe
               cursor: "pointer", transition: "all 0.15s",
             }}
           >
-            <Ic d={I.trash} z={14} />
+            <Ic d={I.trash} z={17} />
           </button>
 
           <motion.div
@@ -1179,7 +1179,7 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSe
               transition: "background 0.2s, border-color 0.2s",
             }}
           >
-            <Ic d={I.chevD} z={16} s={isExpanded ? "white" : "#9ca3af"} />
+            <Ic d={I.chevD} z={19} s={isExpanded ? "white" : "#9ca3af"} />
           </motion.div>
         </div>
       </div>
