@@ -26,7 +26,7 @@ const CSS = `
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    color: #a8874e;
+    color: #7c6238;
     font-size: 11px;
     font-weight: 800;
     text-transform: uppercase;
@@ -151,7 +151,7 @@ const CSS = `
     cursor: not-allowed;
   }
   .settings-mini-title {
-    color: #a8874e;
+    color: #7c6238;
     font-size: 10px;
     font-weight: 900;
     letter-spacing: .12em;

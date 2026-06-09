@@ -1,5 +1,4 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createServerSupabase, getServerUser } from "@/lib/supabase-server";
 import DepensesPageClient from "./DepensesPageClient";
 import type { Depense } from "@/types";
 
@@ -10,25 +9,9 @@ type SoumissionOption = {
 };
 
 export default async function DepensesPage() {
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll(); },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {}
-        },
-      },
-    }
-  );
+  const supabase = await createServerSupabase();
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getServerUser();
 
   const [depensesResult, soumissionsResult] = await Promise.all([
     supabase.from("depenses").select("*").order("date_depense", { ascending: false }),

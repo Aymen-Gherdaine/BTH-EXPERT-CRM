@@ -54,7 +54,10 @@ export async function GET(req: NextRequest) {
   let query = supabase
     .from("soumissions")
     .select("*, client:clients(*)")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    // Garde-fou : borne le payload pour éviter de tout charger d'un coup.
+    // À remplacer par une vraie pagination serveur (.range) à fort volume.
+    .limit(1000);
 
   if (statut) query = query.eq("statut", statut);
   if (client_id) query = query.eq("client_id", client_id);

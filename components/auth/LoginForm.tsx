@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect, useId } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -8,10 +8,16 @@ import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 const FONT = `var(--font-inter)`;
 const CSS  = `*, *::before, *::after { box-sizing: border-box; } button { cursor: pointer; -webkit-tap-highlight-color: transparent; }`;
 
+// On the server useLayoutEffect doesn't exist — fall back to useEffect (no-op during SSR).
+// On the client useLayoutEffect fires synchronously before the browser paints, which
+// prevents the visible layout shift caused by the mobile→desktop state update.
+const useIsomorphicLayoutEffect =
+  typeof window !== "undefined" ? useLayoutEffect : useEffect;
+
 /* ── Breakpoint ─────────────────────────────────────────── */
 function useBp(): "mobile" | "desktop" {
   const [bp, set] = useState<"mobile" | "desktop">("mobile");
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     const h = () => set(window.innerWidth >= 768 ? "desktop" : "mobile");
     h();
     window.addEventListener("resize", h);
@@ -51,10 +57,11 @@ function Field({ label, type: t0, placeholder, value, onChange, icon, toggleable
   const [focused, setFocused] = useState(false);
   const [showPw,  setShowPw]  = useState(false);
   const type = toggleable ? (showPw ? "text" : "password") : t0;
+  const inputId = useId();
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <label style={{ fontFamily: FONT, fontSize: 13.5, fontWeight: 600,
+      <label htmlFor={inputId} style={{ fontFamily: FONT, fontSize: 13.5, fontWeight: 600,
         color: focused ? "#1a2e1e" : "#111827", transition: "color .15s" }}>
         {label}
       </label>
@@ -64,6 +71,7 @@ function Field({ label, type: t0, placeholder, value, onChange, icon, toggleable
           <Ic d={icon} z={16} />
         </div>
         <input
+          id={inputId}
           type={type}
           placeholder={placeholder}
           value={value}
@@ -244,7 +252,7 @@ function FormContent({
                 value={forgotEmail} onChange={setForgotEmail} icon={I.mail} autoComplete="email" />
 
               {error && (
-                <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                <motion.div role="alert" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                   style={{ padding: "10px 14px", borderRadius: 9,
                     background: "#fef2f2", border: "1px solid #fecaca" }}>
                   <p style={{ fontFamily: FONT, fontSize: 13, color: "#dc2626", fontWeight: 500 }}>{error}</p>
@@ -298,7 +306,7 @@ function FormContent({
             </div>
 
             {error && (
-              <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+              <motion.div role="alert" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
                 style={{ padding: "10px 14px", borderRadius: 9,
                   background: "#fef2f2", border: "1px solid #fecaca" }}>
                 <p style={{ fontFamily: FONT, fontSize: 13, color: "#dc2626", fontWeight: 500 }}>{error}</p>
@@ -418,7 +426,7 @@ export default function LoginForm() {
             initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: .45, delay: .15, ease: [.25, .46, .45, .94] }}
             style={{ flex: 1, background: "white", borderRadius: "24px 24px 0 0",
-              marginTop: -20, padding: "36px 24px 40px",
+              marginTop: -20, padding: "48px 24px 40px",
               boxShadow: "0 -4px 24px rgba(0,0,0,.06)" }}>
             <FormContent {...shared} btnHeight={52} btnRadius={13} btnFontSize={16} />
           </motion.div>

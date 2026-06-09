@@ -13,24 +13,26 @@ const RESULTAT_LABELS: Record<string, string> = {
   autre:               "Autre",
 };
 
+// Palette de marque (success/info/error/warning/neutral) — cohérente avec
+// les statuts soumissions (ST) et le dashboard. Plus de couleurs Tailwind froides.
 const RESULTAT_STYLES: Record<string, { bg: string; text: string; dot: string }> = {
-  soumission_demandee: { bg: "bg-emerald-50",  text: "text-emerald-700", dot: "bg-emerald-500" },
-  rappel_planifie:     { bg: "bg-blue-50",     text: "text-blue-700",    dot: "bg-blue-500"    },
-  pas_interesse:       { bg: "bg-red-50",      text: "text-red-600",     dot: "bg-red-500"     },
-  absent:              { bg: "bg-amber-50",    text: "text-amber-700",   dot: "bg-amber-500"   },
-  autre:               { bg: "bg-gray-100",    text: "text-gray-500",    dot: "bg-gray-400"    },
+  soumission_demandee: { bg: "bg-[#eaf3ed]", text: "text-[#2b5c3c]", dot: "bg-[#3a7a50]" },
+  rappel_planifie:     { bg: "bg-[#eaf2f7]", text: "text-[#2f6585]", dot: "bg-[#3a7ca5]" },
+  pas_interesse:       { bg: "bg-[#f9eeec]", text: "text-[#a83c2e]", dot: "bg-[#c44a3a]" },
+  absent:              { bg: "bg-[#fcf4e4]", text: "text-[#7c6238]", dot: "bg-[#c9a96e]" },
+  autre:               { bg: "bg-bth-n-100", text: "text-bth-n-500", dot: "bg-bth-n-400" },
 };
 
 const URGENCY_BORDER: Record<string, string> = {
-  retard:      "border-l-red-400",
-  aujourd_hui: "border-l-blue-400",
-  semaine:     "border-l-gray-300",
+  retard:      "border-l-[#c44a3a]",
+  aujourd_hui: "border-l-[#3a7ca5]",
+  semaine:     "border-l-bth-n-300",
 };
 
 const DATE_URGENCY_STYLE: Record<string, string> = {
-  retard:      "bg-red-50 text-red-600 font-semibold",
-  aujourd_hui: "bg-blue-50 text-blue-700 font-semibold",
-  semaine:     "bg-gray-100 text-gray-600",
+  retard:      "bg-[#f9eeec] text-[#a83c2e] font-semibold",
+  aujourd_hui: "bg-[#eaf2f7] text-[#2f6585] font-semibold",
+  semaine:     "bg-bth-n-100 text-bth-n-600",
 };
 
 function getLastVisite(prospect: Prospect): Visite | null {

@@ -30,9 +30,9 @@ const defaultStep2: FormDataStep2 = {
 };
 
 const defaultStep3: FormDataStep3 = {
-  lignes: [
-    { numero: 1, designation: "", quantite: 1, prix_unitaire: 0, ordre: 0, groupe: "Mission" },
-  ],
+  // Pas de tableau « Mission » par défaut : l'utilisateur choisit directement
+  // son premier type d'étude (prédéfini ou personnalisé).
+  lignes: [],
 };
 
 import type { Variants } from "framer-motion";

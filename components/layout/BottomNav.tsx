@@ -117,6 +117,7 @@ export default function BottomNav({ role }: { role: UserRole }) {
             <Link
               key={href}
               href={href}
+              prefetch={true}
               onTouchStart={() => {
                 router.prefetch(href);
                 (PREFETCH_MAP[href] ?? []).forEach(key => preload(key, fetcher));

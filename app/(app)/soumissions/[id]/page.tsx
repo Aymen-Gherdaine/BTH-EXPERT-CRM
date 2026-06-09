@@ -7,6 +7,8 @@ import Link from "next/link";
 import { Client, EditablePreview, LigneBudget, Soumission, StatutSoumission, UserRole } from "@/types";
 import type { SoumissionAIContent } from "@/lib/anthropic";
 import { formatMontant, formatDateFr, generateNumeroOffre } from "@/lib/utils";
+import { DeleteState, D0 } from "../types";
+import { DeleteModal } from "../components/DeleteModal";
 
 const STATUTS: StatutSoumission[] = ["Brouillon", "Envoyée", "Acceptée", "Refusée"];
 
@@ -41,6 +43,8 @@ export default function SoumissionDetailPage() {
   const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
   const [changingStatut, setChangingStatut] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<DeleteState>(D0);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showStatutMenu, setShowStatutMenu] = useState(false);
   const [duplicating, setDuplicating] = useState(false);
   const [role, setRole] = useState<UserRole | null>(null);
@@ -185,12 +189,23 @@ export default function SoumissionDetailPage() {
     setChangingStatut(false);
   }
 
-  async function handleDelete() {
+  function handleDelete() {
     if (!soumission) return;
-    if (!confirm("Supprimer cette soumission définitivement ?")) return;
+    setDeleteConfirm({ open: true, id: soumission.id, label: soumission.titre_projet });
+  }
+
+  async function confirmDelete() {
+    const targetId = deleteConfirm.id;
+    setDeletingId(targetId);
     setDeleting(true);
-    await fetch(`/api/soumissions/${soumission.id}`, { method: "DELETE" });
-    router.push("/soumissions");
+    try {
+      await fetch(`/api/soumissions/${targetId}`, { method: "DELETE" });
+      router.push("/soumissions");
+    } finally {
+      setDeletingId(null);
+      setDeleting(false);
+      setDeleteConfirm(D0);
+    }
   }
 
   if (loading) {
@@ -352,7 +367,7 @@ export default function SoumissionDetailPage() {
             <button
               onClick={handleDelete}
               disabled={deleting}
-              className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 border border-gray-200 transition-all cursor-pointer disabled:opacity-50 min-h-[40px] min-w-[40px] flex items-center justify-center"
+              className="p-2 rounded-xl text-gray-400 hover:text-red-500 hover:bg-red-50 border border-gray-200 transition-all cursor-pointer disabled:opacity-50 min-h-[40px] min-w-[40px] hidden sm:flex items-center justify-center"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -425,10 +440,6 @@ export default function SoumissionDetailPage() {
             transition={{ delay: 0.2 }}
             className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6"
           >
-            <div className="flex items-center gap-2 mb-4">
-              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Contenu généré par IA</h2>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[#1a2e1e]/10 text-[#1a2e1e] font-medium">Claude AI</span>
-            </div>
 
             <div className="mb-4">
               <h3 className="text-sm font-semibold mb-2" style={{ color: "#1a2e1e" }}>1. Contexte et objectifs</h3>
@@ -539,6 +550,13 @@ export default function SoumissionDetailPage() {
           </motion.div>
         )}
       </div>
+
+      <DeleteModal
+        deleteConfirm={deleteConfirm}
+        onCancel={() => setDeleteConfirm(D0)}
+        onConfirm={confirmDelete}
+        deletingId={deletingId}
+      />
     </div>
   );
 }

@@ -71,8 +71,15 @@ export default function Header() {
     const h = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", h);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]);
 
   useEffect(() => {
@@ -139,6 +146,7 @@ export default function Header() {
       <div className="flex items-center gap-1">
         {/* Bell */}
         <Link href="/prospection"
+          aria-label={alertCount > 0 ? `Notifications — ${alertCount} alerte${alertCount > 1 ? "s" : ""}` : "Notifications"}
           className="relative w-9 h-9 rounded-bth-sm flex items-center justify-center
                      text-bth-n-500 hover:bg-bth-n-100 hover:text-bth-n-900
                      transition-colors duration-100 bth-focus">
@@ -152,11 +160,14 @@ export default function Header() {
         <div className="relative" ref={ref}>
           <button
             onClick={() => setOpen(v => !v)}
+            aria-label="Menu du profil"
+            aria-haspopup="menu"
+            aria-expanded={open}
             className="w-8 h-8 rounded-full bg-bth-green-800 border-none flex items-center justify-center
                        text-white font-semibold text-[12px] cursor-pointer bth-focus overflow-hidden"
           >
             {avatarUrl ? (
-              <img src={avatarUrl} alt={name || "Utilisateur"} className="w-full h-full object-cover" />
+              <img src={avatarUrl} alt="" width={32} height={32} loading="lazy" decoding="async" className="w-full h-full object-cover" />
             ) : (
               initials || <div className="w-3.5 h-3.5 rounded-full bg-white/30" />
             )}
@@ -177,7 +188,7 @@ export default function Header() {
                 <div className="flex items-center gap-[10px] px-4 py-3.5 border-b border-bth-hairline">
                   <div className="w-8 h-8 rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[11px] font-semibold flex-shrink-0 overflow-hidden">
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt={name || "Utilisateur"} className="w-full h-full object-cover" />
+                      <img src={avatarUrl} alt="" width={32} height={32} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     ) : (
                       initials
                     )}

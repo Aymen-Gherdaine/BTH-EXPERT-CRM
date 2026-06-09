@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Soumission, StatutSoumission, UserRole } from "@/types";
@@ -55,28 +55,43 @@ export default function SoumissionsClient({
 
   useEffect(() => { setPage(1); }, [filtre, q, view]);
 
-  const filtered = soumissions.filter(s => {
-    const mF = !filtre || s.statut === filtre;
-    const mQ = !q
-      || s.titre_projet.toLowerCase().includes(q.toLowerCase())
-      || (s.client?.entreprise ?? "").toLowerCase().includes(q.toLowerCase())
-      || s.numero_offre.toLowerCase().includes(q.toLowerCase());
-    return mF && mQ;
-  }).map(toView);
+  // Filtrage mémoïsé — ne se recalcule que si data / recherche / filtre changent
+  // (avant : refait à chaque render, dont chaque frappe clavier).
+  const filtered = useMemo(() => {
+    const ql = q.toLowerCase();
+    return soumissions.filter(s => {
+      const mF = !filtre || s.statut === filtre;
+      const mQ = !ql
+        || s.titre_projet.toLowerCase().includes(ql)
+        || (s.client?.entreprise ?? "").toLowerCase().includes(ql)
+        || s.numero_offre.toLowerCase().includes(ql);
+      return mF && mQ;
+    }).map(toView);
+  }, [soumissions, q, filtre, toView]);
 
-  const pageItems = filtered.slice((page - 1) * perPage, page * perPage);
+  const pageItems = useMemo(
+    () => filtered.slice((page - 1) * perPage, page * perPage),
+    [filtered, page, perPage]
+  );
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
   const hasMobilePagination = !isDesktop && filtered.length > 0 && totalPages > 1;
 
-  const counts = Object.fromEntries(
-    (["Brouillon", "Envoyée", "Acceptée", "Refusée"] as StatutSoumission[]).map(s => [
-      s, soumissions.filter(x => x.statut === s).length,
-    ])
-  ) as Partial<Record<StatutSoumission, number>>;
-
-  const totalTTC   = soumissions.reduce((s, o) => s + o.total_ttc, 0);
-  const nbAccepted = soumissions.filter(o => o.statut === "Acceptée").length;
-  const totalVerse = soumissions.reduce((s, o) => s + (o.versement_recu ?? 0), 0);
+  // Agrégats KPI / compteurs mémoïsés sur la liste source uniquement.
+  const { counts, totalTTC, nbAccepted, totalVerse } = useMemo(() => {
+    const counts = Object.fromEntries(
+      (["Brouillon", "Envoyée", "Acceptée", "Refusée"] as StatutSoumission[]).map(s => [
+        s, soumissions.filter(x => x.statut === s).length,
+      ])
+    ) as Partial<Record<StatutSoumission, number>>;
+    return {
+      counts,
+      totalTTC:   soumissions.reduce((s, o) => s + o.total_ttc, 0),
+      nbAccepted: soumissions.filter(o => o.statut === "Acceptée").length,
+      totalVerse: soumissions.reduce((s, o) => s + (o.versement_recu ?? 0), 0),
+    };
+  }, [soumissions]);
 
   const px = isDesktop ? 32 : 14;
 
@@ -86,15 +101,21 @@ export default function SoumissionsClient({
       <div className={`submission-page-shell ${hasMobilePagination ? "has-mobile-pagination" : ""}`} style={{ display: "flex", flexDirection: "column", height: "100%", background: "#faf9f7" }}>
 
         {/* Hero */}
-        <div className="submission-hero" style={{ background: "white", borderBottom: "1px solid #ededeb", padding: `24px ${px}px 20px`, flexShrink: 0 }}>
-          <div className="submission-hero-top" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: isAdmin ? 16 : 0 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <h1 className="submission-title" style={{ fontWeight: 700, fontSize: isDesktop ? 25 : 22, color: "#111827", letterSpacing: 0, lineHeight: 1 }}>
-                Soumissions
-              </h1>
-              <span style={{ height: 24, minWidth: 24, padding: "0 8px", background: "#f3f4f6", borderRadius: 9999, border: "1px solid #e5e7eb", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600, color: "#6b7280" }}>
-                {soumissions.length}
-              </span>
+        <div className="submission-hero" style={{ background: "white", borderBottom: "1px solid #e8e2d8", padding: `18px ${px}px 16px`, flexShrink: 0 }}>
+          <div className="submission-hero-top" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: isAdmin ? 14 : 0 }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
+                <span style={{ width: 28, height: 1, background: "#c9a96e", display: "inline-block" }} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: "#7c6238" }}>Offres</span>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <h1 className="submission-title" style={{ fontWeight: 700, fontSize: isDesktop ? 22 : 20, color: "#1a1714", letterSpacing: 0, lineHeight: 1.05, margin: 0 }}>
+                  Soumissions
+                </h1>
+                <span style={{ height: 22, minWidth: 22, padding: "0 8px", background: "#f6f1e8", borderRadius: 9999, border: "1px solid #e8e2d8", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#7c6238" }}>
+                  {soumissions.length}
+                </span>
+              </div>
             </div>
             <div className="submission-hero-actions" style={{ display: "flex", gap: 8, alignItems: "center" }}>
               {isAdmin && (
@@ -122,10 +143,10 @@ export default function SoumissionsClient({
                 { label: "Acceptées",  value: String(nbAccepted),           icon: I.check },
                 { label: "Versements", value: `${fmtInt(totalVerse)} DZD`, icon: I.trend },
               ].map(chip => (
-                <div key={chip.label} className="submission-kpi" style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 13px", borderRadius: 9999, background: "#f3f4f6", border: "1px solid #ededeb" }}>
-                  <Ic d={chip.icon} z={13} s="#6b7280" />
-                  <span className="submission-kpi-label" style={{ fontSize: 11.5, color: "#6b7280" }}>{chip.label}</span>
-                  <span className="submission-kpi-value" style={{ fontSize: 12.5, color: "#111827", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{chip.value}</span>
+                <div key={chip.label} className="submission-kpi" style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 9999, background: "#faf7f2", border: "1px solid #e8e2d8" }}>
+                  <Ic d={chip.icon} z={13} s="#a08a63" />
+                  <span className="submission-kpi-label" style={{ fontSize: 11.5, color: "#887f74" }}>{chip.label}</span>
+                  <span className="submission-kpi-value" style={{ fontSize: 12.5, color: "#1a1714", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{chip.value}</span>
                 </div>
               ))}
             </div>
@@ -133,7 +154,7 @@ export default function SoumissionsClient({
         </div>
 
         {/* Filter + view toggle bar */}
-        <div className="submission-tools" style={{ background: "white", borderBottom: "1px solid #ededeb", padding: `12px ${px}px`, display: "flex", alignItems: "center", gap: 10, flexShrink: 0, flexWrap: "wrap" }}>
+        <div className="submission-tools" style={{ background: "white", borderBottom: "1px solid #e8e2d8", padding: `12px ${px}px`, display: "flex", alignItems: "center", gap: 10, flexShrink: 0, flexWrap: "wrap" }}>
           <div className="submission-search" style={{ position: "relative", flex: 1, minWidth: 200 }}>
             <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", display: "flex", pointerEvents: "none" }}>
               <Ic d={I.search} z={14} />

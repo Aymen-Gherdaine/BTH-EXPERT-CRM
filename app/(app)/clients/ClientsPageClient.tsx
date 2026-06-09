@@ -3,15 +3,32 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import useSWR from "swr";
+import useSWR, { preload } from "swr";
+import { fetcher } from "@/lib/fetcher";
 import { Client, Soumission, StatutSoumission, UserRole } from "@/types";
 import { formatDateFr } from "@/lib/utils";
 import { useDynamicPerPage } from "@/hooks/useDynamicPerPage";
+import { useToast } from "@/components/ui/Toast";
 
 /* ── CSS global ─────────────────────────────────────────── */
 const CSS = `
   @keyframes sk { 0%,100%{opacity:1} 50%{opacity:.4} }
   .sk { animation: sk 1.5s ease-in-out infinite; }
+  /* Barre de progression indéterminée (hauteur réservée → aucun décalage) */
+  .clients-progress { position: relative; height: 2px; flex-shrink: 0; overflow: hidden; }
+  .clients-progress::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 35%;
+    border-radius: 9999px;
+    background: linear-gradient(90deg, transparent, #3a7a50, transparent);
+    opacity: 0; transition: opacity .2s ease;
+  }
+  .clients-progress[data-active="1"]::before {
+    opacity: 1; animation: clients-progress-slide 1.1s cubic-bezier(.4,0,.2,1) infinite;
+  }
+  @keyframes clients-progress-slide {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(400%); }
+  }
   .clients-shell {
     background: linear-gradient(180deg, #ffffff 0%, #faf8f5 38%, #f7f2ea 100%);
     color: #1a1714;
@@ -36,7 +53,7 @@ const CSS = `
     align-items: center;
     gap: 10px;
     margin-bottom: 8px;
-    color: #a8874e;
+    color: #7c6238;
     font-size: 11px;
     font-weight: 800;
   }
@@ -231,62 +248,65 @@ const CSS = `
   }
   @media (max-width: 767px) {
     .clients-shell.clients-has-mobile-pagination {
-      padding-bottom: calc(62px + env(safe-area-inset-bottom));
+      padding-bottom: calc(68px + env(safe-area-inset-bottom));
     }
+    /* Header compact mobile : moins d'espace en haut → les clients visibles d'emblée */
     .clients-header {
-      padding: 18px 14px 16px;
+      padding: 14px 14px 12px;
     }
     .clients-header-top {
       grid-template-columns: minmax(0, 1fr) auto;
       gap: 12px;
+      align-items: center;
     }
+    .clients-kicker { margin-bottom: 5px; }
     .clients-title {
-      font-size: 25px;
+      font-size: 22px;
     }
-    .clients-subtitle {
-      max-width: 24rem;
-      font-size: 13px;
-      line-height: 1.45;
-    }
+    /* Sous-titre redondant masqué sur mobile (les mini-stats portent l'info) */
+    .clients-subtitle { display: none; }
     .clients-export {
       width: auto;
       justify-content: center;
       padding: 0 13px;
-      height: 38px;
+      height: 36px;
     }
+    /* 2 mini-stats sur une fine rangée (la 3e « Dernière entrée » est masquée :
+       déjà visible en tête de liste) */
     .clients-summary {
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
+      gap: 8px;
       overflow: visible;
-      padding-bottom: 4px;
+      padding-bottom: 0;
+      margin-top: 12px;
     }
     .clients-stat {
-      min-height: 88px;
+      min-height: 0;
       border-radius: 12px;
-      padding: 13px 14px;
+      padding: 9px 12px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       min-width: 0;
     }
-    .clients-stat:last-child { grid-column: 1 / -1; }
+    .clients-stat:last-child { display: none; }
     .clients-stat-label {
-      font-size: 11px;
-      line-height: 1.25;
+      font-size: 10.5px;
+      line-height: 1.2;
       white-space: nowrap;
     }
     .clients-stat-value {
-      margin-top: 9px;
-      font-size: 17px;
+      margin-top: 3px;
+      font-size: 18px;
       line-height: 1.05;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
     }
     .clients-stat-note {
-      margin-top: 7px;
-      font-size: 12px;
-      line-height: 1.25;
+      margin-top: 2px;
+      font-size: 11px;
+      line-height: 1.2;
       white-space: nowrap;
     }
     .clients-content {
@@ -304,7 +324,7 @@ const CSS = `
     }
     .clients-card-main {
       display: grid !important;
-      grid-template-columns: 48px minmax(0, 1fr) 36px;
+      grid-template-columns: 48px minmax(0, 1fr) auto;
       align-items: center !important;
       gap: 10px !important;
       min-height: 90px;
@@ -354,9 +374,14 @@ const CSS = `
       white-space: normal !important;
       line-height: 1.35;
     }
+    /* Pagination mobile identique à Soumissions : flex, fond clair, fixée en bas */
     .clients-pagination {
-      grid-template-columns: 1fr auto;
-      padding: 10px 14px calc(12px + env(safe-area-inset-bottom));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: auto;
+      background: #fffdfa;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
       position: fixed;
       left: 0;
       right: 0;
@@ -364,7 +389,6 @@ const CSS = `
       z-index: 19;
       box-shadow: 0 -10px 28px rgba(26,46,30,.06);
     }
-    .clients-pagination-spacer { display: none; }
     .clients-modal-actions { flex-direction: column-reverse; }
   }
 `;
@@ -554,14 +578,16 @@ interface ClientWithSoumissions extends Client {
 }
 
 type ApiListResponse<T> = { data?: T[] };
+type ClientsPageResponse = { data?: ClientWithSoumissions[]; total?: number; cityCount?: number };
 
 /* ── Status config ──────────────────────────────────────── */
 type StCfg = { dot: string; bgBadge: string; textBadge: string; border: string; accentBar: string };
+// Palette de marque — alignée sur les statuts soumissions (constants.ts ST) et le dashboard.
 const ST: Record<StatutSoumission, StCfg> = {
-  Brouillon: { dot: "#94a3b8", bgBadge: "#f8fafc", textBadge: "#475569", border: "#e2e8f0", accentBar: "#94a3b8" },
-  Envoyée:   { dot: "#3b82f6", bgBadge: "#eff6ff", textBadge: "#2563eb", border: "#bfdbfe", accentBar: "#3b82f6" },
-  Acceptée:  { dot: "#22c55e", bgBadge: "#f0fdf4", textBadge: "#15803d", border: "#bbf7d0", accentBar: "#22c55e" },
-  Refusée:   { dot: "#f43f5e", bgBadge: "#fff1f2", textBadge: "#be123c", border: "#fecdd3", accentBar: "#f43f5e" },
+  Brouillon: { dot: "#b0a898", bgBadge: "#f5f0e8", textBadge: "#635c54", border: "#e8e2d8", accentBar: "#b0a898" },
+  Envoyée:   { dot: "#3a7ca5", bgBadge: "#eaf2f7", textBadge: "#3a7ca5", border: "#d3e3ee", accentBar: "#3a7ca5" },
+  Acceptée:  { dot: "#3a7a50", bgBadge: "#eaf3ed", textBadge: "#3a7a50", border: "#d2e4d8", accentBar: "#3a7a50" },
+  Refusée:   { dot: "#c44a3a", bgBadge: "#f9eeec", textBadge: "#c44a3a", border: "#f0d3ce", accentBar: "#c44a3a" },
 };
 
 /* ── Icon ───────────────────────────────────────────────── */
@@ -651,9 +677,15 @@ function useBp() {
 ══════════════════════════════════════════════════════════ */
 export default function ClientsPageClient({
   initialClients,
+  initialTotal,
+  initialCityCount,
+  initialPerPage,
   initialRole,
 }: {
   initialClients: ClientWithSoumissions[];
+  initialTotal: number;
+  initialCityCount: number;
+  initialPerPage: number;
   initialRole: UserRole | null;
 }) {
   const bp = useBp();
@@ -669,6 +701,9 @@ export default function ClientsPageClient({
   );
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteState>(D0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const toast = useToast();
+  // "Dernière entrée" = client le plus récent (page 1, tri desc) — mémorisé
+  const latestRef = useRef<ClientWithSoumissions | null>(initialClients[0] ?? null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search), 300);
@@ -677,19 +712,41 @@ export default function ClientsPageClient({
 
   useEffect(() => { setPage(1); }, [debouncedSearch]);
 
-  const clientsUrl = debouncedSearch ? `/api/clients?q=${encodeURIComponent(debouncedSearch)}` : "/api/clients";
-  const { data: clientsRes, isLoading: clientsLoading, mutate: mutateClients } =
-    useSWR<ApiListResponse<ClientWithSoumissions>>(
+  // Taille de page : remplit la fenêtre (desktop/tablette, sans scroll), 10/page mobile (scroll).
+  // rowHeight=64 (minHeight réel) ; safetyPx=28 → arrondi conservateur = jamais de
+  // ligne coupée ni de scroll interne. immediate=true → mesure avant paint (pas de saut).
+  // initialPerPage doit matcher le rendu SSR (évite un mismatch d'hydratation).
+  const perPage = useDynamicPerPage(
+    gridRef,
+    { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 44, pagerHeight: 40, mobilePerPage: 6, safetyPx: 28, initialPerPage, immediate: true },
+    []
+  );
+
+  // SWR paginé serveur. Pour la page 1 sans recherche, on sert la tranche du buffer
+  // SSR (initialClients) à la taille mesurée → AUCUN re-fetch visible, donc pas de saut.
+  const buildUrl = (p: number) =>
+    `/api/clients?page=${p}&pageSize=${perPage}${debouncedSearch ? `&q=${encodeURIComponent(debouncedSearch)}` : ""}`;
+  const clientsUrl = buildUrl(page);
+  const canSeedFromBuffer = page === 1 && !debouncedSearch && perPage <= initialClients.length;
+  const { data: clientsRes, isLoading: clientsLoading, isValidating, mutate: mutateClients } =
+    useSWR<ClientsPageResponse>(
       clientsUrl,
-      { fallbackData: debouncedSearch ? undefined : { data: initialClients } }
+      {
+        fallbackData: canSeedFromBuffer
+          ? { data: initialClients.slice(0, perPage), total: initialTotal, cityCount: initialCityCount }
+          : undefined,
+        keepPreviousData: true,
+        // Données SSR fraîches → pas de revalidation (ni barre) au tout premier paint
+        revalidateOnMount: !canSeedFromBuffer,
+      }
     );
 
   const role = initialRole;
   const canSeeAmounts = role === "admin" || role === "charge_projet";
   const clients = clientsRes?.data ?? [];
+  const total = clientsRes?.total ?? initialTotal;
+  const cityCount = clientsRes?.cityCount ?? initialCityCount;
   const loading = clientsLoading && !clientsRes;
-  // tableHeaderHeight=44: sticky header row; pagerHeight=40: pagination bar inside outer wrapper
-  const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 64, tableHeaderHeight: 44, pagerHeight: 40, mobilePerPage: 6, safetyPx: 20 }, [loading]);
 
   function toggleExpand(id: string) {
     setExpandedId(prev => (prev === id ? null : id));
@@ -701,27 +758,59 @@ export default function ClientsPageClient({
   }
 
   async function confirmDelete() {
-    setDeletingId(deleteConfirm.id);
-    await fetch(`/api/clients/${deleteConfirm.id}`, { method: "DELETE" });
-    mutateClients(
-      current => ({ data: (current?.data ?? []).filter(c => c.id !== deleteConfirm.id) }),
-      { revalidate: false }
-    );
-    if (expandedId === deleteConfirm.id) setExpandedId(null);
-    setDeletingId(null);
-    setDeleteConfirm(D0);
+    const targetId = deleteConfirm.id;
+    setDeletingId(targetId);
+    try {
+      const res = await fetch(`/api/clients/${targetId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("delete failed");
+      if (expandedId === targetId) setExpandedId(null);
+      setDeleteConfirm(D0);
+      // Revalide la page courante (total + remplissage corrects après suppression)
+      await mutateClients();
+      toast.success("Client supprimé.");
+    } catch {
+      toast.error("La suppression a échoué. Le client a peut-être des soumissions liées.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
-  const totalPages = Math.max(1, Math.ceil(clients.length / perPage));
-  const paginated = clients.slice((page - 1) * perPage, page * perPage);
-  const cityCount = new Set(clients.map(c => c.ville).filter(Boolean)).size;
-  const latestClient = clients[0];
-  const showPagination = !loading && clients.length > 0 && totalPages > 1;
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(1, perPage)));
+  // La réponse serveur est déjà la page courante — pas de slice client.
+  const paginated = clients;
+
+  // Mémorise le client le plus récent (page 1, sans recherche) pour "Dernière entrée"
+  useEffect(() => {
+    if (page === 1 && !debouncedSearch && clients.length > 0) latestRef.current = clients[0];
+  }, [page, debouncedSearch, clients]);
+  const latestClient = latestRef.current;
+
+  // Recadre la page si elle dépasse le total (ex. fenêtre agrandie → page plus grande)
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const showPagination = !loading && total > 0 && totalPages > 1;
+  // Mobile : la barre du bas reste affichée tant qu'il y a des clients (compteur
+  // permanent, fixé en bas). Les boutons de page n'apparaissent que s'il y a
+  // plusieurs pages.
+  const showMobileBar = !loading && total > 0;
+
+  // Préchargement des pages adjacentes → clic suivant/précédent instantané (cache chaud)
+  useEffect(() => {
+    if (loading || perPage <= 0) return;
+    if (page < totalPages) preload(buildUrl(page + 1), fetcher);
+    if (page > 1) preload(buildUrl(page - 1), fetcher);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, perPage, totalPages, debouncedSearch, loading]);
+
+  // Mise à jour en arrière-plan (données déjà visibles) → repère subtil, jamais d'écran blanc
+  const updating = isValidating && !loading;
 
   return (
     <>
       <style>{CSS}</style>
-      <div className={`clients-shell ${showPagination && bp !== "desktop" ? "clients-has-mobile-pagination" : ""}`}>
+      <div className={`clients-shell ${showMobileBar && bp !== "desktop" ? "clients-has-mobile-pagination" : ""}`}>
 
         {/* ── Header ──────────────────────────────────────── */}
         <div className="clients-header">
@@ -730,7 +819,7 @@ export default function ClientsPageClient({
               <div className="clients-kicker">Portefeuille</div>
               <h1 className="clients-title">Clients</h1>
               <p className="clients-subtitle">
-                {clients.length} client{clients.length !== 1 ? "s" : ""} enregistré{clients.length !== 1 ? "s" : ""}, suivi commercial et historique des soumissions.
+                {total} client{total !== 1 ? "s" : ""} enregistré{total !== 1 ? "s" : ""}, suivi commercial et historique des soumissions.
               </p>
             </div>
             <a href="/api/clients/export" target="_blank" rel="noreferrer" className="clients-export">
@@ -742,7 +831,7 @@ export default function ClientsPageClient({
           <div className="clients-summary">
             <div className="clients-stat">
               <div className="clients-stat-label">Base clients</div>
-              <div className="clients-stat-value">{clients.length}</div>
+              <div className="clients-stat-value">{total}</div>
               <div className="clients-stat-note">contacts actifs</div>
             </div>
             <div className="clients-stat">
@@ -781,6 +870,8 @@ export default function ClientsPageClient({
 
         {/* ── Content ─────────────────────────────────────── */}
         <div className="clients-content">
+          {/* Repère de mise à jour (recherche / changement de page non préchargé) */}
+          <div className="clients-progress" data-active={updating ? "1" : "0"} aria-hidden="true" />
           {loading ? (
             bp === "desktop" ? (
               <div style={{ flex: 1, margin: "16px 32px 20px", borderRadius: 8, border: "1px solid #e8e2d8", overflow: "hidden", boxShadow: "0 18px 48px rgba(26,46,30,0.07)" }}>
@@ -796,7 +887,7 @@ export default function ClientsPageClient({
                 ))}
               </div>
             )
-          ) : clients.length === 0 ? (
+          ) : total === 0 ? (
             <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 24px" }}>
               <div className="clients-empty" style={{ width: "100%", maxWidth: 480 }}>
                 <div className="clients-empty-icon">
@@ -877,33 +968,31 @@ export default function ClientsPageClient({
           )}
         </div>
 
-        {/* ── Pagination mobile (fixed) ──────────────────────── */}
-        {showPagination && bp !== "desktop" && (
+        {/* ── Pagination mobile (style Soumissions / Pager) ──── */}
+        {showMobileBar && bp !== "desktop" && (
           <div className="clients-pagination">
-            <span style={{ fontSize: 11, color: "#a09690", letterSpacing: "0.01em" }}>
-              <strong style={{ color: "#1a1714", fontWeight: 600 }}>{clients.length}</strong>
-              {" "}client{clients.length !== 1 ? "s" : ""}
+            <span style={{ fontSize: 12, color: "#6b7280" }}>
+              <strong style={{ color: "#111827" }}>{(page - 1) * perPage + 1}–{Math.min(page * perPage, total)}</strong>
+              {" "}sur{" "}
+              <strong style={{ color: "#111827" }}>{total}</strong>
             </span>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <motion.button whileTap={{ scale: 0.93 }}
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <motion.button whileTap={{ scale: 0.94 }}
                 onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page <= 1}
-                className="clients-page-btn"
-                style={{ color: page <= 1 ? "#d0c9be" : "#3d5c41", cursor: page <= 1 ? "default" : "pointer" }}
+                style={{ width: 32, height: 32, borderRadius: 9999, border: "1px solid #e8e2d8", background: "white", display: "flex", alignItems: "center", justifyContent: "center", color: page <= 1 ? "#d0c9be" : "#1a2e1e", cursor: page <= 1 ? "default" : "pointer" }}
               >
-                <Ic d={I.chevL} z={12} />
+                <Ic d={I.chevL} z={13} />
               </motion.button>
-              <span style={{ fontSize: 11, color: "#887f74", fontWeight: 500, minWidth: 52, textAlign: "center", userSelect: "none", letterSpacing: "0.02em" }}>
-                {page} / {totalPages}
+              <span style={{ fontSize: 12, color: "#374151", fontWeight: 500, minWidth: 76, textAlign: "center", userSelect: "none" }}>
+                Page {page} / {totalPages}
               </span>
-              <motion.button whileTap={{ scale: 0.93 }}
+              <motion.button whileTap={{ scale: 0.94 }}
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages}
-                className="clients-page-btn"
-                style={{ color: page >= totalPages ? "#d0c9be" : "#3d5c41", cursor: page >= totalPages ? "default" : "pointer" }}
+                style={{ width: 32, height: 32, borderRadius: 9999, border: "1px solid #e8e2d8", background: "white", display: "flex", alignItems: "center", justifyContent: "center", color: page >= totalPages ? "#d0c9be" : "#1a2e1e", cursor: page >= totalPages ? "default" : "pointer" }}
               >
-                <Ic d={I.chevR} z={12} />
+                <Ic d={I.chevR} z={13} />
               </motion.button>
             </div>
-            <div className="clients-pagination-spacer" />
           </div>
         )}
 
@@ -973,9 +1062,6 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSe
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: idx * 0.04, duration: 0.22, ease: "easeOut" }}
       className={`clients-client-card ${isExpanded ? "clients-expanded" : ""}`}
       style={{
         background: "white", borderRadius: 16, overflow: "hidden",
@@ -1065,13 +1151,13 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSe
         </div>
 
         {/* Actions */}
-        <div className="clients-card-actions" style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+        <div className="clients-card-actions" style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, paddingRight: 4 }}>
           <button
             className="clients-card-delete"
             title="Supprimer le client"
             onClick={e => onDelete(client, e)}
             style={{
-              width: 32, height: 32, borderRadius: 9999,
+              width: 38, height: 38, borderRadius: 9999,
               background: hov ? "#fff2ed" : "#fbfaf7",
               border: `1px solid ${hov ? "#f0b9ad" : "#e8e2d8"}`,
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -1079,21 +1165,21 @@ function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSe
               cursor: "pointer", transition: "all 0.15s",
             }}
           >
-            <Ic d={I.trash} z={13} />
+            <Ic d={I.trash} z={17} />
           </button>
 
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.22 }}
             style={{
-              width: 32, height: 32, borderRadius: 9999,
+              width: 38, height: 38, borderRadius: 9999,
               background: isExpanded ? "#1a2e1e" : "#f8fafc",
               border: `1px solid ${isExpanded ? "#1a2e1e" : "#e8e2d8"}`,
               display: "flex", alignItems: "center", justifyContent: "center",
               transition: "background 0.2s, border-color 0.2s",
             }}
           >
-            <Ic d={I.chevD} z={15} s={isExpanded ? "white" : "#9ca3af"} />
+            <Ic d={I.chevD} z={19} s={isExpanded ? "white" : "#9ca3af"} />
           </motion.div>
         </div>
       </div>
