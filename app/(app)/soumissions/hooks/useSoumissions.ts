@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { Soumission, StatutSoumission, UserRole } from "@/types";
 import { SoumissionView, ApiListResponse, MeResponse, VersementState, V0, DeleteState, D0 } from "../types";
 import { useToast } from "@/components/ui/Toast";
@@ -10,6 +10,7 @@ import { useToast } from "@/components/ui/Toast";
 export function useSoumissions(initialSoumissions: Soumission[] = [], initialRole?: UserRole) {
   const router = useRouter();
   const toast = useToast();
+  const { mutate: globalMutate } = useSWRConfig();
 
   const { data: soumissionsRes, isLoading: soumissionsLoading, mutate: mutateSoumissions } =
     useSWR<ApiListResponse<Soumission>>("/api/soumissions", {
@@ -149,6 +150,9 @@ export function useSoumissions(initialSoumissions: Soumission[] = [], initialRol
       const res = await fetch(`/api/soumissions/${targetId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("delete failed");
       toast.success("Soumission supprimée.");
+      // Rafraîchit le dashboard et les clients (totaux, CA, taux) après suppression
+      globalMutate("/api/dashboard");
+      globalMutate("/api/clients");
     } catch {
       // Revert
       mutateSoumissions({ data: prevSoumissions }, { revalidate: false });
