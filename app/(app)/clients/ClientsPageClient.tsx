@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import useSWR, { preload } from "swr";
+import useSWR, { preload, useSWRConfig } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { Client, Soumission, StatutSoumission, UserRole } from "@/types";
 import { formatDateFr } from "@/lib/utils";
@@ -702,6 +702,7 @@ export default function ClientsPageClient({
   const [deleteConfirm, setDeleteConfirm] = useState<DeleteState>(D0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const toast = useToast();
+  const { mutate: globalMutate } = useSWRConfig();
   // "Dernière entrée" = client le plus récent (page 1, tri desc) — mémorisé
   const latestRef = useRef<ClientWithSoumissions | null>(initialClients[0] ?? null);
 
@@ -767,6 +768,9 @@ export default function ClientsPageClient({
       setDeleteConfirm(D0);
       // Revalide la page courante (total + remplissage corrects après suppression)
       await mutateClients();
+      // Rafraîchit le dashboard et les soumissions (cascade) après suppression du client
+      globalMutate("/api/dashboard");
+      globalMutate("/api/soumissions");
       toast.success("Client supprimé.");
     } catch {
       toast.error("La suppression a échoué. Le client a peut-être des soumissions liées.");

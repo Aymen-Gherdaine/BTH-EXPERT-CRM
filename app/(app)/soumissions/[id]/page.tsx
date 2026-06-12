@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSWRConfig } from "swr";
 import { motion } from "framer-motion";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -32,6 +33,7 @@ export default function SoumissionDetailPage() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { mutate: globalMutate } = useSWRConfig();
   const isDuplicate = searchParams.get("duplicate") === "1";
   const id = params.id as string;
 
@@ -199,7 +201,12 @@ export default function SoumissionDetailPage() {
     setDeletingId(targetId);
     setDeleting(true);
     try {
-      await fetch(`/api/soumissions/${targetId}`, { method: "DELETE" });
+      const res = await fetch(`/api/soumissions/${targetId}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("delete failed");
+      // Invalide les caches liés avant la navigation pour que la liste et le dashboard soient à jour
+      globalMutate("/api/soumissions");
+      globalMutate("/api/dashboard");
+      globalMutate("/api/clients");
       router.push("/soumissions");
     } finally {
       setDeletingId(null);
