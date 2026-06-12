@@ -737,7 +737,7 @@ export default function DashboardClient({
   );
 
   const roleLabel = role === "commercial" ? "Commercial"
-    : role === "charge_projet" ? "Chargé de projet"
+    : role === "charge_projet" ? "Expert"
     : "Administrateur";
 
   const userFirstName = userName.split(" ")[0] || "Aymen";
@@ -1013,12 +1013,12 @@ export default function DashboardClient({
               </p>
             </div>
             <div className="dash-actions">
-              {role !== "commercial" && (
+              {role === "admin" && (
                 <Link href="/soumissions/nouvelle" className="no-underline">
                   <Button size="md"><Ic d={IC.plus} size={14} />Nouvelle offre</Button>
                 </Link>
               )}
-              {role !== "charge_projet" && (
+              {role !== "commercial" && (
                 <Link href="/prospection/nouveau" className="no-underline">
                   <Button variant="secondary" size="md"><Ic d={IC.plus} size={14} />Prospect</Button>
                 </Link>

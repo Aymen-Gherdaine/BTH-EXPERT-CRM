@@ -2,7 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase-server";
 
 const PUBLIC_ROUTES = ["/login", "/auth/callback", "/auth/set-password"];
-const ADMIN_PREFIXES = ["/admin/", "/couts-marges"];
+const ADMIN_ONLY_PREFIXES = ["/admin/", "/soumissions/nouvelle"];
+const EXPERT_PREFIXES = ["/couts-marges"];
 const SETTINGS_PREFIX = "/parametres";
 
 export async function proxy(request: NextRequest) {
@@ -26,10 +27,11 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(dashboardUrl);
   }
 
-  const isAdminRoute = ADMIN_PREFIXES.some((p) => pathname.startsWith(p));
+  const isAdminOnlyRoute = ADMIN_ONLY_PREFIXES.some((p) => pathname.startsWith(p));
+  const isExpertRoute = EXPERT_PREFIXES.some((p) => pathname.startsWith(p));
   const isSettingsRoute = pathname.startsWith(SETTINGS_PREFIX);
 
-  if (user && (isAdminRoute || isSettingsRoute)) {
+  if (user && (isAdminOnlyRoute || isExpertRoute || isSettingsRoute)) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
@@ -37,7 +39,7 @@ export async function proxy(request: NextRequest) {
       .single<{ role: string }>();
 
     const role = profile?.role;
-    const canAccess = isAdminRoute
+    const canAccess = isAdminOnlyRoute
       ? role === "admin"
       : role === "admin" || role === "charge_projet";
 

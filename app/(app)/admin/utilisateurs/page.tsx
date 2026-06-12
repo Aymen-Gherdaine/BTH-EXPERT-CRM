@@ -9,7 +9,7 @@ import type { UserProfile, UserRole } from "@/types";
 
 const ROLE_LABELS: Record<UserRole, string> = {
   admin:          "Administrateur",
-  charge_projet:  "Chargé de projet",
+  charge_projet:  "Expert",
   commercial:     "Commercial",
 };
 
@@ -34,7 +34,7 @@ const ROLE_CARD: Record<UserRole, { border: string; bg: string; icon: React.Reac
   charge_projet: {
     border: "border-blue-600",
     bg:     "bg-blue-600",
-    desc:   "Soumissions et gestion des clients",
+    desc:   "Accès complet sauf création de soumissions et gestion des utilisateurs",
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -405,7 +405,7 @@ export default function UtilisateursPage() {
                               className="appearance-none pl-2.5 pr-7 py-1.5 border border-bth-hairline-strong rounded-full text-xs text-bth-n-700 bg-white outline-none focus:border-[#1a2e1e] cursor-pointer"
                             >
                               <option value="admin">Administrateur</option>
-                              <option value="charge_projet">Chargé de projet</option>
+                              <option value="charge_projet">Expert</option>
                               <option value="commercial">Commercial</option>
                             </select>
                             <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400"
@@ -614,7 +614,7 @@ export default function UtilisateursPage() {
                               className="appearance-none w-full pl-3 pr-8 py-2 border border-bth-hairline-strong rounded-full text-sm text-bth-n-700 bg-white outline-none focus:border-[#1a2e1e] cursor-pointer"
                             >
                               <option value="admin">Administrateur</option>
-                              <option value="charge_projet">Chargé de projet</option>
+                              <option value="charge_projet">Expert</option>
                               <option value="commercial">Commercial</option>
                             </select>
                             <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400"

@@ -51,9 +51,9 @@ const PRIMARY: NavItem[] = [
 ];
 
 const SHEET_ITEMS: NavItem[] = [
-  { href: "/prospection",        label: "Prospection",    icon: "map",    roles: ["admin", "commercial"] },
+  { href: "/prospection",        label: "Prospection",    icon: "map",    roles: ["admin", "charge_projet", "commercial"] },
   { href: "/depenses",           label: "Dépenses",       icon: "wallet", roles: ["admin", "charge_projet", "commercial"] },
-  { href: "/couts-marges",       label: "Coûts & Marges", icon: "chart",  roles: ["admin"] },
+  { href: "/couts-marges",       label: "Coûts & Marges", icon: "chart",  roles: ["admin", "charge_projet"] },
   { href: "/admin/utilisateurs", label: "Utilisateurs",   icon: "admin",  roles: ["admin"] },
 ];
 
