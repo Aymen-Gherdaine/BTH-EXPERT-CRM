@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
         tva,
         total_ttc,
         statut: "Brouillon",
-        contexte_genere: JSON.stringify(contexte),
+        contexte_genere: contexte ? JSON.stringify(contexte) : null,
       })
       .select()
       .single();

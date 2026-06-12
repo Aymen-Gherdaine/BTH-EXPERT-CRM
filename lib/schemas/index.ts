@@ -115,7 +115,7 @@ export const soumissionCreateSchema = z.object({
     description_echeancier: z.string(),
     inclusions_specifiques: z.string(),
     exclusions_specifiques: z.string(),
-  }).passthrough(),
+  }).passthrough().optional().nullable(),
 })
 
 // ── Client PATCH ──────────────────────────────────────────
