@@ -200,6 +200,30 @@ export default function NouvellePageClient({ parametres }: Props) {
     }
   }
 
+  async function handleSaveAsReference(data: FormDataStep3) {
+    setStep3(data);
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/soumissions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          formData: { step1, step2, step3: data },
+          // Pas de contexte → soumission de référence sans génération IA
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error);
+      setSaved(true);
+      router.push(`/soumissions/${json.data.id}`);
+    } catch {
+      setError("Erreur lors de l'enregistrement.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (!role) {
     return (
       <div className="px-4 py-6 md:p-8 max-w-4xl mx-auto">
@@ -300,8 +324,10 @@ export default function NouvellePageClient({ parametres }: Props) {
               <StepBudget
                 data={step3}
                 generating={generating}
+                saving={saving}
                 onBack={() => goTo(1)}
                 onNext={handleStep3Complete}
+                onSaveAsReference={handleSaveAsReference}
               />
             )}
             {step === 3 && contexte && (
