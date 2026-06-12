@@ -23,6 +23,7 @@ export function useSoumissions(initialSoumissions: Soumission[] = [], initialRol
 
   const role = meRes?.role ?? "admin";
   const isAdmin = role === "admin" || role === "charge_projet";
+  const canCreate = role === "admin";
   const soumissions = soumissionsRes?.data ?? [];
   const loading = (soumissionsLoading && !soumissionsRes) || (meLoading && !meRes);
 
@@ -169,6 +170,7 @@ export function useSoumissions(initialSoumissions: Soumission[] = [], initialRol
     soumissions,
     loading,
     isAdmin,
+    canCreate,
     toView,
     selId,
     selDetail,

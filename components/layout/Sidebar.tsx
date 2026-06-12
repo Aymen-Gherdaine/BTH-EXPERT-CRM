@@ -57,9 +57,9 @@ const NAV: NavItem[] = [
   { href: "/dashboard",          label: "Tableau de bord", icon: "home",   roles: ["admin", "charge_projet", "commercial"], group: "PRINCIPAL"      },
   { href: "/soumissions",        label: "Soumissions",     icon: "docs",   roles: ["admin", "charge_projet", "commercial"], group: "PRINCIPAL"      },
   { href: "/clients",            label: "Clients",         icon: "users",  roles: ["admin", "charge_projet", "commercial"], group: "PRINCIPAL"      },
-  { href: "/prospection",        label: "Prospection",     icon: "map",    roles: ["admin", "commercial"],                  group: "PRINCIPAL"      },
+  { href: "/prospection",        label: "Prospection",     icon: "map",    roles: ["admin", "charge_projet", "commercial"], group: "PRINCIPAL"      },
   { href: "/depenses",           label: "Dépenses",        icon: "wallet", roles: ["admin", "charge_projet", "commercial"], group: "FINANCE"        },
-  { href: "/couts-marges",       label: "Coûts & Marges",  icon: "chart",  roles: ["admin"],                                group: "FINANCE"        },
+  { href: "/couts-marges",       label: "Coûts & Marges",  icon: "chart",  roles: ["admin", "charge_projet"],               group: "FINANCE"        },
   { href: "/admin/utilisateurs", label: "Utilisateurs",    icon: "admin",  roles: ["admin"],                                group: "ADMINISTRATION" },
 ];
 
@@ -69,7 +69,7 @@ const NAV_GROUPS: NavGroup[] = ["PRINCIPAL", "FINANCE", "ADMINISTRATION"];
 
 const ROLE_LABEL: Record<UserRole, string> = {
   admin: "Administrateur",
-  charge_projet: "Chargé de projet",
+  charge_projet: "Expert",
   commercial: "Commercial",
 };
 

@@ -26,7 +26,7 @@ export default function SoumissionsClient({
   const isDesktop = bp === "desktop";
 
   const {
-    soumissions, loading, isAdmin, toView,
+    soumissions, loading, isAdmin, canCreate, toView,
     selId, selDetail, detailLoading,
     versement, setVersement, versementInput, setVersementInput, savingVersement,
     deleteConfirm, setDeleteConfirm, deletingId,
@@ -126,7 +126,7 @@ export default function SoumissionsClient({
                   </motion.button>
                 </a>
               )}
-              {isAdmin && (
+              {canCreate && (
                 <Link href="/soumissions/nouvelle">
                   <motion.button whileTap={{ scale: .94 }} style={{ height: 36, padding: isDesktop ? "0 16px" : "0 13px", borderRadius: 9999, background: "#1a2e1e", border: "none", display: "flex", alignItems: "center", gap: 6, color: "white", fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 2px 10px rgba(26,46,30,.20)", whiteSpace: "nowrap" }}>
                     <Ic d={I.plus} z={14} />
@@ -195,9 +195,9 @@ export default function SoumissionsClient({
               </div>
               <p style={{ fontWeight: 700, fontSize: 16, color: "#111827", marginBottom: 8, letterSpacing: 0 }}>Aucune soumission</p>
               <p style={{ fontSize: 14, color: "#9ca3af", marginBottom: 24 }}>
-                {q || filtre ? "Aucun résultat pour ces critères." : isAdmin ? "Créez votre première soumission." : "Aucune soumission disponible."}
+                {q || filtre ? "Aucun résultat pour ces critères." : canCreate ? "Créez votre première soumission." : "Aucune soumission disponible."}
               </p>
-              {isAdmin && !q && !filtre && (
+              {canCreate && !q && !filtre && (
                 <Link href="/soumissions/nouvelle">
                   <motion.button whileTap={{ scale: .96 }} style={{ padding: "11px 22px", borderRadius: 9999, background: "#1a2e1e", border: "none", color: "white", fontWeight: 600, fontSize: 13, cursor: "pointer", boxShadow: "0 2px 10px rgba(26,46,30,.18)" }}>
                     Nouvelle soumission
