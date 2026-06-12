@@ -19,8 +19,10 @@ type Section = {
 interface Props {
   data: FormDataStep3;
   generating?: boolean;
+  saving?: boolean;
   onBack: () => void;
   onNext: (data: FormDataStep3) => void;
+  onSaveAsReference?: (data: FormDataStep3) => void;
 }
 
 function emptyLigne(groupe: string): LigneBudget {
@@ -73,7 +75,7 @@ const TrashIcon = () => (
   </svg>
 );
 
-export default function StepBudget({ data, generating, onBack, onNext }: Props) {
+export default function StepBudget({ data, generating, saving, onBack, onNext, onSaveAsReference }: Props) {
   const [{ sections, customSet }, setAll] = useState(() => {
     const sections: Section[] =
       data.lignes.length > 0
@@ -193,6 +195,10 @@ export default function StepBudget({ data, generating, onBack, onNext }: Props) 
     }
     setErrors(null);
     return true;
+  }
+
+  function handleSaveRef() {
+    if (validate()) onSaveAsReference?.({ lignes: flattenSections(sections) });
   }
 
   function handleNext() {
@@ -665,30 +671,59 @@ export default function StepBudget({ data, generating, onBack, onNext }: Props) 
           Retour
         </button>
 
-        <button
-          type="button"
-          onClick={handleNext}
-          disabled={generating}
-          className="flex items-center justify-center gap-2 px-6 min-h-[44px] w-full sm:w-auto rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90 disabled:opacity-60"
-          style={{ backgroundColor: BTH_GREEN }}
-        >
-          {generating ? (
-            <>
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-              Génération en cours…
-            </>
-          ) : (
-            <>
-              Générer la soumission
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
-            </>
+        <div className="flex flex-col-reverse sm:flex-row gap-3">
+          {onSaveAsReference && (
+            <button
+              type="button"
+              onClick={handleSaveRef}
+              disabled={saving || generating}
+              className="flex items-center justify-center gap-2 px-5 min-h-[44px] w-full sm:w-auto rounded-xl text-sm font-medium border transition-all cursor-pointer hover:bg-gray-50 disabled:opacity-60"
+              style={{ borderColor: BTH_GREEN, color: BTH_GREEN }}
+            >
+              {saving ? (
+                <>
+                  <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Enregistrement…
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  Enregistrer comme référence
+                </>
+              )}
+            </button>
           )}
-        </button>
+
+          <button
+            type="button"
+            onClick={handleNext}
+            disabled={generating || saving}
+            className="flex items-center justify-center gap-2 px-6 min-h-[44px] w-full sm:w-auto rounded-xl text-sm font-medium text-white transition-all cursor-pointer hover:opacity-90 disabled:opacity-60"
+            style={{ backgroundColor: BTH_GREEN }}
+          >
+            {generating ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Génération en cours…
+              </>
+            ) : (
+              <>
+                Générer la soumission
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </>
+            )}
+          </button>
+        </div>
       </div>
     </div>
   );
