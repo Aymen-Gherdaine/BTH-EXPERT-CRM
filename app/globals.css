@@ -205,4 +205,50 @@
     font-feature-settings: "tnum";
     letter-spacing: -0.42px;
   }
+
+  /* ── Skeleton shimmer ──────────────────────────────────
+     Bloc de chargement cohérent avec le design system.
+     Utilisé par les loading.tsx pour afficher un shell
+     instantané au changement d'onglet (au lieu d'un écran figé). */
+  .bth-skel {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--color-bth-n-200);
+    border-radius: var(--radius-bth-sm);
+  }
+  .bth-skel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.65) 50%,
+      transparent 100%
+    );
+    animation: bth-shimmer 1.5s var(--bth-ease-in-out) infinite;
+  }
+
+  @keyframes bth-shimmer {
+    100% { transform: translateX(100%); }
+  }
+
+  /* Variantes de rayon (spécificité 0,2,0 → surclassent le rayon de base
+     de .bth-skel sans dépendre de l'ordre du cascade ni de !important). */
+  .bth-skel.bth-skel-pill { border-radius: var(--radius-bth-pill); }
+  .bth-skel.bth-skel-lg   { border-radius: var(--radius-bth-lg); }
+  .bth-skel.bth-skel-md   { border-radius: var(--radius-bth-md); }
+
+  /* Respecte les préférences d'accessibilité : pas de balayage,
+     un simple battement d'opacité. */
+  @media (prefers-reduced-motion: reduce) {
+    .bth-skel::after { animation: none; }
+    .bth-skel { animation: bth-skel-pulse 1.8s ease-in-out infinite; }
+  }
+
+  @keyframes bth-skel-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.55; }
+  }
 }
