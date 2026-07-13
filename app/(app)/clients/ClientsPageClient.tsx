@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m as motion } from "framer-motion";
 import useSWR, { preload, useSWRConfig } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import { Client, Soumission, UserRole } from "@/types";

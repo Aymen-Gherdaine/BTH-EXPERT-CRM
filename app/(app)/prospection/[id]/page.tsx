@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import type { Prospect, Visite, StatutProspect, ResultatVisite } from "@/types";
 import { formatDateFr } from "@/lib/utils";
 import VisiteForm, { type VisiteFormData } from "@/components/prospection/VisiteForm";

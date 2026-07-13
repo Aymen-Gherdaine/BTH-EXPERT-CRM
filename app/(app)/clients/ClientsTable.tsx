@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m as motion } from "framer-motion";
 import type { Soumission } from "@/types";
 import { formatDateFr } from "@/lib/utils";
 import { CT_D, CT_GRID, CT_HD, I, type ClientWithSoumissions } from "./lib";

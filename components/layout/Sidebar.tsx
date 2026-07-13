@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m as motion } from "framer-motion";
 import { preload } from "swr";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { fetcher } from "@/lib/fetcher";

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import Link from "next/link";
 import useSWR from "swr";
 import { DashboardStats, Prospect, Soumission, UserRole, Visite } from "@/types";

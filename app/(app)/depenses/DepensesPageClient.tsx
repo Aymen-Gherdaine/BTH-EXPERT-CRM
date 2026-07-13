@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m as motion } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { CategorieDepense, Depense } from "@/types";
 import { formatMontant } from "@/lib/utils";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import type { CategorieDepense } from "@/types";
 import { CATEGORIES, I, type DepenseFormProps } from "./lib";
 import { Icon, SelectChevron, Spinner } from "./components";

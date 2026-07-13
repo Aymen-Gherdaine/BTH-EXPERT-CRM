@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 type ModalSize = "sm" | "md" | "lg";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import StepClientInfo from "@/components/forms/StepClientInfo";

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m as motion } from "framer-motion";
 import type { DragEndEvent, DragStartEvent, UniqueIdentifier } from "@dnd-kit/core";
 import type { EtapeProspect, Prospect, StatutProspect, Visite } from "@/types";
 import {

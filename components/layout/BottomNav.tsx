@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m as motion } from "framer-motion";
 import { useEffect, useState, useTransition } from "react";
 import { preload } from "swr";
 import { fetcher } from "@/lib/fetcher";
