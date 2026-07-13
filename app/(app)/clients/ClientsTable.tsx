@@ -8,8 +8,8 @@ import { CT_D, CT_GRID, CT_HD, I, type ClientWithSoumissions } from "./lib";
 import { Avatar, Ic } from "./components";
 import { SoumMobileList, SoumissionsTable } from "./SoumissionsTable";
 
-export function ClientCard({ client, idx, isExpanded, soumissions, isLoadingSoum, canSeeAmounts, onToggle, onDelete }: {
-  client: ClientWithSoumissions; idx: number; isExpanded: boolean;
+export function ClientCard({ client, isExpanded, soumissions, isLoadingSoum, canSeeAmounts, onToggle, onDelete }: {
+  client: ClientWithSoumissions; isExpanded: boolean;
   soumissions: Soumission[]; isLoadingSoum: boolean;
   canSeeAmounts: boolean;
   onToggle: () => void;

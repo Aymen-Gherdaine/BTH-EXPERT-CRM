@@ -695,9 +695,9 @@ export default function ClientsPageClient({
           ) : (
             <div className="clients-list">
               <AnimatePresence>
-                {paginated.map((client, idx) => (
+                {paginated.map((client) => (
                   <ClientCard
-                    key={client.id} client={client} idx={idx}
+                    key={client.id} client={client}
                     isExpanded={expandedId === client.id}
                     soumissions={expandedId === client.id ? (expandedSoumRes?.data ?? []) : []}
                     isLoadingSoum={expandedId === client.id && expandedSoumLoading}
