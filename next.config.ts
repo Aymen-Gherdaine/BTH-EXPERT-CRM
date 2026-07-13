@@ -34,6 +34,13 @@ const nextConfig: NextConfig = {
       port: '',
       pathname: '/storage/v1/object/public/**',
     },
+    // Avatars issus d'une connexion Google (user_metadata.picture / avatar_url)
+    {
+      protocol: 'https',
+      hostname: '**.googleusercontent.com',
+      port: '',
+      pathname: '/**',
+    },
   ],
 },
 };

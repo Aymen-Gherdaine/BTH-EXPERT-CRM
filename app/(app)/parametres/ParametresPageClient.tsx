@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { Parametres } from "./defaults";
 
@@ -172,6 +173,7 @@ const CSS = `
     min-width: 0;
   }
   .settings-signature-preview {
+    position: relative;
     height: 118px;
     border: 1px dashed #d0c9be;
     border-radius: 14px;
@@ -558,8 +560,7 @@ export default function ParametresPageClient({ initialData }: { initialData: Par
               <p className="settings-label">{label}</p>
               <div className="settings-signature-preview">
                 {form[field] ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={form[field]} alt={label} className="max-h-full max-w-full object-contain p-2" />
+                  <Image src={form[field]} alt={label} fill sizes="(max-width: 768px) 100vw, 320px" className="object-contain p-2" />
                 ) : (
                   <span className="settings-hint">Aucune signature</span>
                 )}

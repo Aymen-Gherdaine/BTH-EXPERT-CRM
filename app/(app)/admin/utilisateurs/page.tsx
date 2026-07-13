@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { UserProfile, UserRole } from "@/types";
@@ -75,9 +76,11 @@ function UserAvatar({ user }: { user: UserProfile }) {
 
   if (user.avatar_url && !failed) {
     return (
-      <img
+      <Image
         src={user.avatar_url}
         alt={name}
+        width={44}
+        height={44}
         onError={() => setFailed(true)}
         className="w-11 h-11 rounded-full object-cover flex-shrink-0 border border-bth-hairline shadow-[0_8px_18px_rgba(26,46,30,.10)] bg-bth-green-800"
       />
