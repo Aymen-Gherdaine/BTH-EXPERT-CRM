@@ -48,13 +48,18 @@ export const CATEGORIES: CatConfig[] = [
   { value: "autre", label: "Autre", abbr: "AUT", bg: "#fbfaf7", text: "#635c54", dot: "#b0a898", border: "#e8e2d8" },
 ];
 
-export const EMPTY_FORM: FormState = {
-  categorie: "",
-  montant: "",
-  description: "",
-  date_depense: new Date().toISOString().slice(0, 10),
-  projet_lie: "",
-};
+// Factory plutôt qu'une constante : recalcule la date du jour à chaque appel.
+// Évite qu'un module chargé une seule fois (serveur long-lived, onglet resté
+// ouvert) fige la date par défaut du formulaire à celle du chargement.
+export function makeEmptyForm(): FormState {
+  return {
+    categorie: "",
+    montant: "",
+    description: "",
+    date_depense: new Date().toISOString().slice(0, 10),
+    projet_lie: "",
+  };
+}
 
 export const I = {
   search: "M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z",

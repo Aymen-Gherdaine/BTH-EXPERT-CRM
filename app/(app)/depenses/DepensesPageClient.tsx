@@ -9,8 +9,8 @@ import { useBp } from "@/hooks/useBp";
 import { useDynamicPerPage } from "@/hooks/useDynamicPerPage";
 import {
   CATEGORIES,
-  EMPTY_FORM,
   I,
+  makeEmptyForm,
   formatDateShort,
   formatMontantCompact,
   projectLabel,
@@ -789,12 +789,12 @@ export default function DepensesPageClient({
   const [userId] = useState<string | null>(initialUserId);
 
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [form, setForm] = useState<FormState>(() => makeEmptyForm());
   const [photo, setPhoto] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [editId, setEditId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<FormState>(EMPTY_FORM);
+  const [editForm, setEditForm] = useState<FormState>(() => makeEmptyForm());
   const [editPhoto, setEditPhoto] = useState<File | null>(null);
   const [editSaving, setEditSaving] = useState(false);
 
@@ -898,7 +898,7 @@ export default function DepensesPageClient({
         }
       }
       setDepenses((current) => [created, ...current]);
-      setForm(EMPTY_FORM);
+      setForm(makeEmptyForm());
       setPhoto(null);
       setShowForm(false);
     }
@@ -1055,7 +1055,7 @@ export default function DepensesPageClient({
                     onSubmit={handleAdd}
                     onCancel={() => {
                       setShowForm(false);
-                      setForm(EMPTY_FORM);
+                      setForm(makeEmptyForm());
                       setPhoto(null);
                     }}
                     saving={saving}
