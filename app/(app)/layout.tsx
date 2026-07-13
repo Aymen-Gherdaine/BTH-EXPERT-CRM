@@ -7,6 +7,7 @@ import { SidebarProvider } from "@/components/layout/SidebarContext";
 import SWRProvider from "@/components/layout/SWRProvider";
 import NavigationProgress from "@/components/layout/NavigationProgress";
 import { ToastProvider } from "@/components/ui/Toast";
+import MotionProvider from "@/components/MotionProvider";
 import type { UserRole } from "@/types";
 
 export default async function AppLayout({
@@ -24,6 +25,7 @@ export default async function AppLayout({
   const role: UserRole = (profile?.role as UserRole) ?? "admin";
 
   return (
+    <MotionProvider>
     <SidebarProvider>
       <SWRProvider>
         <ToastProvider>
@@ -39,5 +41,6 @@ export default async function AppLayout({
         </ToastProvider>
       </SWRProvider>
     </SidebarProvider>
+    </MotionProvider>
   );
 }

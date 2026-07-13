@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import MotionProvider from "@/components/MotionProvider";
 
 // Police variable : un seul fichier woff2 couvre tout l'axe de graisse
 // (100→900), au lieu de 7 fichiers statiques. Gère nativement les poids
@@ -28,9 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={inter.variable}>
-      <body suppressHydrationWarning>
-        <MotionProvider>{children}</MotionProvider>
-      </body>
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }
