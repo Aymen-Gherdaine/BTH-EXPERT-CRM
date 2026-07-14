@@ -81,10 +81,13 @@ export default function SoumissionsClient({
   }, [page, perPage, debouncedQ, filtre, sortCol, sortDir]);
 
   // Seed SSR : page 1 en vue par défaut → on sert la tranche du buffer sans
-  // re-fetch (aucun "saut"). Dès qu'on cherche/trie/pagine, plus de seed.
+  // re-fetch (aucun "saut" ni skeleton). Dès qu'on cherche/trie/pagine, plus de
+  // seed. Le buffer suffit s'il couvre une page ENTIÈRE (perPage) OU s'il
+  // contient déjà TOUTES les soumissions (petit volume → total ≤ buffer) — sans
+  // ce 2ᵉ cas, une base avec peu de lignes ne serait jamais seedée (skeleton).
   const canSeed = page === 1 && !debouncedQ && !filtre
     && sortCol === DEFAULT_SORT && sortDir === DEFAULT_DIR
-    && perPage <= initialSoumissions.length;
+    && (perPage <= initialSoumissions.length || initialSoumissions.length >= initialTotal);
   const seed: SoumissionsPage | undefined = canSeed
     ? {
         data: initialSoumissions.slice(0, perPage),
