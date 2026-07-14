@@ -62,7 +62,7 @@ export async function GET() {
     .select("*, visites(id, date_visite, resultat, date_prochaine_action, created_at)")
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   const rows = (data ?? []).map((p) => {
     const lastV = getLastVisite(p.visites ?? []);

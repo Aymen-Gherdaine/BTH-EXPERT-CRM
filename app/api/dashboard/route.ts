@@ -38,7 +38,7 @@ export async function GET() {
   const { data, error } = await supabase.rpc("dashboard_stats", {
     p_start_of_month: startOfMonth,
   });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   const stats = data?.[0] ?? {
     soumissions_mois: 0,

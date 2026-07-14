@@ -62,7 +62,7 @@ export async function PUT(
     .eq("soumission_id", id);
 
   if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
   }
 
   if (Array.isArray(lignes) && lignes.length > 0) {
@@ -86,7 +86,7 @@ export async function PUT(
       .insert(rows);
 
     if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
   }
 

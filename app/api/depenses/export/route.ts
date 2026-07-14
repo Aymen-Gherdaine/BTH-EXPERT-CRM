@@ -56,7 +56,7 @@ export async function GET(_req: NextRequest) {
     .select("date_depense, categorie, montant, description, justificatif_url, profiles(full_name, email), soumissions(titre_projet, numero_offre)")
     .order("date_depense", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   const rows = ((data ?? []) as unknown as DepenseRow[]).map((d) => ({
     "Date": d.date_depense,

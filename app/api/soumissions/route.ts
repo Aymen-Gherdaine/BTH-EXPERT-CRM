@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
     }
 
     const { data, error, count } = await pageQuery.range(from, to);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
     // KPIs globaux (agrégats en base). Montants visibles par tous les rôles.
     const { data: statsData } = await supabase.rpc("soumissions_list_stats");
@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
   if (client_id) query = query.eq("client_id", client_id);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ data: data ?? [] });
 }

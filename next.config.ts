@@ -14,6 +14,8 @@ const SUPABASE_HOST = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  // Ne pas divulguer la stack via l'en-tête X-Powered-By.
+  poweredByHeader: false,
   experimental: {
     serverActions: {
       bodySizeLimit: "4mb",

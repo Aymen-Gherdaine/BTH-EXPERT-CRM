@@ -51,7 +51,7 @@ export async function GET(req: NextRequest) {
     if (orFilter) pageQuery = pageQuery.or(orFilter);
 
     const { data, error, count } = await pageQuery;
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
     // cityCount = villes distinctes sur l'ensemble filtré (colonne unique, léger)
     let cityQuery = supabase.from("clients").select("ville").limit(5000);
@@ -72,7 +72,7 @@ export async function GET(req: NextRequest) {
   if (orFilter) query = query.or(orFilter);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ data });
 }

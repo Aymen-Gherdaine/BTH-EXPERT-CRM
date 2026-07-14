@@ -868,10 +868,32 @@ export default function DepensesPageClient({
   async function uploadPhoto(file: File, depenseId: string): Promise<string | null> {
     if (!userId) return null;
 
+    // Sécurité : extension dérivée du type MIME réel (pas du nom de fichier),
+    // types autorisés restreints, taille bornée. Mêmes limites côté serveur
+    // (bucket justificatifs : file_size_limit + allowed_mime_types).
+    const ALLOWED: Record<string, string> = {
+      "image/png": "png",
+      "image/jpeg": "jpg",
+      "image/webp": "webp",
+      "application/pdf": "pdf",
+    };
+    const MAX_BYTES = 5 * 1024 * 1024; // 5 Mo
+    const ext = ALLOWED[file.type];
+    if (!ext) {
+      alert("Type de fichier non autorisé (image PNG/JPEG/WEBP ou PDF uniquement).");
+      return null;
+    }
+    if (file.size > MAX_BYTES) {
+      alert("Fichier trop volumineux (5 Mo maximum).");
+      return null;
+    }
+
     const supabase = createSupabaseBrowserClient();
-    const ext = file.name.split(".").pop() ?? "jpg";
     const path = `${userId}/${depenseId}.${ext}`;
-    const { error } = await supabase.storage.from("justificatifs").upload(path, file, { upsert: true });
+    const { error } = await supabase.storage.from("justificatifs").upload(path, file, {
+      upsert: true,
+      contentType: file.type,
+    });
     if (error) return null;
     return path;
   }

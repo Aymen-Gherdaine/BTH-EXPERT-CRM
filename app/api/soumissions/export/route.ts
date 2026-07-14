@@ -61,7 +61,7 @@ export async function GET() {
     .select("numero_offre, date_offre, titre_projet, type_etude, delai_jours, total_ht, tva, total_ttc, versement_recu, statut, client:clients(titre, nom_contact, entreprise)")
     .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   const rows = ((data ?? []) as unknown as SoumissionRow[]).map((s) => ({
     "N° Offre": s.numero_offre,

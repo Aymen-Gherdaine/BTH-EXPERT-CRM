@@ -15,3 +15,11 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
+    Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+    # CSP : script/style-src incluent 'unsafe-inline' car Next.js (hydratation)
+    # et les styles inline de l'app en ont besoin ; l'app n'a aucun sink XSS
+    # (pas de dangerouslySetInnerHTML). connect-src autorise l'API + le realtime
+    # Supabase. La CSP reste une défense en profondeur (frame-ancestors, base-uri,
+    # object-src, form-action verrouillés).
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
