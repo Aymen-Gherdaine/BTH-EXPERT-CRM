@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import useSWR from "swr";
 import { m as motion, AnimatePresence } from "framer-motion";
 import { formatDateFr, formatMontant } from "@/lib/utils";
 
@@ -666,38 +667,25 @@ function Skeleton() {
 
 export default function CoutsMargesDashboard() {
   const [periode, setPeriode] = useState<Periode>("month");
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchStats = useCallback(async (p: Periode) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/depenses/stats?periode=${p}`);
-      const json = await res.json() as { error?: string } & Partial<Stats>;
-      if (!res.ok || json.error) {
-        setError(json.error ?? "Erreur inconnue");
-      } else {
-        setStats({
-          total_revenus: json.total_revenus ?? 0,
-          total_depenses: json.total_depenses ?? 0,
-          marge_nette: json.marge_nette ?? 0,
-          par_projet: json.par_projet ?? [],
-          par_employe: json.par_employe ?? [],
-          depenses_non_liees: json.depenses_non_liees ?? [],
-        });
-      }
-    } catch {
-      setError("Impossible de charger les données.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStats(periode);
-  }, [fetchStats, periode]);
+  // SWR (comme les autres pages) : cache PAR période + revalidation en fond.
+  // Retour sur la page, ou période déjà consultée = instantané depuis le cache.
+  const { data: raw, error: swrError, isLoading } = useSWR<{ error?: string } & Partial<Stats>>(
+    `/api/depenses/stats?periode=${periode}`
+  );
+  const stats: Stats | null = useMemo(
+    () => (raw && !raw.error) ? {
+      total_revenus: raw.total_revenus ?? 0,
+      total_depenses: raw.total_depenses ?? 0,
+      marge_nette: raw.marge_nette ?? 0,
+      par_projet: raw.par_projet ?? [],
+      par_employe: raw.par_employe ?? [],
+      depenses_non_liees: raw.depenses_non_liees ?? [],
+    } : null,
+    [raw]
+  );
+  const loading = isLoading && !raw;
+  const error = swrError ? "Impossible de charger les données." : (raw?.error ?? null);
 
   const maxEmpTotal = Math.max(1, stats?.par_employe[0]?.total ?? 1);
   const margePos = (stats?.marge_nette ?? 0) >= 0;
