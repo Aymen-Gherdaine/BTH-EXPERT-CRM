@@ -20,15 +20,26 @@
 --      séparément (SEC-20) pour rester incrémental.
 -- ============================================================
 
+-- Nettoyage robuste : supprime TOUTES les policies existantes de ces 3 tables,
+-- quel que soit leur nom (dérive de nommage possible, ex. "Public read …").
+-- Les policies RLS se cumulant en OU, une ancienne policy permissive
+-- (rôle PUBLIC/anon) annulerait le durcissement ci-dessous.
+DO $$
+DECLARE pol record;
+BEGIN
+  FOR pol IN
+    SELECT tablename, policyname FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename IN ('clients', 'soumissions', 'lignes_budget')
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON public.%I', pol.policyname, pol.tablename);
+  END LOOP;
+END $$;
+
 -- =====================
 -- TABLE: clients
 -- =====================
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "clients_select" ON public.clients;
-DROP POLICY IF EXISTS "clients_insert" ON public.clients;
-DROP POLICY IF EXISTS "clients_update" ON public.clients;
-DROP POLICY IF EXISTS "clients_delete" ON public.clients;
 
 CREATE POLICY "clients_select" ON public.clients
   FOR SELECT TO authenticated USING (true);
