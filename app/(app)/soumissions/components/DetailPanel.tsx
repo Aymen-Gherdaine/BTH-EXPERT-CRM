@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import Link from "next/link";
 import { StatutSoumission, LigneBudget } from "@/types";
 import { formatMontant, formatDateFr } from "@/lib/utils";

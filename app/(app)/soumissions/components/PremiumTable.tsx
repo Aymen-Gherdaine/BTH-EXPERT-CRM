@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, Dispatch, SetStateAction } from "react";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import Link from "next/link";
 import { formatDateFr } from "@/lib/utils";
 import { SoumissionView, SortCol } from "../types";

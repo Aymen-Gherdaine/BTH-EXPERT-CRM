@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useId } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
 const FONT = `var(--font-inter)`;

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m as motion } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { Button } from "@/components/ui/Button";
 import type { User } from "@supabase/supabase-js";
@@ -83,10 +84,10 @@ function getDisplayName(user: User): string {
 
 function AvatarDisplay({ url, name, size = 20 }: { url: string | null; name: string; size?: number }) {
   const px = `${size * 4}px`;
+  const dim = size * 4;
   if (url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={url} alt={name} style={{ width: px, height: px }} className="rounded-full object-cover" />
+      <Image src={url} alt={name} width={dim} height={dim} style={{ width: px, height: px }} className="rounded-full object-cover" />
     );
   }
   return (

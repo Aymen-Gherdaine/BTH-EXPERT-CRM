@@ -1,5 +1,18 @@
 import type { NextConfig } from "next";
 
+// Hostname du projet Supabase dérivé de l'environnement plutôt que codé en dur :
+// garantit que les avatars et signatures (Supabase Storage) chargent quel que
+// soit le projet configuré via NEXT_PUBLIC_SUPABASE_URL. Fallback sur le host
+// historique si la variable est absente au build (ex. lint/CI sans env).
+const SUPABASE_HOST = (() => {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname
+      || "fxdcajofagujhdhkjxse.supabase.co";
+  } catch {
+    return "fxdcajofagujhdhkjxse.supabase.co";
+  }
+})();
+
 const nextConfig: NextConfig = {
   experimental: {
     serverActions: {
@@ -30,9 +43,16 @@ const nextConfig: NextConfig = {
   remotePatterns: [
     {
       protocol: 'https',
-      hostname: 'fxdcajofagujhdhkjxse.supabase.co',
+      hostname: SUPABASE_HOST,
       port: '',
       pathname: '/storage/v1/object/public/**',
+    },
+    // Avatars issus d'une connexion Google (user_metadata.picture / avatar_url)
+    {
+      protocol: 'https',
+      hostname: '**.googleusercontent.com',
+      port: '',
+      pathname: '/**',
     },
   ],
 },

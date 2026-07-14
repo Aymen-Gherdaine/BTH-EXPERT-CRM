@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { formatDateFr, formatMontant } from "@/lib/utils";
 
 type Periode = "month" | "quarter" | "year" | "all";
@@ -756,10 +756,13 @@ export default function CoutsMargesDashboard() {
                   style={{ color: active ? "#fff" : undefined }}
                 >
                   {active && (
+                    // Fondu (domAnimation) au lieu d'un slide layoutId : évite de
+                    // charger domMax (layout) juste pour cette pastille.
                     <motion.i
-                      layoutId="financePeriodBg"
                       className="active-bg"
-                      transition={{ type: "spring", stiffness: 360, damping: 32 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ duration: 0.18 }}
                     />
                   )}
                   <span>{p.label}</span>

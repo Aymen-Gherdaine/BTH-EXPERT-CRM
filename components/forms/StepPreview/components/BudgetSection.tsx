@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import type { LigneBudget } from "@/types";
 import { formatMontant } from "@/lib/utils";
 import { BTH_GREEN } from "../constants";

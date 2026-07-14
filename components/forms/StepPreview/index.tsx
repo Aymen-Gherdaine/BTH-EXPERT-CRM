@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import EditableSection from "@/components/soumissions/EditableSection";
 import type { StepPreviewProps } from "./types";
 import { DARK_BLUE, MID_BLUE, LIGHT_BLUE, BTH_GREEN } from "./constants";

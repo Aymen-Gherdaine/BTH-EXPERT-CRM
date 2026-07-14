@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSWRConfig } from "swr";
-import { motion } from "framer-motion";
+import { m as motion } from "framer-motion";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Client, EditablePreview, LigneBudget, Soumission, StatutSoumission, UserRole } from "@/types";

@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 
 type ToastTone = "success" | "error" | "info";
 

@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, m as motion } from "framer-motion";
 import { preload } from "swr";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { fetcher } from "@/lib/fetcher";
@@ -255,7 +256,7 @@ function SidebarInner({
               <div className="flex items-center gap-[10px] px-4 py-3.5 border-b border-bth-hairline">
                 <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden">
                   {avatarUrl ? (
-                    <img src={avatarUrl} alt={name || "Utilisateur"} className="w-full h-full object-cover" />
+                    <Image src={avatarUrl} alt={name || "Utilisateur"} width={40} height={40} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[13px] font-semibold">
                       {initials}
@@ -325,7 +326,7 @@ function SidebarInner({
             <div className="relative flex-shrink-0">
               <div className="w-[34px] h-[34px] rounded-full overflow-hidden">
                 {avatarUrl ? (
-                  <img src={avatarUrl} alt={name || "Utilisateur"} className="w-full h-full object-cover" />
+                  <Image src={avatarUrl} alt={name || "Utilisateur"} width={34} height={34} className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-[34px] h-[34px] rounded-full bg-bth-green-800 flex items-center justify-center text-white text-[13px] font-semibold">
                     {initials}

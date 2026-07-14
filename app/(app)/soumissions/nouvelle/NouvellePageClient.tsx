@@ -1,14 +1,36 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { m as motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import StepClientInfo from "@/components/forms/StepClientInfo";
 import StepProjectInfo from "@/components/forms/StepProjectInfo";
-import StepBudget from "@/components/forms/StepBudget";
-import StepPreview from "@/components/forms/StepPreview";
 import { FormDataStep1, FormDataStep2, FormDataStep3, UserRole } from "@/types";
 import type { SoumissionAIContent } from "@/lib/anthropic";
+
+// Fallback léger affiché pendant le chargement d'une étape différée.
+function StepLoading() {
+  return (
+    <div className="p-6 md:p-8">
+      <div className="h-6 w-48 bg-gray-100 rounded-lg animate-pulse" />
+      <div className="h-64 bg-gray-50 rounded-xl animate-pulse mt-6" />
+    </div>
+  );
+}
+
+// Étapes lourdes (Budget ~730 lignes ; Prévisualisation ~1800 lignes avec ses
+// sous-composants et modales) chargées à la demande : elles ne sont montées
+// qu'aux étapes 3 et 4, donc leur JS ne pèse plus sur le bundle initial de la
+// page « Nouvelle soumission ».
+const StepBudget = dynamic(() => import("@/components/forms/StepBudget"), {
+  loading: StepLoading,
+  ssr: false,
+});
+const StepPreview = dynamic(() => import("@/components/forms/StepPreview"), {
+  loading: StepLoading,
+  ssr: false,
+});
 
 const STEPS = ["Informations client", "Projet", "Budget", "Prévisualisation"];
 
