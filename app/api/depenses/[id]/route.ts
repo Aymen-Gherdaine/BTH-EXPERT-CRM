@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { depensePatchSchema } from "@/lib/schemas/index";
+import { validateBody } from "@/lib/schemas/helpers";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -61,14 +63,19 @@ export async function PATCH(
   if (access.notFound) return NextResponse.json({ error: "Non trouvé" }, { status: 404 });
   if (!access.allowed) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
 
-  const body = await req.json();
-  // Silently strip employe_id — ownership cannot be transferred
-  const { employe_id: _drop, ...safeFields } = body as Record<string, unknown>;
-  void _drop;
+  let rawBody: unknown;
+  try {
+    rawBody = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide" }, { status: 400 });
+  }
+  // Whitelist stricte : seuls les champs éditables passent (employe_id jamais modifiable).
+  const validation = validateBody(depensePatchSchema, rawBody);
+  if (!validation.success) return validation.response;
 
   const { data, error } = await supabase
     .from("depenses")
-    .update(safeFields)
+    .update(validation.data)
     .eq("id", id)
     .select()
     .single();

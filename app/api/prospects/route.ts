@@ -3,6 +3,12 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { prospectCreateSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
+import { getUserRole } from "@/lib/api-roles";
+
+// La prospection est réservée aux administrateurs et commerciaux.
+function canAccessProspection(role: string | undefined) {
+  return role === "admin" || role === "commercial";
+}
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -29,6 +35,9 @@ export async function GET(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  if (!canAccessProspection(await getUserRole(supabase, user.id))) {
+    return NextResponse.json({ error: "Accès réservé aux administrateurs et commerciaux" }, { status: 403 });
+  }
 
   const { searchParams } = new URL(req.url);
   const statut = searchParams.get("statut");
@@ -53,6 +62,9 @@ export async function POST(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  if (!canAccessProspection(await getUserRole(supabase, user.id))) {
+    return NextResponse.json({ error: "Accès réservé aux administrateurs et commerciaux" }, { status: 403 });
+  }
 
   const body = await req.json();
   const validation = validateBody(prospectCreateSchema, body);

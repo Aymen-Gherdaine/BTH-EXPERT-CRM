@@ -130,6 +130,19 @@ export const clientPatchSchema = z.object({
   email: z.string().email().optional().nullable(),
 }).refine(data => Object.keys(data).length > 0, "Au moins un champ requis")
 
+// ── Prospect PATCH (whitelist anti mass-assignment) ───────
+export const prospectPatchSchema = z.object({
+  entreprise: z.string().min(1).max(200).optional(),
+  secteur_activite: z.string().min(1).max(100).optional(),
+  nom_contact: z.string().min(1).max(100).optional(),
+  poste_contact: z.string().max(100).optional().nullable(),
+  telephone: z.string().max(30).optional().nullable(),
+  email: z.string().email().optional().nullable(),
+  adresse: z.string().max(300).optional().nullable(),
+  notes_generales: z.string().max(2000).optional().nullable(),
+  statut_global: z.string().max(50).optional(),
+}).refine(data => Object.keys(data).length > 0, "Au moins un champ requis")
+
 // ── Dépense POST ──────────────────────────────────────────
 const CATEGORIES_VALIDES = [
   "mission",
@@ -151,6 +164,16 @@ export const depenseCreateSchema = z.object({
   justificatif_url: z.string().url().optional().nullable(),
   projet_lie: z.string().uuid("projet_lie doit être un UUID valide").optional().nullable(),
 })
+
+// ── Dépense PATCH (whitelist anti mass-assignment ; employe_id non modifiable) ──
+export const depensePatchSchema = z.object({
+  categorie: z.enum(CATEGORIES_VALIDES).optional(),
+  montant: z.number().positive("Le montant doit être positif").optional(),
+  description: z.string().max(1000).optional().nullable(),
+  date_depense: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  justificatif_url: z.string().url().optional().nullable(),
+  projet_lie: z.string().uuid().optional().nullable(),
+}).refine(data => Object.keys(data).length > 0, "Au moins un champ requis")
 
 // ── Export DOCX / PDF ──────────────────────────────────────
 export const exportDocumentSchema = z.object({

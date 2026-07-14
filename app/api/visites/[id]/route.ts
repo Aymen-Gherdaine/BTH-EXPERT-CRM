@@ -3,6 +3,11 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { visitePatchSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
+import { getUserRole } from "@/lib/api-roles";
+
+function canAccessProspection(role: string | undefined) {
+  return role === "admin" || role === "commercial";
+}
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -28,6 +33,9 @@ export async function PATCH(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  if (!canAccessProspection(await getUserRole(supabase, user.id))) {
+    return NextResponse.json({ error: "Accès réservé aux administrateurs et commerciaux" }, { status: 403 });
+  }
 
   const body = await req.json();
   const validation = validateBody(visitePatchSchema, body);
@@ -59,6 +67,9 @@ export async function DELETE(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  if (!canAccessProspection(await getUserRole(supabase, user.id))) {
+    return NextResponse.json({ error: "Accès réservé aux administrateurs et commerciaux" }, { status: 403 });
+  }
 
   const { error } = await supabase.from("visites").delete().eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

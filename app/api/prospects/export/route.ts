@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import * as XLSX from "xlsx-js-style";
 import { autoFitColumns, styleHeaders } from "@/lib/excel-utils";
+import { getUserRole } from "@/lib/api-roles";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -51,6 +52,10 @@ export async function GET() {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  const role = await getUserRole(supabase, user.id);
+  if (role !== "admin" && role !== "commercial") {
+    return NextResponse.json({ error: "Accès réservé aux administrateurs et commerciaux" }, { status: 403 });
+  }
 
   const { data, error } = await supabase
     .from("prospects")
