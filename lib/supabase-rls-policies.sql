@@ -5,15 +5,25 @@
 -- une policy sans `to authenticated` s'appliquerait à PUBLIC/anon,
 -- dont la clé est publique. Cf. migration 20260714160000 (SEC-01).
 
+-- Nettoyage robuste : supprime toutes les policies existantes de ces tables
+-- quel que soit leur nom (dérive de nommage possible). Les policies RLS se
+-- cumulant en OU, une ancienne policy permissive annulerait le durcissement.
+do $$
+declare pol record;
+begin
+  for pol in
+    select tablename, policyname from pg_policies
+    where schemaname = 'public'
+      and tablename in ('clients', 'soumissions', 'lignes_budget')
+  loop
+    execute format('drop policy if exists %I on public.%I', pol.policyname, pol.tablename);
+  end loop;
+end $$;
+
 -- =====================
 -- TABLE: clients
 -- =====================
 alter table clients enable row level security;
-
-drop policy if exists "clients_select" on clients;
-drop policy if exists "clients_insert" on clients;
-drop policy if exists "clients_update" on clients;
-drop policy if exists "clients_delete" on clients;
 
 create policy "clients_select" on clients
   for select to authenticated using (true);
