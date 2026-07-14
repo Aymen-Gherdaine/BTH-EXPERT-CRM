@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { createServerSupabase, getServerProfile } from "@/lib/supabase-server";
-import { redactSoumissionAmounts } from "@/lib/soumission-access";
 import SoumissionDetailClient from "./SoumissionDetailClient";
 import type { Soumission, UserRole } from "@/types";
 
@@ -29,11 +28,7 @@ export default async function SoumissionDetailPage({
     .order("ordre");
 
   const role = (profile?.role as UserRole) ?? null;
-  // SEC-04 : ne jamais inclure les montants dans la charge utile d'un commercial.
-  const initialSoumission = redactSoumissionAmounts(
-    { ...soumRes.data, lignes_budget: lignes ?? [] } as Record<string, unknown>,
-    role
-  ) as unknown as Soumission;
+  const initialSoumission = { ...soumRes.data, lignes_budget: lignes ?? [] } as unknown as Soumission;
 
   return (
     <SoumissionDetailClient

@@ -12,10 +12,11 @@ import { SoumMobileList, SoumissionsTable } from "./SoumissionsTable";
 // changer les données des autres lignes. Props stables (client, onToggle
 // id-based en useCallback, tableau vide constant) → seules les lignes concernées
 // se re-rendent.
-export const ClientCard = memo(function ClientCard({ client, isExpanded, soumissions, isLoadingSoum, canSeeAmounts, onToggle, onDelete }: {
+export const ClientCard = memo(function ClientCard({ client, isExpanded, soumissions, isLoadingSoum, canSeeAmounts, canDelete, onToggle, onDelete }: {
   client: ClientWithSoumissions; isExpanded: boolean;
   soumissions: Soumission[]; isLoadingSoum: boolean;
   canSeeAmounts: boolean;
+  canDelete: boolean;
   onToggle: (id: string) => void;
   onDelete: (c: ClientWithSoumissions, e: React.MouseEvent) => void;
 }) {
@@ -113,6 +114,7 @@ export const ClientCard = memo(function ClientCard({ client, isExpanded, soumiss
 
         {/* Actions */}
         <div className="clients-card-actions" style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0, paddingRight: 4 }}>
+          {canDelete && (
           <button
             className="clients-card-delete"
             title="Supprimer le client"
@@ -128,6 +130,7 @@ export const ClientCard = memo(function ClientCard({ client, isExpanded, soumiss
           >
             <Ic d={I.trash} z={17} />
           </button>
+          )}
 
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -196,12 +199,13 @@ export const ClientCard = memo(function ClientCard({ client, isExpanded, soumiss
 /* ══════════════════════════════════════════════════════════
    CLIENT TABLE ROW (desktop)
 ══════════════════════════════════════════════════════════ */
-const ClientTableRow = memo(function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, canSeeAmounts, onToggle, onDelete }: {
+const ClientTableRow = memo(function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, canSeeAmounts, canDelete, onToggle, onDelete }: {
   client: ClientWithSoumissions;
   isExpanded: boolean;
   soumissions: Soumission[];
   isLoadingSoum: boolean;
   canSeeAmounts: boolean;
+  canDelete: boolean;
   onToggle: (id: string) => void;
   onDelete: (c: ClientWithSoumissions, e: React.MouseEvent) => void;
 }) {
@@ -264,6 +268,7 @@ const ClientTableRow = memo(function ClientTableRow({ client, isExpanded, soumis
         </div>
         {/* Actions */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "0 12px" }}>
+          {canDelete && (
           <button
             title="Supprimer le client"
             onClick={e => onDelete(client, e)}
@@ -278,6 +283,7 @@ const ClientTableRow = memo(function ClientTableRow({ client, isExpanded, soumis
           >
             <Ic d={I.trash} z={13} />
           </button>
+          )}
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
             transition={{ duration: 0.22 }}
@@ -338,12 +344,13 @@ const NO_SOUM: Soumission[] = [];
 /* ══════════════════════════════════════════════════════════
    CLIENTS TABLE (desktop)
 ══════════════════════════════════════════════════════════ */
-export function ClientsTable({ clients, expandedId, expandedSoumissions, expandedSoumLoading, canSeeAmounts, onToggle, onDelete }: {
+export function ClientsTable({ clients, expandedId, expandedSoumissions, expandedSoumLoading, canSeeAmounts, canDelete, onToggle, onDelete }: {
   clients: ClientWithSoumissions[];
   expandedId: string | null;
   expandedSoumissions: Soumission[];
   expandedSoumLoading: boolean;
   canSeeAmounts: boolean;
+  canDelete: boolean;
   onToggle: (id: string) => void;
   onDelete: (c: ClientWithSoumissions, e: React.MouseEvent) => void;
 }) {
@@ -388,6 +395,7 @@ export function ClientsTable({ clients, expandedId, expandedSoumissions, expande
             soumissions={expandedId === client.id ? expandedSoumissions : NO_SOUM}
             isLoadingSoum={expandedId === client.id && expandedSoumLoading}
             canSeeAmounts={canSeeAmounts}
+            canDelete={canDelete}
             onToggle={onToggle}
             onDelete={onDelete}
           />

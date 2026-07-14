@@ -5,6 +5,8 @@ import { generateNumeroOffre } from "@/lib/utils";
 import { soumissionCreateSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
 import { SOUMISSION_LIST_SELECT } from "@/lib/queries";
+import { canCreateSoumission } from "@/lib/permissions";
+import { sanitizeSearchTerm } from "@/lib/search";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -26,14 +28,13 @@ async function getSupabase() {
   );
 }
 
-async function canManageSoumissions(supabase: Awaited<ReturnType<typeof getSupabase>>, userId: string) {
+async function getRole(supabase: Awaited<ReturnType<typeof getSupabase>>, userId: string) {
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", userId)
     .single<{ role: string }>();
-
-  return profile?.role === "admin" || profile?.role === "charge_projet";
+  return profile?.role;
 }
 
 export async function GET(req: NextRequest) {
@@ -41,27 +42,9 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single<{ role: string }>();
-  const role = profile?.role;
-
   const { searchParams } = new URL(req.url);
   const statut = searchParams.get("statut");
   const client_id = searchParams.get("client_id");
-
-  // Un commercial ne voit jamais les montants (masqués côté serveur).
-  const sanitize = (rows: unknown[]) =>
-    rows.map(s => {
-      if (role === "commercial") {
-        const { total_ht, tva, total_ttc, versement_recu, ...rest } = s as Record<string, unknown>;
-        void total_ht; void tva; void total_ttc; void versement_recu;
-        return rest;
-      }
-      return s;
-    });
 
   // ── Mode paginé (serveur) : ?page (+ pageSize, q, sort, dir) ───────────────
   // Recherche, filtre, tri et pagination sont faits EN BASE : le client ne
@@ -72,7 +55,8 @@ export async function GET(req: NextRequest) {
     const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") ?? "20", 10) || 20));
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
-    const q = searchParams.get("q")?.trim();
+    const rawQ = searchParams.get("q")?.trim();
+    const q = rawQ ? sanitizeSearchTerm(rawQ) : "";
 
     // Tri : colonne sur liste blanche uniquement (jamais d'entrée brute en ORDER BY)
     const sortParam = searchParams.get("sort") ?? "date_offre";
@@ -109,10 +93,9 @@ export async function GET(req: NextRequest) {
     }
 
     const { data, error, count } = await pageQuery.range(from, to);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
-    // KPIs globaux (agrégats en base). Montants réservés admin / chargé de projet.
-    const canSeeAmounts = role === "admin" || role === "charge_projet";
+    // KPIs globaux (agrégats en base). Montants visibles par tous les rôles.
     const { data: statsData } = await supabase.rpc("soumissions_list_stats");
     const st = statsData?.[0];
     const kpis = {
@@ -122,11 +105,11 @@ export async function GET(req: NextRequest) {
         "Acceptée": st?.count_acceptee ?? 0,
         "Refusée": st?.count_refusee ?? 0,
       },
-      totalTTC: canSeeAmounts ? Number(st?.total_ttc ?? 0) : null,
-      totalVerse: canSeeAmounts ? Number(st?.total_verse ?? 0) : null,
+      totalTTC: Number(st?.total_ttc ?? 0),
+      totalVerse: Number(st?.total_verse ?? 0),
     };
 
-    return NextResponse.json({ data: sanitize(data ?? []), total: count ?? 0, kpis });
+    return NextResponse.json({ data: data ?? [], total: count ?? 0, kpis });
   }
 
   // ── Mode legacy (non paginé, borné) ────────────────────────────────────────
@@ -142,9 +125,9 @@ export async function GET(req: NextRequest) {
   if (client_id) query = query.eq("client_id", client_id);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
-  return NextResponse.json({ data: sanitize(data ?? []) });
+  return NextResponse.json({ data: data ?? [] });
 }
 
 export async function POST(req: NextRequest) {
@@ -152,8 +135,9 @@ export async function POST(req: NextRequest) {
     const supabase = await getSupabase();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    if (!(await canManageSoumissions(supabase, user.id))) {
-      return NextResponse.json({ error: "Action réservée aux administrateurs et chargés de projet" }, { status: 403 });
+    // Création d'une soumission : réservée à l'administrateur.
+    if (!canCreateSoumission(await getRole(supabase, user.id))) {
+      return NextResponse.json({ error: "Action réservée aux administrateurs" }, { status: 403 });
     }
 
     const rawBody = await req.json();

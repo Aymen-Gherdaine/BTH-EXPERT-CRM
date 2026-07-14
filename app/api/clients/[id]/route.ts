@@ -3,6 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { clientPatchSchema } from "@/lib/schemas/index";
 import { validateBody } from "@/lib/schemas/helpers";
+import { getUserRole } from "@/lib/api-roles";
+import { canDeleteClient } from "@/lib/permissions";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -46,7 +48,7 @@ export async function PATCH(
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ data });
 }
@@ -59,12 +61,17 @@ export async function DELETE(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
+  // Suppression client → réservée à l'admin (cascade sur les soumissions liées).
+  if (!canDeleteClient(await getUserRole(supabase, user.id))) {
+    return NextResponse.json({ error: "Suppression réservée aux administrateurs" }, { status: 403 });
+  }
+
   const { id } = await params;
 
   // La suppression cascade les soumissions liées (ON DELETE CASCADE)
   const { error } = await supabase.from("clients").delete().eq("id", id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ success: true });
 }

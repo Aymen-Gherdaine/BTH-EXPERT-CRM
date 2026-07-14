@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { ligneBudgetSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
+import { getUserRole } from "@/lib/api-roles";
+import { canManageSoumissions } from "@/lib/permissions";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -25,16 +27,6 @@ async function getSupabase() {
   );
 }
 
-async function canManageSoumissions(supabase: Awaited<ReturnType<typeof getSupabase>>, userId: string) {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .single<{ role: string }>();
-
-  return profile?.role === "admin" || profile?.role === "charge_projet";
-}
-
 // Corps attendu : { lignes: LigneBudget[] } — validé avant toute écriture.
 const lignesPutSchema = z.object({
   lignes: z.array(ligneBudgetSchema),
@@ -48,7 +40,7 @@ export async function PUT(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  if (!(await canManageSoumissions(supabase, user.id))) {
+  if (!canManageSoumissions(await getUserRole(supabase, user.id))) {
     return NextResponse.json({ error: "Action réservée aux administrateurs et chargés de projet" }, { status: 403 });
   }
 
@@ -70,7 +62,7 @@ export async function PUT(
     .eq("soumission_id", id);
 
   if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
   }
 
   if (Array.isArray(lignes) && lignes.length > 0) {
@@ -94,7 +86,7 @@ export async function PUT(
       .insert(rows);
 
     if (insertError) {
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+      return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
     }
   }
 

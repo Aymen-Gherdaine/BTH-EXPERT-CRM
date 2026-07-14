@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { getUserRole } from "@/lib/api-roles";
+import { canAccessProspection } from "@/lib/permissions";
+import { prospectPatchSchema } from "@/lib/schemas";
+import { validateBody } from "@/lib/schemas/helpers";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -30,6 +34,9 @@ export async function GET(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  if (!canAccessProspection(await getUserRole(supabase, user.id))) {
+    return NextResponse.json({ error: "Accès réservé aux administrateurs et commerciaux" }, { status: 403 });
+  }
 
   const { data, error } = await supabase
     .from("prospects")
@@ -50,17 +57,27 @@ export async function PATCH(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  if (!canAccessProspection(await getUserRole(supabase, user.id))) {
+    return NextResponse.json({ error: "Accès réservé aux administrateurs et commerciaux" }, { status: 403 });
+  }
 
-  const body = await req.json();
+  let rawBody: unknown;
+  try {
+    rawBody = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide" }, { status: 400 });
+  }
+  const validation = validateBody(prospectPatchSchema, rawBody);
+  if (!validation.success) return validation.response;
 
   const { data, error } = await supabase
     .from("prospects")
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update({ ...validation.data, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ data });
 }
@@ -73,10 +90,13 @@ export async function DELETE(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  if (!canAccessProspection(await getUserRole(supabase, user.id))) {
+    return NextResponse.json({ error: "Accès réservé aux administrateurs et commerciaux" }, { status: 403 });
+  }
 
   const { error } = await supabase.from("prospects").delete().eq("id", id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ success: true });
 }

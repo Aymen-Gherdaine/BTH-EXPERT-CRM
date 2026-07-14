@@ -12,8 +12,8 @@ import { Ic } from "./Ic";
 // détail, des modales, du versement… sans que `pageItems` change. Sans memo,
 // toutes les cartes visibles se re-rendraient à chaque fois. Les props sont
 // stables (o : même réf tant que pageItems ne change pas ; onOpen : useCallback).
-const SoumissionCard = memo(function SoumissionCard({ o, idx, isAdmin, onOpen, isActive }: {
-  o: SoumissionView; idx: number; isAdmin: boolean; onOpen: (o: SoumissionView) => void; isActive: boolean;
+const SoumissionCard = memo(function SoumissionCard({ o, idx, onOpen, isActive }: {
+  o: SoumissionView; idx: number; onOpen: (o: SoumissionView) => void; isActive: boolean;
 }) {
   const c = ST[o.statut];
   const pct = o.total_ttc > 0 ? Math.min(100, ((o.versement_recu ?? 0) / o.total_ttc) * 100) : 0;
@@ -99,7 +99,7 @@ const SoumissionCard = memo(function SoumissionCard({ o, idx, isAdmin, onOpen, i
                 )}
               </div>
             </div>
-            {isAdmin && o.total_ttc > 0 && (
+            {o.total_ttc > 0 && (
               <div className="submission-card-total" style={{ textAlign: "right" }}>
                 <div className="submission-card-total-row" style={{ display: "flex", alignItems: "baseline", gap: 3, justifyContent: "flex-end" }}>
                   <span className="submission-card-total-value" style={{
@@ -135,8 +135,8 @@ const SoumissionCard = memo(function SoumissionCard({ o, idx, isAdmin, onOpen, i
   );
 });
 
-export function CardGrid({ items, isAdmin, onOpen, selId, px }: {
-  items: SoumissionView[]; isAdmin: boolean;
+export function CardGrid({ items, onOpen, selId, px }: {
+  items: SoumissionView[];
   onOpen: (o: SoumissionView) => void; selId: string | null; px: number;
 }) {
   return (
@@ -149,7 +149,7 @@ export function CardGrid({ items, isAdmin, onOpen, selId, px }: {
     }}>
       {items.map((o, i) => (
         <SoumissionCard
-          key={o.id} o={o} idx={i} isAdmin={isAdmin}
+          key={o.id} o={o} idx={i}
           onOpen={onOpen} isActive={selId === o.id}
         />
       ))}

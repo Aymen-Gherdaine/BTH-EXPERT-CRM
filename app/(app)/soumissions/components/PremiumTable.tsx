@@ -111,12 +111,11 @@ const PremiumTableRow = memo(function PremiumTableRow({
       </div>
 
       {/* Statut */}
-      <div style={{ display: "flex", alignItems: "center", paddingLeft: 4, borderRight: isAdmin ? D : "none" }}>
+      <div style={{ display: "flex", alignItems: "center", paddingLeft: 4, borderRight: D }}>
         <StatusBadge st={o.statut} sm />
       </div>
 
-      {isAdmin && (
-        <>
+      <>
           {/* Délai */}
           <div style={{ display: "flex", alignItems: "center", paddingLeft: 10, borderRight: D }}>
             {o.delai_jours > 0 && (
@@ -161,7 +160,6 @@ const PremiumTableRow = memo(function PremiumTableRow({
             )}
           </div>
         </>
-      )}
 
       {/* Actions */}
       <div style={{
@@ -213,9 +211,8 @@ export function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle
 }) {
   // Les lignes arrivent déjà triées par le serveur (tri global sur toute la
   // liste, pas seulement la page). Ici on ne fait que les afficher.
-  const GRID = isAdmin
-    ? "52px 130px 190px 1fr 110px 80px 150px 110px"
-    : "52px 130px 190px 1fr 110px 100px";
+  // Montants visibles par tous les rôles → grille toujours complète.
+  const GRID = "52px 130px 190px 1fr 110px 80px 150px 110px";
 
   const totalRow = items.reduce((s, o) => s + o.total_ttc, 0);
 
@@ -258,13 +255,9 @@ export function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle
         <div style={{ display: "flex", alignItems: "center", paddingLeft: 4, borderRight: HD }}><TH id="numero_offre" label="Référence" /></div>
         <div style={{ display: "flex", alignItems: "center", paddingLeft: 4, borderRight: HD }}><TH id="client" label="Client" /></div>
         <div style={{ display: "flex", alignItems: "center", paddingLeft: 4, borderRight: HD }}><TH id="titre_projet" label="Soumission" /></div>
-        <div style={{ display: "flex", alignItems: "center", paddingLeft: 4, borderRight: isAdmin ? HD : "none" }}><TH id="statut" label="Statut" /></div>
-        {isAdmin && (
-          <>
-            <div style={{ display: "flex", alignItems: "center", paddingLeft: 8, borderRight: HD }}><TH label="Délai" /></div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 16, borderRight: HD }}><TH id="total_ttc" label="Montant" align="right" /></div>
-          </>
-        )}
+        <div style={{ display: "flex", alignItems: "center", paddingLeft: 4, borderRight: HD }}><TH id="statut" label="Statut" /></div>
+        <div style={{ display: "flex", alignItems: "center", paddingLeft: 8, borderRight: HD }}><TH label="Délai" /></div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 16, borderRight: HD }}><TH id="total_ttc" label="Montant" align="right" /></div>
         <div />
       </div>
 
@@ -283,7 +276,7 @@ export function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle
       {/* Footer: count + pagination + total */}
       <div style={{
         display: "grid",
-        gridTemplateColumns: isAdmin ? "1fr auto 1fr" : "auto 1fr",
+        gridTemplateColumns: "1fr auto 1fr",
         alignItems: "center", gap: 12,
         borderTop: "1px solid #e8e2d8",
         background: "#fffdfa", flexShrink: 0,
@@ -327,19 +320,17 @@ export function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle
           </div>
         )}
 
-        {isAdmin && (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
-            <span style={{ fontSize: 10, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em" }}>
-              Total TTC
+        <div style={{ display: "flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Total TTC
+          </span>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
+            <span style={{ fontVariantNumeric: "tabular-nums", fontSize: 15, fontWeight: 700, color: "#111827", letterSpacing: 0 }}>
+              {fmtInt(totalRow)}
             </span>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 2 }}>
-              <span style={{ fontVariantNumeric: "tabular-nums", fontSize: 15, fontWeight: 700, color: "#111827", letterSpacing: 0 }}>
-                {fmtInt(totalRow)}
-              </span>
-              <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 500 }}>DZD</span>
-            </div>
+            <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 500 }}>DZD</span>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

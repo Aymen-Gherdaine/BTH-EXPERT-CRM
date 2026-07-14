@@ -30,17 +30,12 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single<{ role: string }>();
-  const role = profile?.role;
-
   const { searchParams } = new URL(req.url);
   const categorie = searchParams.get("categorie");
   const projet_lie = searchParams.get("projet_lie");
 
+  // Toutes les dépenses sont visibles par tous les rôles (total par projet).
+  // La modification/suppression reste réservée au propriétaire ou à l'admin.
   let query = supabase
     .from("depenses")
     .select("*, profiles(full_name), soumissions(id, titre_projet, numero_offre, total_ht)")
@@ -48,12 +43,11 @@ export async function GET(req: NextRequest) {
     // Garde-fou volume — voir note dans /api/soumissions.
     .limit(1000);
 
-  if (role === "commercial") query = query.eq("employe_id", user.id);
   if (categorie) query = query.eq("categorie", categorie);
   if (projet_lie) query = query.eq("projet_lie", projet_lie);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ data });
 }
@@ -85,7 +79,7 @@ export async function POST(req: NextRequest) {
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ data }, { status: 201 });
 }

@@ -127,7 +127,7 @@ export default function SoumissionsClient({
 
         {/* Hero */}
         <div className="submission-hero" style={{ background: "white", borderBottom: "1px solid #e8e2d8", padding: `18px ${px}px 16px`, flexShrink: 0 }}>
-          <div className="submission-hero-top" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: isAdmin ? 14 : 0 }}>
+          <div className="submission-hero-top" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14 }}>
             <div style={{ minWidth: 0 }}>
               <div style={{ display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
                 <span style={{ width: 28, height: 1, background: "#c9a96e", display: "inline-block" }} />
@@ -161,21 +161,19 @@ export default function SoumissionsClient({
               )}
             </div>
           </div>
-          {isAdmin && (
-            <div className="submission-kpis" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              {[
-                { label: "Total TTC",  value: `${fmtInt(totalTTC)} DZD`,  icon: I.wallet },
-                { label: "Acceptées",  value: String(nbAccepted),           icon: I.check },
-                { label: "Versements", value: `${fmtInt(totalVerse)} DZD`, icon: I.trend },
-              ].map(chip => (
-                <div key={chip.label} className="submission-kpi" style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 9999, background: "#faf7f2", border: "1px solid #e8e2d8" }}>
-                  <Ic d={chip.icon} z={13} s="#a08a63" />
-                  <span className="submission-kpi-label" style={{ fontSize: 11.5, color: "#887f74" }}>{chip.label}</span>
-                  <span className="submission-kpi-value" style={{ fontSize: 12.5, color: "#1a1714", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{chip.value}</span>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="submission-kpis" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {[
+              { label: "Total TTC",  value: `${fmtInt(totalTTC)} DZD`,  icon: I.wallet },
+              { label: "Acceptées",  value: String(nbAccepted),           icon: I.check },
+              { label: "Versements", value: `${fmtInt(totalVerse)} DZD`, icon: I.trend },
+            ].map(chip => (
+              <div key={chip.label} className="submission-kpi" style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 12px", borderRadius: 9999, background: "#faf7f2", border: "1px solid #e8e2d8" }}>
+                <Ic d={chip.icon} z={13} s="#a08a63" />
+                <span className="submission-kpi-label" style={{ fontSize: 11.5, color: "#887f74" }}>{chip.label}</span>
+                <span className="submission-kpi-value" style={{ fontSize: 12.5, color: "#1a1714", fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{chip.value}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Filter + view toggle bar */}
@@ -235,7 +233,7 @@ export default function SoumissionsClient({
               {(!isDesktop || view === "cards") ? (
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
                   <div ref={gridRef} style={{ flex: 1, overflow: "hidden" }} className="sc">
-                    <CardGrid items={rows} isAdmin={isAdmin} onOpen={openDetail} selId={selId} px={px} />
+                    <CardGrid items={rows} onOpen={openDetail} selId={selId} px={px} />
                   </div>
                   <Pager page={page} total={total} perPage={perPage} onPage={setPage} hideWhenSinglePage={true} />
                 </div>

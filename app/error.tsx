@@ -26,8 +26,11 @@ export default function GlobalError({
 
         <h1 className="text-lg font-semibold text-bth-n-900 mb-2">Une erreur est survenue</h1>
         <p className="text-sm text-bth-n-500 leading-relaxed mb-8">
-          {error.message || "Une erreur inattendue s'est produite. Réessayez ou revenez à l'accueil."}
+          Une erreur inattendue s&rsquo;est produite. Réessayez ou revenez à l&rsquo;accueil.
         </p>
+        {error?.digest && (
+          <p className="text-[11px] text-bth-n-400 font-mono mb-5">Réf : {error.digest}</p>
+        )}
 
         <div className="flex items-center gap-3">
           <button

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { sanitizeSearchTerm } from "@/lib/search";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -28,7 +29,8 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const q = searchParams.get("q");
+  const rawQ = searchParams.get("q");
+  const q = rawQ ? sanitizeSearchTerm(rawQ) : "";
   const orFilter = q ? `entreprise.ilike.%${q}%,nom_contact.ilike.%${q}%` : null;
   const pageParam = searchParams.get("page");
   const pageSizeParam = searchParams.get("pageSize");
@@ -49,7 +51,7 @@ export async function GET(req: NextRequest) {
     if (orFilter) pageQuery = pageQuery.or(orFilter);
 
     const { data, error, count } = await pageQuery;
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
     // cityCount = villes distinctes sur l'ensemble filtré (colonne unique, léger)
     let cityQuery = supabase.from("clients").select("ville").limit(5000);
@@ -70,7 +72,7 @@ export async function GET(req: NextRequest) {
   if (orFilter) query = query.or(orFilter);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ data });
 }

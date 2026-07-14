@@ -225,8 +225,10 @@ export default function SoumissionDetailClient({
 
   if (!soumission || !client) return null;
 
-  const canSeeAmounts = role === "admin" || role === "charge_projet";
-  const canManageSoumissions = canSeeAmounts;
+  // Montants + téléchargement PDF/DOCX : visibles par tous les rôles.
+  const canSeeAmounts = true;
+  // Gestion (statut, versement, édition des lignes, suppression) : admin / expert.
+  const canManageSoumissions = role === "admin" || role === "charge_projet";
 
   const objectifs = contexte ? [
     contexte.objectif_1,

@@ -3,6 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { visitePatchSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
+import { getUserRole } from "@/lib/api-roles";
+import { canAccessProspection } from "@/lib/permissions";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -28,6 +30,9 @@ export async function PATCH(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  if (!canAccessProspection(await getUserRole(supabase, user.id))) {
+    return NextResponse.json({ error: "Accès réservé aux administrateurs et commerciaux" }, { status: 403 });
+  }
 
   const body = await req.json();
   const validation = validateBody(visitePatchSchema, body);
@@ -47,7 +52,7 @@ export async function PATCH(
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
   return NextResponse.json({ data });
 }
 
@@ -59,8 +64,11 @@ export async function DELETE(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  if (!canAccessProspection(await getUserRole(supabase, user.id))) {
+    return NextResponse.json({ error: "Accès réservé aux administrateurs et commerciaux" }, { status: 403 });
+  }
 
   const { error } = await supabase.from("visites").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
   return NextResponse.json({ success: true });
 }

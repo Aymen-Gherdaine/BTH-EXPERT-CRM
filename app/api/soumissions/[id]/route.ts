@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import type { StatutSoumission, UserRole } from "@/types";
-import { redactSoumissionAmounts } from "@/lib/soumission-access";
+import type { StatutSoumission } from "@/types";
+import { getUserRole } from "@/lib/api-roles";
+import { canManageSoumissions } from "@/lib/permissions";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -26,16 +27,6 @@ async function getSupabase() {
 
 const VALID_STATUTS: StatutSoumission[] = ["Brouillon", "Envoyée", "Acceptée", "Refusée"];
 
-async function canManageSoumissions(supabase: Awaited<ReturnType<typeof getSupabase>>, userId: string) {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .single<{ role: string }>();
-
-  return profile?.role === "admin" || profile?.role === "charge_projet";
-}
-
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -45,13 +36,6 @@ export async function GET(
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   const { id } = await params;
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single<{ role: string }>();
-  const role = (profile?.role as UserRole) ?? null;
 
   const { data: soumission, error } = await supabase
     .from("soumissions")
@@ -67,13 +51,7 @@ export async function GET(
     .eq("soumission_id", id)
     .order("ordre");
 
-  // SEC-04 : masquer les montants pour un commercial (aussi côté données).
-  const data = redactSoumissionAmounts(
-    { ...soumission, lignes_budget: lignes } as Record<string, unknown>,
-    role
-  );
-
-  return NextResponse.json({ data });
+  return NextResponse.json({ data: { ...soumission, lignes_budget: lignes } });
 }
 
 export async function PATCH(
@@ -83,7 +61,7 @@ export async function PATCH(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  if (!(await canManageSoumissions(supabase, user.id))) {
+  if (!canManageSoumissions(await getUserRole(supabase, user.id))) {
     return NextResponse.json({ error: "Action réservée aux administrateurs et chargés de projet" }, { status: 403 });
   }
 
@@ -118,7 +96,7 @@ export async function PATCH(
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ data });
 }
@@ -130,7 +108,7 @@ export async function DELETE(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  if (!(await canManageSoumissions(supabase, user.id))) {
+  if (!canManageSoumissions(await getUserRole(supabase, user.id))) {
     return NextResponse.json({ error: "Action réservée aux administrateurs et chargés de projet" }, { status: 403 });
   }
 
@@ -138,7 +116,7 @@ export async function DELETE(
 
   const { error } = await supabase.from("soumissions").delete().eq("id", id);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ success: true });
 }

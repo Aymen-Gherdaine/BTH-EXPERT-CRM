@@ -87,9 +87,8 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
             </div>
           )}
 
-          {/* Finances (admin only) */}
-          {isAdmin && (
-            <div style={{ background: "#f6f6f4", borderRadius: 10, padding: 14, marginBottom: 14, border: "1px solid #e5e7eb" }}>
+          {/* Finances — montants visibles par tous ; saisie versement réservée admin/expert */}
+          <div style={{ background: "#f6f6f4", borderRadius: 10, padding: 14, marginBottom: 14, border: "1px solid #e5e7eb" }}>
               <p style={{ fontSize: 10.5, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 14 }}>
                 Finances
               </p>
@@ -124,7 +123,7 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
                   </div>
                 </div>
               )}
-              {o.statut === "Acceptée" && (
+              {isAdmin && o.statut === "Acceptée" && (
                 <motion.button whileTap={{ scale: .96 }} onClick={() => onVersement(o)} style={{
                   marginTop: 12, width: "100%", padding: "9px 0", borderRadius: 8,
                   background: "#edf5ee", border: "1.5px solid #4ade8060",
@@ -136,7 +135,6 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
                 </motion.button>
               )}
             </div>
-          )}
 
           {/* Lignes budgétaires */}
           <p style={{ fontSize: 10.5, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: 10 }}>
@@ -157,11 +155,9 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
               }}>
                 <span style={{ fontSize: 11, color: "#9ca3af", marginTop: 2, flexShrink: 0, width: 14, fontWeight: 600 }}>{l.numero}</span>
                 <p style={{ flex: 1, fontSize: 13, color: "#111827", lineHeight: 1.5 }}>{l.designation}</p>
-                {isAdmin && (
-                  <span className="submission-budget-amount" style={{ fontVariantNumeric: "tabular-nums", fontSize: 12.5, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
-                    {formatMontant(l.prix_unitaire * l.quantite)}
-                  </span>
-                )}
+                <span className="submission-budget-amount" style={{ fontVariantNumeric: "tabular-nums", fontSize: 12.5, fontWeight: 600, color: "#6b7280", flexShrink: 0 }}>
+                  {formatMontant(l.prix_unitaire * l.quantite)}
+                </span>
               </div>
             ))}
           </div>

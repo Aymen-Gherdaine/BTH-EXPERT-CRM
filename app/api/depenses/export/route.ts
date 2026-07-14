@@ -3,6 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import * as XLSX from "xlsx-js-style";
 import { styleHeaders } from "@/lib/excel-utils";
+import { canSeeCoutsMarges } from "@/lib/permissions";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -46,7 +47,7 @@ export async function GET(_req: NextRequest) {
     .eq("id", user.id)
     .single<{ role: string }>();
 
-  if (profile?.role !== "admin") {
+  if (!canSeeCoutsMarges(profile?.role)) {
     return NextResponse.json({ error: "Accès refusé — admin uniquement" }, { status: 403 });
   }
 
@@ -55,7 +56,7 @@ export async function GET(_req: NextRequest) {
     .select("date_depense, categorie, montant, description, justificatif_url, profiles(full_name, email), soumissions(titre_projet, numero_offre)")
     .order("date_depense", { ascending: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   const rows = ((data ?? []) as unknown as DepenseRow[]).map((d) => ({
     "Date": d.date_depense,

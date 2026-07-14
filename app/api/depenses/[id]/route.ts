@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { depensePatchSchema } from "@/lib/schemas/index";
+import { validateBody } from "@/lib/schemas/helpers";
+import { getUserRole } from "@/lib/api-roles";
+import { canModifyDepense } from "@/lib/permissions";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -35,16 +39,10 @@ async function resolveAccess(
 
   if (!existing) return { allowed: false, notFound: true };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .single<{ role: string }>();
-
-  const isAdmin = profile?.role === "admin";
+  const role = await getUserRole(supabase, userId);
   const isOwner = existing.employe_id === userId;
 
-  return { allowed: isAdmin || isOwner };
+  return { allowed: canModifyDepense(role, isOwner) };
 }
 
 export async function PATCH(
@@ -61,19 +59,24 @@ export async function PATCH(
   if (access.notFound) return NextResponse.json({ error: "Non trouvé" }, { status: 404 });
   if (!access.allowed) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
 
-  const body = await req.json();
-  // Silently strip employe_id — ownership cannot be transferred
-  const { employe_id: _drop, ...safeFields } = body as Record<string, unknown>;
-  void _drop;
+  let rawBody: unknown;
+  try {
+    rawBody = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide" }, { status: 400 });
+  }
+  // Whitelist stricte : seuls les champs éditables passent (employe_id jamais modifiable).
+  const validation = validateBody(depensePatchSchema, rawBody);
+  if (!validation.success) return validation.response;
 
   const { data, error } = await supabase
     .from("depenses")
-    .update(safeFields)
+    .update(validation.data)
     .eq("id", id)
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ data });
 }
@@ -93,7 +96,7 @@ export async function DELETE(
   if (!access.allowed) return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
 
   const { error } = await supabase.from("depenses").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
 
   return NextResponse.json({ success: true });
 }

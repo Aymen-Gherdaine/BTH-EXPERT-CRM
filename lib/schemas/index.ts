@@ -7,7 +7,7 @@ export const prospectCreateSchema = z.object({
   nom_contact: z.string().min(1, "Nom contact requis").max(100),
   poste_contact: z.string().max(100).optional(),
   telephone: z.string().max(30).optional(),
-  email: z.string().email("Email invalide").optional().nullable(),
+  email: z.string().email("Email invalide").or(z.literal("")).optional().nullable(),
   adresse: z.string().max(300).optional(),
   notes_generales: z.string().max(2000).optional().nullable(),
 })
@@ -130,6 +130,23 @@ export const clientPatchSchema = z.object({
   email: z.string().email().optional().nullable(),
 }).refine(data => Object.keys(data).length > 0, "Au moins un champ requis")
 
+// ── Prospect PATCH (whitelist anti mass-assignment) ───────
+// Inclut les champs du formulaire de détail ET ceux du Kanban (etape,
+// statut_global, raison_perte). email accepte "" (formulaire sans email).
+export const prospectPatchSchema = z.object({
+  entreprise: z.string().min(1).max(200).optional(),
+  secteur_activite: z.string().min(1).max(100).optional(),
+  nom_contact: z.string().min(1).max(100).optional(),
+  poste_contact: z.string().max(100).optional().nullable(),
+  telephone: z.string().max(30).optional().nullable(),
+  email: z.string().email().or(z.literal("")).optional().nullable(),
+  adresse: z.string().max(300).optional().nullable(),
+  notes_generales: z.string().max(2000).optional().nullable(),
+  statut_global: z.string().max(50).optional(),
+  etape: z.string().max(50).optional(),
+  raison_perte: z.string().max(1000).optional().nullable(),
+}).refine(data => Object.keys(data).length > 0, "Au moins un champ requis")
+
 // ── Dépense POST ──────────────────────────────────────────
 const CATEGORIES_VALIDES = [
   "mission",
@@ -148,9 +165,21 @@ export const depenseCreateSchema = z.object({
     /^\d{4}-\d{2}-\d{2}$/,
     "Format date invalide (YYYY-MM-DD)"
   ).optional(),
-  justificatif_url: z.string().url().optional().nullable(),
+  justificatif_url: z.string().max(500).optional().nullable(),
   projet_lie: z.string().uuid("projet_lie doit être un UUID valide").optional().nullable(),
 })
+
+// ── Dépense PATCH (whitelist anti mass-assignment ; employe_id non modifiable) ──
+// justificatif_url stocke un CHEMIN d'objet Storage (pas une URL), et
+// date_depense peut arriver null (champ effacé) → schéma tolérant.
+export const depensePatchSchema = z.object({
+  categorie: z.enum(CATEGORIES_VALIDES).optional(),
+  montant: z.number().positive("Le montant doit être positif").optional(),
+  description: z.string().max(1000).optional().nullable(),
+  date_depense: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional().nullable(),
+  justificatif_url: z.string().max(500).optional().nullable(),
+  projet_lie: z.string().uuid().optional().nullable(),
+}).refine(data => Object.keys(data).length > 0, "Au moins un champ requis")
 
 // ── Export DOCX / PDF ──────────────────────────────────────
 export const exportDocumentSchema = z.object({

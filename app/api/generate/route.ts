@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
-  if (!checkRateLimit(user.id)) {
+  if (!(await checkRateLimit(supabase, user.id))) {
     return NextResponse.json(
       { error: "Trop de requêtes. Attendez 1 minute avant de réessayer." },
       { status: 429 }
