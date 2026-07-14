@@ -60,42 +60,60 @@ USING (true)
 WITH CHECK (true);
 
 -- ============================================================
--- Supabase Storage — Bucket "signatures"
+-- Supabase Storage — Bucket "signatures" (PRIVÉ — SEC-05)
+-- Lecture via URL signée (connectés) ou download service-role (export).
+-- Écriture réservée admin / chargé de projet. Cf. migration 20260714180000.
 -- ============================================================
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
   'signatures',
   'signatures',
-  true,
+  false,
   1048576,  -- 1 Mo max
   ARRAY['image/png', 'image/jpeg', 'image/webp']
 )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET public = false;
 
--- Lecture publique
+-- Lecture : connectés uniquement (jamais anon)
 DROP POLICY IF EXISTS "Lecture publique signatures" ON storage.objects;
-CREATE POLICY "Lecture publique signatures"
+DROP POLICY IF EXISTS "signatures_select" ON storage.objects;
+CREATE POLICY "signatures_select"
 ON storage.objects FOR SELECT
+TO authenticated
 USING (bucket_id = 'signatures');
 
--- Upload : utilisateurs connectés uniquement
+-- Écriture : admin / chargé de projet uniquement
 DROP POLICY IF EXISTS "Upload signatures" ON storage.objects;
-CREATE POLICY "Upload signatures"
+DROP POLICY IF EXISTS "signatures_insert" ON storage.objects;
+CREATE POLICY "signatures_insert"
 ON storage.objects FOR INSERT
 TO authenticated
-WITH CHECK (bucket_id = 'signatures');
+WITH CHECK (
+  bucket_id = 'signatures'
+  AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'charge_projet'))
+);
 
--- Mise à jour : utilisateurs connectés
 DROP POLICY IF EXISTS "Update signatures" ON storage.objects;
-CREATE POLICY "Update signatures"
+DROP POLICY IF EXISTS "signatures_update" ON storage.objects;
+CREATE POLICY "signatures_update"
 ON storage.objects FOR UPDATE
 TO authenticated
-USING (bucket_id = 'signatures');
+USING (
+  bucket_id = 'signatures'
+  AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'charge_projet'))
+)
+WITH CHECK (
+  bucket_id = 'signatures'
+  AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'charge_projet'))
+);
 
--- Suppression : utilisateurs connectés
 DROP POLICY IF EXISTS "Delete signatures" ON storage.objects;
-CREATE POLICY "Delete signatures"
+DROP POLICY IF EXISTS "signatures_delete" ON storage.objects;
+CREATE POLICY "signatures_delete"
 ON storage.objects FOR DELETE
 TO authenticated
-USING (bucket_id = 'signatures');
+USING (
+  bucket_id = 'signatures'
+  AND EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('admin', 'charge_projet'))
+);
