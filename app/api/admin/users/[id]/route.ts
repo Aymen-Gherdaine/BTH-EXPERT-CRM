@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createAdminClient } from "@/lib/supabase-admin";
 
 const VALID_ROLES = ["admin", "charge_projet", "commercial"];
 
@@ -69,7 +70,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Aucune modification fournie" }, { status: 400 });
   }
 
-  const { error } = await supabase
+  // Écriture via service-role : `profiles` est en lecture seule pour les
+  // clients (SEC-03). L'autorisation admin est déjà vérifiée ci-dessus.
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+  }
+
+  const { error } = await adminClient
     .from("profiles")
     .update(updateData)
     .eq("id", targetId);
@@ -103,7 +113,16 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     );
   }
 
-  const { error } = await supabase
+  // Écriture via service-role : `profiles` est en lecture seule pour les
+  // clients (SEC-03). L'autorisation admin est déjà vérifiée ci-dessus.
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
+  }
+
+  const { error } = await adminClient
     .from("profiles")
     .update({ is_active: false })
     .eq("id", targetId);
