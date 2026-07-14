@@ -34,7 +34,9 @@ export default function SoumissionsClient({
   const bp = useBp();
   const isDesktop = bp === "desktop";
 
-  const [view, setView] = useState<"cards" | "table">("cards");
+  // Défaut : tableau (comme Clients / Dépenses sur desktop). L'utilisateur peut
+  // basculer en cartes via le toggle ; son choix est mémorisé (localStorage).
+  const [view, setView] = useState<"cards" | "table">("table");
   useEffect(() => {
     const saved = localStorage.getItem("soum-view");
     if (saved === "table" || saved === "cards") setView(saved);

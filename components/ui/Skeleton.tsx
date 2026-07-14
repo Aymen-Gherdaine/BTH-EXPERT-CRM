@@ -145,19 +145,31 @@ function Page({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Page liste : hero + table (optionnellement une rangée de KPIs). */
+/** Page liste : hero + contenu RESPONSIVE (tableau sur desktop, cartes sur
+ *  mobile) — copie exactement le système des pages listes (Soumissions,
+ *  Clients, Dépenses, Utilisateurs) qui sont toutes tableau/desktop + cartes/mobile.
+ *  Un seul skeleton pour toutes → système de chargement unifié. */
 export function ListPageSkeleton({
   kpis = 0,
   rows = 9,
+  cards = 9,
 }: {
   kpis?: number;
   rows?: number;
+  cards?: number;
 }) {
   return (
     <Page>
       <Hero kpis={kpis} />
       <div className="flex-1 overflow-hidden">
-        <TableBlock rows={rows} />
+        {/* Desktop : tableau */}
+        <div className="hidden md:block">
+          <TableBlock rows={rows} />
+        </div>
+        {/* Mobile : cartes */}
+        <div className="md:hidden">
+          <CardGrid count={cards} />
+        </div>
       </div>
     </Page>
   );
