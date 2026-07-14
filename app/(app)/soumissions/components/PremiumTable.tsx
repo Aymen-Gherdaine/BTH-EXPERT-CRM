@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Dispatch, SetStateAction } from "react";
+import { useState, useMemo, memo, Dispatch, SetStateAction } from "react";
 import { m as motion } from "framer-motion";
 import Link from "next/link";
 import { formatDateFr } from "@/lib/utils";
@@ -10,11 +10,15 @@ import { Ic } from "./Ic";
 import { StatusBadge } from "./StatusBadge";
 import { Avatar } from "./Avatar";
 
-function PremiumTableRow({
-  o, isAdmin, onClick, isActive, isSelected, onToggle,
+// memo : la rangée gère son propre survol (état local) et ne dépend que de props
+// stables (o, callbacks en useCallback, primitives). Évite de re-rendre toutes
+// les rangées quand le parent change d'état sans toucher aux données (ouverture
+// du panneau, tri, pagination d'une autre page…).
+const PremiumTableRow = memo(function PremiumTableRow({
+  o, isAdmin, onOpen, isActive, isSelected, onToggle,
   GRID, onDuplicate, onDelete, idx,
 }: {
-  o: SoumissionView; isAdmin: boolean; onClick: () => void;
+  o: SoumissionView; isAdmin: boolean; onOpen: (o: SoumissionView) => void;
   isActive: boolean; isSelected: boolean; onToggle: (id: string) => void;
   GRID: string; onDuplicate: (s: SoumissionView) => void;
   onDelete: (s: SoumissionView) => void; idx: number;
@@ -39,7 +43,7 @@ function PremiumTableRow({
       transition={{ delay: idx * 0.025, duration: 0.18, ease: "easeOut" }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
-      onClick={onClick}
+      onClick={() => onOpen(o)}
       style={{
         display: "grid", gridTemplateColumns: GRID,
         minHeight: 66, alignItems: "stretch",
@@ -198,7 +202,7 @@ function PremiumTableRow({
       </div>
     </motion.div>
   );
-}
+});
 
 export function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle, onDuplicate, onDelete, page, total, perPage, onPage }: {
   items: SoumissionView[]; isAdmin: boolean; onOpen: (o: SoumissionView) => void;
@@ -214,7 +218,9 @@ export function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle
     else { setSortCol(col); setSortDir("desc"); }
   };
 
-  const sorted = [...items].sort((a, b) => {
+  // Tri mémoïsé : ne recalcule (et ne recrée le tableau) que si les données ou
+  // le tri changent — pas à chaque re-render du parent.
+  const sorted = useMemo(() => [...items].sort((a, b) => {
     let va: string | number, vb: string | number;
     if (sortCol === "client") { va = a._cn.toLowerCase(); vb = b._cn.toLowerCase(); }
     else if (sortCol === "total_ttc") { va = a.total_ttc; vb = b.total_ttc; }
@@ -222,7 +228,7 @@ export function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle
     if (va < vb) return sortDir === "asc" ? -1 : 1;
     if (va > vb) return sortDir === "asc" ? 1 : -1;
     return 0;
-  });
+  }), [items, sortCol, sortDir]);
 
   const GRID = isAdmin
     ? "52px 130px 190px 1fr 110px 80px 150px 110px"
@@ -283,7 +289,7 @@ export function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle
       <div className="submission-table-scroll" style={{ flex: 1, overflowY: "auto" }}>
         {sorted.map((o, idx) => (
           <PremiumTableRow
-            key={o.id} o={o} isAdmin={isAdmin} onClick={() => onOpen(o)}
+            key={o.id} o={o} isAdmin={isAdmin} onOpen={onOpen}
             isActive={selId === o.id} isSelected={selected.includes(o.id)}
             onToggle={onToggle} GRID={GRID} onDuplicate={onDuplicate}
             onDelete={onDelete} idx={idx}

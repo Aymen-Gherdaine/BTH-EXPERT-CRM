@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { generateNumeroOffre } from "@/lib/utils";
 import { soumissionCreateSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
+import { SOUMISSION_LIST_SELECT } from "@/lib/queries";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -53,7 +54,9 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("soumissions")
-    .select("*, client:clients(*)")
+    // Liste : toutes les colonnes sauf `contexte_genere` (lourd, lu seulement
+    // en page détail) — voir lib/queries.ts.
+    .select(SOUMISSION_LIST_SELECT)
     .order("created_at", { ascending: false })
     // Garde-fou : borne le payload pour éviter de tout charger d'un coup.
     // À remplacer par une vraie pagination serveur (.range) à fort volume.

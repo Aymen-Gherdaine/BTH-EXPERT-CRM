@@ -1,4 +1,5 @@
 import { createServerSupabase, getServerUser, getServerProfile } from "@/lib/supabase-server";
+import { SOUMISSION_LIST_SELECT } from "@/lib/queries";
 import DashboardClient from "./DashboardClient";
 import type { DashboardStats, Soumission, Prospect, UserRole } from "@/types";
 
@@ -11,40 +12,30 @@ export default async function DashboardPage() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     .toISOString().split("T")[0];
 
-  const [profile, aggRes, recentRes, prospectsRes] = await Promise.all([
+  const [profile, statsRes, recentRes, prospectsRes] = await Promise.all([
     getServerProfile(),
-    // Agrégats : TOUTES les lignes mais seulement 4 colonnes, sans jointure
-    // → totaux EXACTS avec un payload minimal (avant : toutes les colonnes +
-    //   client:clients(*) sur chaque ligne).
-    supabase
-      .from("soumissions")
-      .select("statut, date_offre, total_ttc, versement_recu"),
+    // Agrégats calculés en base (RPC) : Postgres renvoie directement les 5
+    // indicateurs en une passe, au lieu de rapatrier toutes les lignes pour
+    // les compter/sommer côté serveur. RLS respectée (SECURITY INVOKER).
+    supabase.rpc("dashboard_stats", { p_start_of_month: startOfMonth }),
     // Affichage : seules les plus récentes (avec la jointure client) sont
     // nécessaires pour les listes "récentes" (5) et "envoyées" (5).
+    // Colonnes de liste (sans `contexte_genere`, inutile ici) — voir lib/queries.ts.
     supabase
       .from("soumissions")
-      .select("*, client:clients(*)")
+      .select(SOUMISSION_LIST_SELECT)
       .order("created_at", { ascending: false })
-      .limit(60),
+      .limit(60)
+      .returns<Soumission[]>(),
     supabase.from("prospects").select("*, visites(*)").eq("statut_global", "actif"),
   ]);
 
-  type AggRow = {
-    statut: string | null;
-    date_offre: string | null;
-    total_ttc: number | null;
-    versement_recu: number | null;
-  };
-  const agg = (aggRes.data ?? []) as AggRow[];
-  const acceptees = agg.filter(s => s.statut === "Acceptée");
-  const initialStats: DashboardStats = {
-    soumissions_mois: agg.filter(s => (s.date_offre ?? "") >= startOfMonth).length,
-    nombre_mandats_acceptes: acceptees.length,
-    total_mandats_acceptes: acceptees.reduce((sum, s) => sum + (s.total_ttc ?? 0), 0),
-    taux_acceptation: agg.length > 0
-      ? Math.round((acceptees.length / agg.length) * 100)
-      : 0,
-    total_versements_recus: agg.reduce((sum, s) => sum + (s.versement_recu ?? 0), 0),
+  const initialStats: DashboardStats = (statsRes.data?.[0] as DashboardStats | undefined) ?? {
+    soumissions_mois: 0,
+    nombre_mandats_acceptes: 0,
+    total_mandats_acceptes: 0,
+    taux_acceptation: 0,
+    total_versements_recus: 0,
   };
 
   return (
@@ -53,7 +44,7 @@ export default async function DashboardPage() {
         ? { role: profile.role as UserRole, full_name: profile.full_name ?? null }
         : undefined}
       initialStats={initialStats}
-      initialSoumissions={(recentRes.data ?? []) as Soumission[]}
+      initialSoumissions={recentRes.data ?? []}
       initialProspects={(prospectsRes.data ?? []) as Prospect[]}
     />
   );

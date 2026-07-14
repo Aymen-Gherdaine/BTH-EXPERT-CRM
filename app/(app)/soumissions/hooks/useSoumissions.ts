@@ -52,7 +52,10 @@ export function useSoumissions(initialSoumissions: Soumission[] = [], initialRol
 
   function closeDetail() { setSelId(null); setSelDetail(null); }
 
-  async function openDetail(o: SoumissionView) {
+  // Callbacks passés aux LIGNES de liste (CardGrid / PremiumTable) : stabilisés
+  // via useCallback pour que React.memo sur les lignes soit effectif (sinon une
+  // nouvelle référence à chaque render re-rendrait toutes les lignes).
+  const openDetail = useCallback(async (o: SoumissionView) => {
     setSelId(o.id);
     setSelDetail(o);
     setDetailLoading(true);
@@ -60,7 +63,7 @@ export function useSoumissions(initialSoumissions: Soumission[] = [], initialRol
     const json = await res.json();
     if (json.data) setSelDetail(toView(json.data));
     setDetailLoading(false);
-  }
+  }, [toView]);
 
   function openVersementFor(id: string, titre: string, ttc: number, current: number) {
     setVersementInput(current ? String(current) : "");
@@ -129,9 +132,9 @@ export function useSoumissions(initialSoumissions: Soumission[] = [], initialRol
     }
   }
 
-  function handleDelete(s: SoumissionView) {
+  const handleDelete = useCallback((s: SoumissionView) => {
     setDeleteConfirm({ open: true, id: s.id, label: s.titre_projet });
-  }
+  }, []);
 
   async function confirmDelete() {
     const targetId = deleteConfirm.id;
@@ -163,8 +166,8 @@ export function useSoumissions(initialSoumissions: Soumission[] = [], initialRol
     }
   }
 
-  const handleDuplicate = (s: SoumissionView) => router.push(`/soumissions/${s.id}?duplicate=1`);
-  const toggleSel = (id: string) => setSelected(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+  const handleDuplicate = useCallback((s: SoumissionView) => router.push(`/soumissions/${s.id}?duplicate=1`), [router]);
+  const toggleSel = useCallback((id: string) => setSelected(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]), []);
 
   return {
     soumissions,

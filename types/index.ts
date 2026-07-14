@@ -53,7 +53,10 @@ export interface Soumission {
   total_ttc: number;
   versement_recu: number;
   statut: StatutSoumission;
-  contexte_genere: string;
+  // Optionnel : présent uniquement sur la page détail (GET /api/soumissions/[id]).
+  // Les vues LISTE l'excluent volontairement du select (payload) — voir
+  // SOUMISSION_LIST_SELECT dans lib/queries.ts.
+  contexte_genere?: string;
   created_at: string;
   lignes_budget?: LigneBudget[];
 }
