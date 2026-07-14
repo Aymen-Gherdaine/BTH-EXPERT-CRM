@@ -9,6 +9,7 @@ import { sanitizeFilename } from "@/lib/utils";
 import { Client } from "@/types";
 import { exportDocumentSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
+import { downloadSignatureBuffer } from "@/lib/signature-storage";
 
 function getAdminSupabase() {
   return createClient(
@@ -50,17 +51,6 @@ export async function POST(req: NextRequest) {
     if (!validation.success) return validation.response;
     const { soumission, client, lignes, contexteData, editablePreview, parametres: payloadParametres } = validation.data;
 
-    async function fetchSignature(url: string | null | undefined): Promise<Buffer | null> {
-      if (!url) return null;
-      try {
-        const res = await fetch(url);
-        if (!res.ok) return null;
-        return Buffer.from(await res.arrayBuffer());
-      } catch {
-        return null;
-      }
-    }
-
     const admin = getAdminSupabase();
     const { data: dbParametres, error: parametresError } = await admin
       .from("parametres")
@@ -81,8 +71,8 @@ export async function POST(req: NextRequest) {
     };
 
     const [sigResponsable, sigAutorise] = await Promise.all([
-      fetchSignature(dbParametres?.signature_responsable_url),
-      fetchSignature(dbParametres?.signature_autorise_url),
+      downloadSignatureBuffer(admin, dbParametres?.signature_responsable_url),
+      downloadSignatureBuffer(admin, dbParametres?.signature_autorise_url),
     ]);
 
     const data = buildDocumentData(

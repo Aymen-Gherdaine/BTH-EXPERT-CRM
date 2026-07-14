@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import type { StatutSoumission } from "@/types";
+import type { StatutSoumission, UserRole } from "@/types";
+import { redactSoumissionAmounts } from "@/lib/soumission-access";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -45,6 +46,13 @@ export async function GET(
 
   const { id } = await params;
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single<{ role: string }>();
+  const role = (profile?.role as UserRole) ?? null;
+
   const { data: soumission, error } = await supabase
     .from("soumissions")
     .select("*, client:clients(*)")
@@ -59,7 +67,13 @@ export async function GET(
     .eq("soumission_id", id)
     .order("ordre");
 
-  return NextResponse.json({ data: { ...soumission, lignes_budget: lignes } });
+  // SEC-04 : masquer les montants pour un commercial (aussi côté données).
+  const data = redactSoumissionAmounts(
+    { ...soumission, lignes_budget: lignes } as Record<string, unknown>,
+    role
+  );
+
+  return NextResponse.json({ data });
 }
 
 export async function PATCH(

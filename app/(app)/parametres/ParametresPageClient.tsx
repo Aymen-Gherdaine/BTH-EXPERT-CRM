@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { signatureObjectPath } from "@/lib/signature-url";
 import type { Parametres } from "./defaults";
+
+const SIGNATURE_FIELDS = ["signature_responsable_url", "signature_autorise_url"] as const;
 
 const CSS = `
   .settings-shell {
@@ -385,10 +388,42 @@ export default function ParametresPageClient({ initialData }: { initialData: Par
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const [uploadingSignature, setUploadingSignature] = useState<"responsable" | "autorise" | null>(null);
+  // SEC-05 : aperçu via URL signée (le bucket signatures est privé). On amorce
+  // avec l'éventuelle URL héritée (bucket encore public) puis on la remplace par
+  // une URL signée résolue en effet — fonctionne bucket public OU privé.
+  const [sigPreview, setSigPreview] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    for (const f of SIGNATURE_FIELDS) {
+      const v = initialData[f];
+      if (typeof v === "string" && v.startsWith("http")) init[f] = v;
+    }
+    return init;
+  });
 
   function set<K extends keyof Parametres>(key: K, value: Parametres[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
+
+  // Résout (ou rafraîchit) les URLs signées d'aperçu à partir des valeurs stockées.
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    let cancelled = false;
+    (async () => {
+      for (const field of SIGNATURE_FIELDS) {
+        const path = signatureObjectPath(form[field] as string | null | undefined);
+        if (!path) {
+          if (!cancelled) setSigPreview((p) => { const n = { ...p }; delete n[field]; return n; });
+          continue;
+        }
+        const { data } = await supabase.storage.from("signatures").createSignedUrl(path, 3600);
+        if (!cancelled && data?.signedUrl) {
+          setSigPreview((p) => ({ ...p, [field]: data.signedUrl }));
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.signature_responsable_url, form.signature_autorise_url]);
 
   async function handleSignatureUpload(
     file: File,
@@ -401,8 +436,14 @@ export default function ParametresPageClient({ initialData }: { initialData: Par
       .from("signatures")
       .upload(filename, file, { upsert: true, contentType: file.type });
     if (!error && data) {
-      const { data: { publicUrl } } = supabase.storage.from("signatures").getPublicUrl(data.path);
-      set(field, publicUrl);
+      // On stocke le CHEMIN d'objet (pas d'URL publique) — le bucket est privé.
+      set(field, data.path);
+      const { data: signed } = await supabase.storage
+        .from("signatures")
+        .createSignedUrl(data.path, 3600);
+      if (signed?.signedUrl) {
+        setSigPreview((p) => ({ ...p, [field]: signed.signedUrl }));
+      }
     }
     setUploadingSignature(null);
   }
@@ -560,7 +601,11 @@ export default function ParametresPageClient({ initialData }: { initialData: Par
               <p className="settings-label">{label}</p>
               <div className="settings-signature-preview">
                 {form[field] ? (
-                  <Image src={form[field]} alt={label} fill sizes="(max-width: 768px) 100vw, 320px" className="object-contain p-2" />
+                  sigPreview[field] ? (
+                    <Image src={sigPreview[field]} alt={label} fill sizes="(max-width: 768px) 100vw, 320px" className="object-contain p-2" />
+                  ) : (
+                    <span className="settings-hint">Aperçu…</span>
+                  )
                 ) : (
                   <span className="settings-hint">Aucune signature</span>
                 )}

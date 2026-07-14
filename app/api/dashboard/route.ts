@@ -27,6 +27,13 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single<{ role: string }>();
+  const role = profile?.role;
+
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
     .toISOString()
@@ -47,6 +54,16 @@ export async function GET() {
     taux_acceptation: 0,
     total_versements_recus: 0,
   };
+
+  // SEC-04 : un commercial ne reçoit jamais les montants (l'UI ne les affiche
+  // pas pour ce rôle, mais ils ne doivent pas non plus transiter par le réseau).
+  if (role === "commercial") {
+    return NextResponse.json({
+      ...stats,
+      total_mandats_acceptes: null,
+      total_versements_recus: null,
+    });
+  }
 
   return NextResponse.json(stats);
 }
