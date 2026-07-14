@@ -12,10 +12,13 @@ export default async function SoumissionsPage() {
   const SSR_BUFFER = 40;
   const SSR_PERPAGE = 12;
 
+  // Pas de { count: "exact" } ici (comptage complet coûteux → SSR plus lent) :
+  // le total est dérivé des agrégats du RPC (somme des compteurs par statut),
+  // déjà calculés. Buffer sans count → requête plus rapide.
   const [soumRes, statsRes, profile] = await Promise.all([
     supabase
       .from("soumissions")
-      .select(SOUMISSION_LIST_SELECT, { count: "exact" })
+      .select(SOUMISSION_LIST_SELECT)
       .order("date_offre", { ascending: false })
       .range(0, SSR_BUFFER - 1)
       .returns<Soumission[]>(),
@@ -24,18 +27,20 @@ export default async function SoumissionsPage() {
   ]);
 
   const initialSoumissions: Soumission[] = soumRes.data ?? [];
-  const initialTotal = soumRes.count ?? initialSoumissions.length;
   const initialRole = (profile?.role ?? null) as UserRole | null;
   const canSeeAmounts = initialRole === "admin" || initialRole === "charge_projet";
 
   const st = statsRes.data?.[0];
+  const counts = {
+    Brouillon: st?.count_brouillon ?? 0,
+    "Envoyée": st?.count_envoyee ?? 0,
+    "Acceptée": st?.count_acceptee ?? 0,
+    "Refusée": st?.count_refusee ?? 0,
+  };
+  // Total = somme des compteurs par statut (toutes les soumissions).
+  const initialTotal = counts.Brouillon + counts["Envoyée"] + counts["Acceptée"] + counts["Refusée"];
   const initialKpis: SoumissionKpis = {
-    counts: {
-      Brouillon: st?.count_brouillon ?? 0,
-      "Envoyée": st?.count_envoyee ?? 0,
-      "Acceptée": st?.count_acceptee ?? 0,
-      "Refusée": st?.count_refusee ?? 0,
-    },
+    counts,
     totalTTC: canSeeAmounts ? Number(st?.total_ttc ?? 0) : null,
     totalVerse: canSeeAmounts ? Number(st?.total_verse ?? 0) : null,
   };
