@@ -59,6 +59,16 @@ export async function DELETE(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
+  // Suppression client → réservée à l'admin (cascade sur les soumissions liées).
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single<{ role: string }>();
+  if (profile?.role !== "admin") {
+    return NextResponse.json({ error: "Suppression réservée aux administrateurs" }, { status: 403 });
+  }
+
   const { id } = await params;
 
   // La suppression cascade les soumissions liées (ON DELETE CASCADE)

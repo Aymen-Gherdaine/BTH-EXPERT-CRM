@@ -486,7 +486,9 @@ export default function ClientsPageClient({
     );
 
   const role = initialRole;
-  const canSeeAmounts = role === "admin" || role === "charge_projet";
+  // Montants visibles par tous les rôles ; suppression réservée à l'admin.
+  const canSeeAmounts = true;
+  const canDelete = role === "admin";
   const clients = clientsRes?.data ?? [];
   const total = clientsRes?.total ?? initialTotal;
   const cityCount = clientsRes?.cityCount ?? initialCityCount;
@@ -667,6 +669,7 @@ export default function ClientsPageClient({
                 expandedSoumissions={expandedSoumRes?.data ?? NO_SOUMISSIONS}
                 expandedSoumLoading={expandedSoumLoading}
                 canSeeAmounts={canSeeAmounts}
+                canDelete={canDelete}
                 onToggle={toggleExpand}
                 onDelete={askDelete}
               />
@@ -709,6 +712,7 @@ export default function ClientsPageClient({
                     soumissions={expandedId === client.id ? (expandedSoumRes?.data ?? NO_SOUMISSIONS) : NO_SOUMISSIONS}
                     isLoadingSoum={expandedId === client.id && expandedSoumLoading}
                     canSeeAmounts={canSeeAmounts}
+                    canDelete={canDelete}
                     onToggle={toggleExpand}
                     onDelete={askDelete}
                   />

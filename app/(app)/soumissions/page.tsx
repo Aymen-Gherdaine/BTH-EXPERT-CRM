@@ -28,7 +28,6 @@ export default async function SoumissionsPage() {
 
   const initialSoumissions: Soumission[] = soumRes.data ?? [];
   const initialRole = (profile?.role ?? null) as UserRole | null;
-  const canSeeAmounts = initialRole === "admin" || initialRole === "charge_projet";
 
   const st = statsRes.data?.[0];
   const counts = {
@@ -41,8 +40,8 @@ export default async function SoumissionsPage() {
   const initialTotal = counts.Brouillon + counts["Envoyée"] + counts["Acceptée"] + counts["Refusée"];
   const initialKpis: SoumissionKpis = {
     counts,
-    totalTTC: canSeeAmounts ? Number(st?.total_ttc ?? 0) : null,
-    totalVerse: canSeeAmounts ? Number(st?.total_verse ?? 0) : null,
+    totalTTC: Number(st?.total_ttc ?? 0),
+    totalVerse: Number(st?.total_verse ?? 0),
   };
 
   return (
