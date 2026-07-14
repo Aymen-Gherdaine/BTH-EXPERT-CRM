@@ -112,7 +112,13 @@ export default function SoumissionDetailClient({
         }),
       });
       const json = await res.json();
-      if (res.ok) router.push(`/soumissions/${json.data.id}`);
+      if (res.ok) {
+        // La copie apparaît dans la liste sans refresh (invalide le cache SWR).
+        globalMutate((key) => typeof key === "string" && key.startsWith("/api/soumissions"));
+        globalMutate("/api/dashboard");
+        globalMutate("/api/clients");
+        router.push(`/soumissions/${json.data.id}`);
+      }
     } finally {
       setDuplicating(false);
     }
@@ -191,8 +197,9 @@ export default function SoumissionDetailClient({
     try {
       const res = await fetch(`/api/soumissions/${targetId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("delete failed");
-      // Invalide les caches liés avant la navigation pour que la liste et le dashboard soient à jour
-      globalMutate("/api/soumissions");
+      // Invalide TOUTES les clés de la liste (y compris paginées ?page=…) + le
+      // dashboard → la soumission supprimée disparaît sans refresh manuel.
+      globalMutate((key) => typeof key === "string" && key.startsWith("/api/soumissions"));
       globalMutate("/api/dashboard");
       globalMutate("/api/clients");
       router.push("/soumissions");

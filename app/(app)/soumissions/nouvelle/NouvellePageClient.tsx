@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSWRConfig } from "swr";
 import { m as motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -87,6 +88,16 @@ interface Props {
 
 export default function NouvellePageClient({ parametres }: Props) {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
+
+  // Après création : invalide le cache SWR de la liste soumissions (toutes les
+  // pages ?page=…), du dashboard et des clients → la nouvelle soumission
+  // apparaît automatiquement, sans refresh manuel.
+  const invalidateAfterCreate = () => {
+    mutate((key) => typeof key === "string" && key.startsWith("/api/soumissions"));
+    mutate("/api/dashboard");
+    mutate("/api/clients");
+  };
   const [role, setRole] = useState<UserRole | null>(null);
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -214,6 +225,7 @@ export default function NouvellePageClient({ parametres }: Props) {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       setSaved(true);
+      invalidateAfterCreate();
       router.push(`/soumissions/${json.data.id}`);
     } catch {
       setError("Erreur lors de la sauvegarde.");
@@ -238,6 +250,7 @@ export default function NouvellePageClient({ parametres }: Props) {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error);
       setSaved(true);
+      invalidateAfterCreate();
       router.push(`/soumissions/${json.data.id}`);
     } catch {
       setError("Erreur lors de l'enregistrement.");

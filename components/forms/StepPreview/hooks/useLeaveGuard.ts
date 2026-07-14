@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useSWRConfig } from "swr";
 import { useRouter } from "next/navigation";
 import type { EditablePreview, FormDataStep2 } from "@/types";
 import { buildAIContent } from "../utils";
@@ -27,6 +28,7 @@ export function useLeaveGuard({
   total_ttc,
 }: UseLeaveGuardParams) {
   const router = useRouter();
+  const { mutate } = useSWRConfig();
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -133,6 +135,9 @@ export function useLeaveGuard({
         });
         if (!res.ok) throw new Error("post failed");
       }
+      // Brouillon créé/mis à jour → la liste soumissions se rafraîchit sans refresh.
+      mutate((key) => typeof key === "string" && key.startsWith("/api/soumissions"));
+      mutate("/api/dashboard");
       setIsDirty(false);
       setShowLeaveModal(false);
       pendingLeaveRef.current?.();
