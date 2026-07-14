@@ -52,14 +52,90 @@ export async function GET(req: NextRequest) {
   const statut = searchParams.get("statut");
   const client_id = searchParams.get("client_id");
 
+  // Un commercial ne voit jamais les montants (masqués côté serveur).
+  const sanitize = (rows: unknown[]) =>
+    rows.map(s => {
+      if (role === "commercial") {
+        const { total_ht, tva, total_ttc, versement_recu, ...rest } = s as Record<string, unknown>;
+        void total_ht; void tva; void total_ttc; void versement_recu;
+        return rest;
+      }
+      return s;
+    });
+
+  // ── Mode paginé (serveur) : ?page (+ pageSize, q, sort, dir) ───────────────
+  // Recherche, filtre, tri et pagination sont faits EN BASE : le client ne
+  // reçoit qu'une page. Les KPIs globaux viennent du RPC soumissions_list_stats.
+  const pageParam = searchParams.get("page");
+  if (pageParam) {
+    const page = Math.max(1, parseInt(pageParam, 10) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(searchParams.get("pageSize") ?? "20", 10) || 20));
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    const q = searchParams.get("q")?.trim();
+
+    // Tri : colonne sur liste blanche uniquement (jamais d'entrée brute en ORDER BY)
+    const sortParam = searchParams.get("sort") ?? "date_offre";
+    const dirAsc = searchParams.get("dir") === "asc";
+    const SORTABLE = new Set(["numero_offre", "titre_projet", "statut", "total_ttc", "date_offre"]);
+
+    let pageQuery = supabase
+      .from("soumissions")
+      .select(SOUMISSION_LIST_SELECT, { count: "exact" });
+
+    if (statut) pageQuery = pageQuery.eq("statut", statut);
+    if (client_id) pageQuery = pageQuery.eq("client_id", client_id);
+
+    // Recherche : colonnes parent + nom d'entreprise. L'entreprise étant sur la
+    // table jointe, on résout d'abord les client_id correspondants puis on les
+    // ajoute au OR (client_id.in.(…)).
+    if (q) {
+      const orParts = [`titre_projet.ilike.%${q}%`, `numero_offre.ilike.%${q}%`];
+      const { data: matchedClients } = await supabase
+        .from("clients")
+        .select("id")
+        .ilike("entreprise", `%${q}%`)
+        .limit(1000);
+      const ids = (matchedClients ?? []).map(c => c.id);
+      if (ids.length) orParts.push(`client_id.in.(${ids.join(",")})`);
+      pageQuery = pageQuery.or(orParts.join(","));
+    }
+
+    if (sortParam === "client") {
+      pageQuery = pageQuery.order("entreprise", { referencedTable: "clients", ascending: dirAsc });
+    } else {
+      const col = SORTABLE.has(sortParam) ? sortParam : "date_offre";
+      pageQuery = pageQuery.order(col, { ascending: SORTABLE.has(sortParam) ? dirAsc : false });
+    }
+
+    const { data, error, count } = await pageQuery.range(from, to);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // KPIs globaux (agrégats en base). Montants réservés admin / chargé de projet.
+    const canSeeAmounts = role === "admin" || role === "charge_projet";
+    const { data: statsData } = await supabase.rpc("soumissions_list_stats");
+    const st = statsData?.[0];
+    const kpis = {
+      counts: {
+        Brouillon: st?.count_brouillon ?? 0,
+        "Envoyée": st?.count_envoyee ?? 0,
+        "Acceptée": st?.count_acceptee ?? 0,
+        "Refusée": st?.count_refusee ?? 0,
+      },
+      totalTTC: canSeeAmounts ? Number(st?.total_ttc ?? 0) : null,
+      totalVerse: canSeeAmounts ? Number(st?.total_verse ?? 0) : null,
+    };
+
+    return NextResponse.json({ data: sanitize(data ?? []), total: count ?? 0, kpis });
+  }
+
+  // ── Mode legacy (non paginé, borné) ────────────────────────────────────────
+  // Conservé pour le dashboard, qui a besoin de la liste complète (listes
+  // récentes + stats CP calculées côté client). Garde-fou .limit(1000).
   let query = supabase
     .from("soumissions")
-    // Liste : toutes les colonnes sauf `contexte_genere` (lourd, lu seulement
-    // en page détail) — voir lib/queries.ts.
     .select(SOUMISSION_LIST_SELECT)
     .order("created_at", { ascending: false })
-    // Garde-fou : borne le payload pour éviter de tout charger d'un coup.
-    // À remplacer par une vraie pagination serveur (.range) à fort volume.
     .limit(1000);
 
   if (statut) query = query.eq("statut", statut);
@@ -68,15 +144,7 @@ export async function GET(req: NextRequest) {
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  const sanitizedData = (data ?? []).map(s => {
-    if (role === "commercial") {
-      const { total_ht, tva, total_ttc, versement_recu, ...rest } = s as Record<string, unknown>;
-      void total_ht; void tva; void total_ttc; void versement_recu;
-      return rest;
-    }
-    return s;
-  });
-  return NextResponse.json({ data: sanitizedData });
+  return NextResponse.json({ data: sanitize(data ?? []) });
 }
 
 export async function POST(req: NextRequest) {

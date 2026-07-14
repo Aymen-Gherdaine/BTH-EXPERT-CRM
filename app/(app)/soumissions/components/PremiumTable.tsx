@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, memo, Dispatch, SetStateAction } from "react";
+import { useState, memo, Dispatch, SetStateAction } from "react";
 import { m as motion } from "framer-motion";
 import Link from "next/link";
 import { formatDateFr } from "@/lib/utils";
@@ -204,44 +204,27 @@ const PremiumTableRow = memo(function PremiumTableRow({
   );
 });
 
-export function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle, onDuplicate, onDelete, page, total, perPage, onPage }: {
+export function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle, onDuplicate, onDelete, sortCol, sortDir, onSort, page, total, perPage, onPage }: {
   items: SoumissionView[]; isAdmin: boolean; onOpen: (o: SoumissionView) => void;
   selId: string | null; selected: string[]; onToggle: (id: string) => void;
   onDuplicate: (s: SoumissionView) => void; onDelete: (s: SoumissionView) => void;
+  sortCol: SortCol; sortDir: "asc" | "desc"; onSort: (col: SortCol) => void;
   page: number; total: number; perPage: number; onPage: Dispatch<SetStateAction<number>>;
 }) {
-  const [sortCol, setSortCol] = useState<SortCol>("date_offre");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
-
-  const handleSort = (col: SortCol) => {
-    if (sortCol === col) setSortDir(d => d === "asc" ? "desc" : "asc");
-    else { setSortCol(col); setSortDir("desc"); }
-  };
-
-  // Tri mémoïsé : ne recalcule (et ne recrée le tableau) que si les données ou
-  // le tri changent — pas à chaque re-render du parent.
-  const sorted = useMemo(() => [...items].sort((a, b) => {
-    let va: string | number, vb: string | number;
-    if (sortCol === "client") { va = a._cn.toLowerCase(); vb = b._cn.toLowerCase(); }
-    else if (sortCol === "total_ttc") { va = a.total_ttc; vb = b.total_ttc; }
-    else { va = (a[sortCol] as string).toLowerCase(); vb = (b[sortCol] as string).toLowerCase(); }
-    if (va < vb) return sortDir === "asc" ? -1 : 1;
-    if (va > vb) return sortDir === "asc" ? 1 : -1;
-    return 0;
-  }), [items, sortCol, sortDir]);
-
+  // Les lignes arrivent déjà triées par le serveur (tri global sur toute la
+  // liste, pas seulement la page). Ici on ne fait que les afficher.
   const GRID = isAdmin
     ? "52px 130px 190px 1fr 110px 80px 150px 110px"
     : "52px 130px 190px 1fr 110px 100px";
 
-  const totalRow = sorted.reduce((s, o) => s + o.total_ttc, 0);
+  const totalRow = items.reduce((s, o) => s + o.total_ttc, 0);
 
   const HD = "1px solid #e8e2d8";
 
   function TH({ id, label, align = "left" }: { id?: SortCol; label: string; align?: string }) {
     const active = sortCol === id;
     return (
-      <div onClick={id ? () => handleSort(id) : undefined} style={{
+      <div onClick={id ? () => onSort(id) : undefined} style={{
         display: "flex", alignItems: "center", gap: 4, height: "100%",
         cursor: id ? "pointer" : "default",
         justifyContent: align === "right" ? "flex-end" : "flex-start",
@@ -287,7 +270,7 @@ export function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle
 
       {/* Rows */}
       <div className="submission-table-scroll" style={{ flex: 1, overflowY: "auto" }}>
-        {sorted.map((o, idx) => (
+        {items.map((o, idx) => (
           <PremiumTableRow
             key={o.id} o={o} isAdmin={isAdmin} onOpen={onOpen}
             isActive={selId === o.id} isSelected={selected.includes(o.id)}
@@ -307,8 +290,8 @@ export function PremiumTable({ items, isAdmin, onOpen, selId, selected, onToggle
         padding: "0 16px", height: 48,
       }}>
         <span style={{ fontSize: 12, color: "#9ca3af" }}>
-          <strong style={{ color: "#374151", fontWeight: 600 }}>{sorted.length}</strong>
-          {" "}soumission{sorted.length > 1 ? "s" : ""}
+          <strong style={{ color: "#374151", fontWeight: 600 }}>{total}</strong>
+          {" "}soumission{total > 1 ? "s" : ""}
         </span>
 
         {Math.max(1, Math.ceil(total / perPage)) > 1 && (

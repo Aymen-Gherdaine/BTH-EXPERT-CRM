@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { m as motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Soumission, StatutSoumission, UserRole } from "@/types";
-import { D0, V0 } from "./types";
+import { D0, V0, SortCol, SoumissionKpis, SoumissionsPage } from "./types";
 import { CSS, I, fmtInt } from "./constants";
 import { useBp } from "@/hooks/useBp";
 import { useDynamicPerPage } from "@/hooks/useDynamicPerPage";
@@ -15,25 +15,24 @@ import {
   DeleteModal, VersementModal,
 } from "./components";
 
+const DEFAULT_SORT: SortCol = "date_offre";
+const DEFAULT_DIR: "asc" | "desc" = "desc";
+
 export default function SoumissionsClient({
   initialSoumissions = [],
+  initialTotal = 0,
+  initialKpis,
+  initialPerPage = 12,
   initialRole,
 }: {
   initialSoumissions?: Soumission[];
+  initialTotal?: number;
+  initialKpis?: SoumissionKpis;
+  initialPerPage?: number;
   initialRole?: UserRole | null;
 }) {
   const bp = useBp();
   const isDesktop = bp === "desktop";
-
-  const {
-    soumissions, loading, isAdmin, canCreate, toView,
-    selId, selDetail, detailLoading,
-    versement, setVersement, versementInput, setVersementInput, savingVersement,
-    deleteConfirm, setDeleteConfirm, deletingId,
-    selected,
-    openDetail, closeDetail, handleStatut, openVersementFor,
-    handleSaveVersement, handleDelete, confirmDelete, handleDuplicate, toggleSel,
-  } = useSoumissions(initialSoumissions, initialRole ?? undefined);
 
   const [view, setView] = useState<"cards" | "table">("cards");
   useEffect(() => {
@@ -47,51 +46,72 @@ export default function SoumissionsClient({
 
   const gridRef = useRef<HTMLDivElement>(null);
   // tableHeaderHeight=44: PremiumTable header(48)+footer(48)=96, minus pagerHeight(52) already subtracted = 44
-  const perPage = useDynamicPerPage(gridRef, { view, isDesktop, cardHeight: 172, rowHeight: 66, cols: 3, tableHeaderHeight: 44, pagerHeight: 52, mobilePerPage: 6 }, [loading]);
+  const perPage = useDynamicPerPage(gridRef, { view, isDesktop, cardHeight: 172, rowHeight: 66, cols: 3, tableHeaderHeight: 44, pagerHeight: 52, mobilePerPage: 6, initialPerPage, immediate: true }, []);
 
   const [q, setQ] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
   const [filtre, setFiltre] = useState<StatutSoumission | null>(null);
   const [page, setPage] = useState(1);
+  const [sortCol, setSortCol] = useState<SortCol>(DEFAULT_SORT);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(DEFAULT_DIR);
 
-  useEffect(() => { setPage(1); }, [filtre, q, view]);
+  // Recherche debouncée (évite un fetch serveur à chaque frappe).
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQ(q), 300);
+    return () => clearTimeout(t);
+  }, [q]);
+  // Toute nouvelle recherche / filtre / tri ramène à la page 1.
+  useEffect(() => { setPage(1); }, [debouncedQ, filtre, sortCol, sortDir, view]);
 
-  // Filtrage mémoïsé — ne se recalcule que si data / recherche / filtre changent
-  // (avant : refait à chaque render, dont chaque frappe clavier).
-  const filtered = useMemo(() => {
-    const ql = q.toLowerCase();
-    return soumissions.filter(s => {
-      const mF = !filtre || s.statut === filtre;
-      const mQ = !ql
-        || s.titre_projet.toLowerCase().includes(ql)
-        || (s.client?.entreprise ?? "").toLowerCase().includes(ql)
-        || s.numero_offre.toLowerCase().includes(ql);
-      return mF && mQ;
-    }).map(toView);
-  }, [soumissions, q, filtre, toView]);
+  const onSort = useCallback((col: SortCol) => {
+    if (sortCol === col) setSortDir(d => (d === "asc" ? "desc" : "asc"));
+    else { setSortCol(col); setSortDir("desc"); }
+  }, [sortCol]);
 
-  const pageItems = useMemo(
-    () => filtered.slice((page - 1) * perPage, page * perPage),
-    [filtered, page, perPage]
-  );
-  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  // URL paginée serveur (recherche + filtre + tri + page).
+  const listUrl = useMemo(() => {
+    const p = new URLSearchParams();
+    p.set("page", String(page));
+    p.set("pageSize", String(perPage));
+    if (debouncedQ) p.set("q", debouncedQ);
+    if (filtre) p.set("statut", filtre);
+    p.set("sort", sortCol);
+    p.set("dir", sortDir);
+    return `/api/soumissions?${p.toString()}`;
+  }, [page, perPage, debouncedQ, filtre, sortCol, sortDir]);
 
+  // Seed SSR : page 1 en vue par défaut → on sert la tranche du buffer sans
+  // re-fetch (aucun "saut"). Dès qu'on cherche/trie/pagine, plus de seed.
+  const canSeed = page === 1 && !debouncedQ && !filtre
+    && sortCol === DEFAULT_SORT && sortDir === DEFAULT_DIR
+    && perPage <= initialSoumissions.length;
+  const seed: SoumissionsPage | undefined = canSeed
+    ? {
+        data: initialSoumissions.slice(0, perPage),
+        total: initialTotal,
+        kpis: initialKpis ?? { counts: {}, totalTTC: null, totalVerse: null },
+      }
+    : undefined;
+
+  const {
+    rows, total, kpis, loading, isAdmin, canCreate,
+    selId, selDetail, detailLoading,
+    versement, setVersement, versementInput, setVersementInput, savingVersement,
+    deleteConfirm, setDeleteConfirm, deletingId,
+    selected,
+    openDetail, closeDetail, handleStatut, openVersementFor,
+    handleSaveVersement, handleDelete, confirmDelete, handleDuplicate, toggleSel,
+  } = useSoumissions({ listUrl, seed, initialRole: initialRole ?? undefined });
+
+  const totalPages = Math.max(1, Math.ceil(total / Math.max(1, perPage)));
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
-  const hasMobilePagination = !isDesktop && filtered.length > 0 && totalPages > 1;
+  const hasMobilePagination = !isDesktop && total > 0 && totalPages > 1;
 
-  // Agrégats KPI / compteurs mémoïsés sur la liste source uniquement.
-  const { counts, totalTTC, nbAccepted, totalVerse } = useMemo(() => {
-    const counts = Object.fromEntries(
-      (["Brouillon", "Envoyée", "Acceptée", "Refusée"] as StatutSoumission[]).map(s => [
-        s, soumissions.filter(x => x.statut === s).length,
-      ])
-    ) as Partial<Record<StatutSoumission, number>>;
-    return {
-      counts,
-      totalTTC:   soumissions.reduce((s, o) => s + o.total_ttc, 0),
-      nbAccepted: soumissions.filter(o => o.statut === "Acceptée").length,
-      totalVerse: soumissions.reduce((s, o) => s + (o.versement_recu ?? 0), 0),
-    };
-  }, [soumissions]);
+  // KPIs / compteurs : agrégats GLOBAUX renvoyés par le serveur.
+  const counts = kpis.counts;
+  const totalTTC = kpis.totalTTC ?? 0;
+  const totalVerse = kpis.totalVerse ?? 0;
+  const nbAccepted = kpis.counts["Acceptée"] ?? 0;
 
   const px = isDesktop ? 32 : 14;
 
@@ -113,7 +133,7 @@ export default function SoumissionsClient({
                   Soumissions
                 </h1>
                 <span style={{ height: 22, minWidth: 22, padding: "0 8px", background: "#f6f1e8", borderRadius: 9999, border: "1px solid #e8e2d8", display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#7c6238" }}>
-                  {soumissions.length}
+                  {total}
                 </span>
               </div>
             </div>
@@ -188,7 +208,7 @@ export default function SoumissionsClient({
                 <div key={i} style={{ height: 220, borderRadius: 16, background: "white", border: "1px solid #ededeb" }} className="sk" />
               ))}
             </div>
-          ) : filtered.length === 0 ? (
+          ) : total === 0 ? (
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 24px" }}>
               <div style={{ width: 64, height: 64, borderRadius: 20, background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 20 }}>
                 <Ic d={I.file} z={32} s="#9ca3af" />
@@ -210,17 +230,18 @@ export default function SoumissionsClient({
               {(!isDesktop || view === "cards") ? (
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, overflow: "hidden" }}>
                   <div ref={gridRef} style={{ flex: 1, overflow: "hidden" }} className="sc">
-                    <CardGrid items={pageItems} isAdmin={isAdmin} onOpen={openDetail} selId={selId} px={px} />
+                    <CardGrid items={rows} isAdmin={isAdmin} onOpen={openDetail} selId={selId} px={px} />
                   </div>
-                  <Pager page={page} total={filtered.length} perPage={perPage} onPage={setPage} hideWhenSinglePage={true} />
+                  <Pager page={page} total={total} perPage={perPage} onPage={setPage} hideWhenSinglePage={true} />
                 </div>
               ) : (
                 <div ref={gridRef} style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, background: "linear-gradient(180deg, #fffdfa 0%, #ffffff 100%)", margin: "16px 32px 20px", borderRadius: 8, border: "1px solid #e8e2d8", overflow: "hidden", boxShadow: "0 18px 48px rgba(26,46,30,0.07)" }}>
                   <PremiumTable
-                    items={pageItems} isAdmin={isAdmin} onOpen={openDetail}
+                    items={rows} isAdmin={isAdmin} onOpen={openDetail}
                     selId={selId} selected={selected} onToggle={toggleSel}
                     onDuplicate={handleDuplicate} onDelete={handleDelete}
-                    page={page} total={filtered.length} perPage={perPage} onPage={setPage}
+                    sortCol={sortCol} sortDir={sortDir} onSort={onSort}
+                    page={page} total={total} perPage={perPage} onPage={setPage}
                   />
                 </div>
               )}

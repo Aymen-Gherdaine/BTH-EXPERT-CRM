@@ -11,6 +11,21 @@ export type StCfg = {
 export type SoumissionView = Soumission & { _cn: string; _contact: string };
 export type ApiListResponse<T> = { data?: T[] };
 export type MeResponse = { role?: UserRole };
+
+// KPIs globaux renvoyés par le serveur (mode paginé). `totalTTC`/`totalVerse`
+// sont `null` pour un commercial (montants masqués).
+export type SoumissionKpis = {
+  counts: Partial<Record<StatutSoumission, number>>;
+  totalTTC: number | null;
+  totalVerse: number | null;
+};
+
+// Réponse paginée de GET /api/soumissions?page=…
+export type SoumissionsPage = {
+  data: Soumission[];
+  total: number;
+  kpis: SoumissionKpis;
+};
 export type SortCol =
   | "numero_offre"
   | "client"
