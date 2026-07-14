@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import type { StatutSoumission } from "@/types";
+import { getUserRole } from "@/lib/api-roles";
+import { canManageSoumissions } from "@/lib/permissions";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -24,16 +26,6 @@ async function getSupabase() {
 }
 
 const VALID_STATUTS: StatutSoumission[] = ["Brouillon", "Envoyée", "Acceptée", "Refusée"];
-
-async function canManageSoumissions(supabase: Awaited<ReturnType<typeof getSupabase>>, userId: string) {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .single<{ role: string }>();
-
-  return profile?.role === "admin" || profile?.role === "charge_projet";
-}
 
 export async function GET(
   _req: NextRequest,
@@ -69,7 +61,7 @@ export async function PATCH(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  if (!(await canManageSoumissions(supabase, user.id))) {
+  if (!canManageSoumissions(await getUserRole(supabase, user.id))) {
     return NextResponse.json({ error: "Action réservée aux administrateurs et chargés de projet" }, { status: 403 });
   }
 
@@ -116,7 +108,7 @@ export async function DELETE(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  if (!(await canManageSoumissions(supabase, user.id))) {
+  if (!canManageSoumissions(await getUserRole(supabase, user.id))) {
     return NextResponse.json({ error: "Action réservée aux administrateurs et chargés de projet" }, { status: 403 });
   }
 

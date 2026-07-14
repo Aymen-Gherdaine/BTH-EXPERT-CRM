@@ -5,6 +5,8 @@ import { generateNumeroOffre } from "@/lib/utils";
 import { soumissionCreateSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
 import { SOUMISSION_LIST_SELECT } from "@/lib/queries";
+import { canCreateSoumission } from "@/lib/permissions";
+import { sanitizeSearchTerm } from "@/lib/search";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -35,12 +37,6 @@ async function getRole(supabase: Awaited<ReturnType<typeof getSupabase>>, userId
   return profile?.role;
 }
 
-// Recherche : neutralise les caractères qui ont un sens dans la syntaxe de
-// filtre PostgREST (`.or(...)`) pour éviter l'injection de clauses via `q`.
-function sanitizeSearch(q: string) {
-  return q.replace(/[,()*\\%]/g, " ").trim();
-}
-
 export async function GET(req: NextRequest) {
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
@@ -60,7 +56,7 @@ export async function GET(req: NextRequest) {
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     const rawQ = searchParams.get("q")?.trim();
-    const q = rawQ ? sanitizeSearch(rawQ) : "";
+    const q = rawQ ? sanitizeSearchTerm(rawQ) : "";
 
     // Tri : colonne sur liste blanche uniquement (jamais d'entrée brute en ORDER BY)
     const sortParam = searchParams.get("sort") ?? "date_offre";
@@ -140,7 +136,7 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     // Création d'une soumission : réservée à l'administrateur.
-    if ((await getRole(supabase, user.id)) !== "admin") {
+    if (!canCreateSoumission(await getRole(supabase, user.id))) {
       return NextResponse.json({ error: "Action réservée aux administrateurs" }, { status: 403 });
     }
 

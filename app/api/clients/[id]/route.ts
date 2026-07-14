@@ -3,6 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { clientPatchSchema } from "@/lib/schemas/index";
 import { validateBody } from "@/lib/schemas/helpers";
+import { getUserRole } from "@/lib/api-roles";
+import { canDeleteClient } from "@/lib/permissions";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -60,12 +62,7 @@ export async function DELETE(
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
 
   // Suppression client → réservée à l'admin (cascade sur les soumissions liées).
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single<{ role: string }>();
-  if (profile?.role !== "admin") {
+  if (!canDeleteClient(await getUserRole(supabase, user.id))) {
     return NextResponse.json({ error: "Suppression réservée aux administrateurs" }, { status: 403 });
   }
 

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import * as XLSX from "xlsx-js-style";
 import { autoFitColumns, styleHeaders } from "@/lib/excel-utils";
 import { getUserRole } from "@/lib/api-roles";
+import { canAccessProspection } from "@/lib/permissions";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -52,8 +53,7 @@ export async function GET() {
 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-  const role = await getUserRole(supabase, user.id);
-  if (role !== "admin" && role !== "commercial") {
+  if (!canAccessProspection(await getUserRole(supabase, user.id))) {
     return NextResponse.json({ error: "Accès réservé aux administrateurs et commerciaux" }, { status: 403 });
   }
 

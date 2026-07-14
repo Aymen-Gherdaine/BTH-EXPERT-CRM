@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { canSeeCoutsMarges } from "@/lib/permissions";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -74,7 +75,7 @@ export async function GET(req: NextRequest) {
     .eq("id", user.id)
     .single<{ role: string }>();
 
-  if (profile?.role !== "admin") {
+  if (!canSeeCoutsMarges(profile?.role)) {
     return NextResponse.json({ error: "Accès refusé — admin uniquement" }, { status: 403 });
   }
 

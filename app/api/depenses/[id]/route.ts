@@ -3,6 +3,8 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { depensePatchSchema } from "@/lib/schemas/index";
 import { validateBody } from "@/lib/schemas/helpers";
+import { getUserRole } from "@/lib/api-roles";
+import { canModifyDepense } from "@/lib/permissions";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -37,16 +39,10 @@ async function resolveAccess(
 
   if (!existing) return { allowed: false, notFound: true };
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .single<{ role: string }>();
-
-  const isAdmin = profile?.role === "admin";
+  const role = await getUserRole(supabase, userId);
   const isOwner = existing.employe_id === userId;
 
-  return { allowed: isAdmin || isOwner };
+  return { allowed: canModifyDepense(role, isOwner) };
 }
 
 export async function PATCH(

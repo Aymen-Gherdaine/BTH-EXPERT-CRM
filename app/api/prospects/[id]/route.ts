@@ -2,13 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { getUserRole } from "@/lib/api-roles";
+import { canAccessProspection } from "@/lib/permissions";
 import { prospectPatchSchema } from "@/lib/schemas";
 import { validateBody } from "@/lib/schemas/helpers";
-
-// La prospection est réservée aux administrateurs et commerciaux.
-function canAccessProspection(role: string | undefined) {
-  return role === "admin" || role === "commercial";
-}
 
 async function getSupabase() {
   const cookieStore = await cookies();

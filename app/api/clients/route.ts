@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { sanitizeSearchTerm } from "@/lib/search";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -22,12 +23,6 @@ async function getSupabase() {
   );
 }
 
-// Recherche : neutralise les caractères qui ont un sens dans la syntaxe de
-// filtre PostgREST (`.or(...)`) pour éviter l'injection de clauses via `q`.
-function sanitizeSearch(q: string) {
-  return q.replace(/[,()*\\%]/g, " ").trim();
-}
-
 export async function GET(req: NextRequest) {
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
@@ -35,7 +30,7 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url);
   const rawQ = searchParams.get("q");
-  const q = rawQ ? sanitizeSearch(rawQ) : "";
+  const q = rawQ ? sanitizeSearchTerm(rawQ) : "";
   const orFilter = q ? `entreprise.ilike.%${q}%,nom_contact.ilike.%${q}%` : null;
   const pageParam = searchParams.get("page");
   const pageSizeParam = searchParams.get("pageSize");
