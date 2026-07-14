@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import useSWR from "swr";
 import { AnimatePresence, m as motion } from "framer-motion";
 import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 import type { CategorieDepense, Depense } from "@/types";
@@ -782,7 +783,16 @@ export default function DepensesPageClient({
   const isDesktop = bp !== "mobile";
   const gridRef = useRef<HTMLElement>(null);
 
-  const [depenses, setDepenses] = useState<Depense[]>(initialDepenses);
+  // Données via SWR (cache + revalidation en fond), comme Soumissions / Clients.
+  // Seed SSR → aucun re-fetch visible ni skeleton au retour sur la page.
+  const { data: depensesRes, mutate: mutateDepenses } = useSWR<{ data: Depense[] }>(
+    "/api/depenses",
+    { fallbackData: { data: initialDepenses } }
+  );
+  const depenses = depensesRes?.data ?? [];
+  // Met à jour le cache SWR localement (mutations optimistes, sans revalider).
+  const setDepenses = (updater: (current: Depense[]) => Depense[]) =>
+    mutateDepenses(cur => ({ data: updater(cur?.data ?? []) }), { revalidate: false });
   // ref on .depenses-shell; tableHeaderHeight=48 (.depenses-table-head); pagerHeight=52 (footer below content)
   const perPage = useDynamicPerPage(gridRef, { view: "table", isDesktop, rowHeight: 66, tableHeaderHeight: 48, pagerHeight: 52, mobilePerPage: 6 }, [depenses.length]);
   const [soumissions] = useState<SoumissionOption[]>(initialSoumissions);
