@@ -29,15 +29,23 @@ SET public = false,
     allowed_mime_types = ARRAY['image/png', 'image/jpeg', 'image/webp']
 WHERE id = 'signatures';
 
--- Supprimer les anciennes policies (tous noms connus)
-DROP POLICY IF EXISTS "Lecture publique signatures" ON storage.objects;
-DROP POLICY IF EXISTS "Upload signatures" ON storage.objects;
-DROP POLICY IF EXISTS "Update signatures" ON storage.objects;
-DROP POLICY IF EXISTS "Delete signatures" ON storage.objects;
-DROP POLICY IF EXISTS "signatures_select" ON storage.objects;
-DROP POLICY IF EXISTS "signatures_insert" ON storage.objects;
-DROP POLICY IF EXISTS "signatures_update" ON storage.objects;
-DROP POLICY IF EXISTS "signatures_delete" ON storage.objects;
+-- Supprimer TOUTES les policies existantes du bucket `signatures`, quel que
+-- soit leur nom. Robuste face à la dérive de nommage (ex. "Public read
+-- signatures", "Authenticated upload signatures"…). Sans ce nettoyage, une
+-- ancienne policy permissive (anon/authenticated) subsisterait et — les
+-- policies RLS se cumulant en OU — annulerait le durcissement ci-dessous.
+DO $$
+DECLARE pol record;
+BEGIN
+  FOR pol IN
+    SELECT policyname
+    FROM pg_policies
+    WHERE schemaname = 'storage' AND tablename = 'objects'
+      AND (COALESCE(qual, '') ILIKE '%signatures%' OR COALESCE(with_check, '') ILIKE '%signatures%')
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', pol.policyname);
+  END LOOP;
+END $$;
 
 -- Lecture : connectés uniquement (URLs signées). Jamais anon.
 CREATE POLICY "signatures_select" ON storage.objects

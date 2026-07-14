@@ -75,6 +75,22 @@ VALUES (
 )
 ON CONFLICT (id) DO UPDATE SET public = false;
 
+-- Nettoyage robuste : supprime TOUTES les policies existantes du bucket
+-- `signatures` (dérive de nommage possible : "Public read signatures",
+-- "Authenticated upload signatures"…). Les policies RLS se cumulant en OU,
+-- une ancienne policy permissive annulerait le durcissement ci-dessous.
+DO $$
+DECLARE pol record;
+BEGIN
+  FOR pol IN
+    SELECT policyname FROM pg_policies
+    WHERE schemaname = 'storage' AND tablename = 'objects'
+      AND (COALESCE(qual, '') ILIKE '%signatures%' OR COALESCE(with_check, '') ILIKE '%signatures%')
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON storage.objects', pol.policyname);
+  END LOOP;
+END $$;
+
 -- Lecture : connectés uniquement (jamais anon)
 DROP POLICY IF EXISTS "Lecture publique signatures" ON storage.objects;
 DROP POLICY IF EXISTS "signatures_select" ON storage.objects;
