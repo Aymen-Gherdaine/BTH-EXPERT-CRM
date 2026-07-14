@@ -181,6 +181,49 @@ export function CardsPageSkeleton({
   );
 }
 
+/** Page détail (consultation) : colonne centrée, fil d'Ariane, titre, méta,
+ *  boutons d'action, puis blocs de contenu. Copie la structure des pages
+ *  /soumissions/[id] et /prospection/[id] pour éviter tout saut de mise en page. */
+export function DetailPageSkeleton() {
+  return (
+    <div
+      className="h-full overflow-y-auto bg-bth-canvas"
+      role="status"
+      aria-busy="true"
+      aria-label="Chargement en cours"
+    >
+      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
+        {/* Fil d'Ariane */}
+        <div className="flex items-center gap-2 mb-6">
+          <Skel className="h-3 w-24" />
+          <Skel className="h-3 w-3" />
+          <Skel className="h-3 w-40" />
+        </div>
+        {/* Titre */}
+        <Skel className="h-7 w-2/3 max-w-md mb-3" />
+        {/* Méta : réf · date · statut */}
+        <div className="flex items-center gap-3 mb-5">
+          <Skel className="h-3 w-20" />
+          <Skel className="h-3 w-24" />
+          <Skel className="h-6 w-20 bth-skel-pill" />
+        </div>
+        {/* Boutons d'action */}
+        <div className="flex flex-wrap gap-2 mb-8">
+          <Skel className="h-10 w-28 bth-skel-md" />
+          <Skel className="h-10 w-20 bth-skel-md" />
+          <Skel className="h-10 w-20 bth-skel-md" />
+        </div>
+        {/* Blocs de contenu */}
+        <div className="grid gap-4">
+          <Skel className="h-28 w-full bth-skel-lg" />
+          <Skel className="h-44 w-full bth-skel-lg" />
+          <Skel className="h-32 w-full bth-skel-lg" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** Tableau de bord : hero + rangée de stats + deux panneaux. */
 export function DashboardSkeleton() {
   return (

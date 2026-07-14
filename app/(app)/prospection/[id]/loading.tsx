@@ -1,5 +1,5 @@
-import { FormPageSkeleton } from "@/components/ui/Skeleton";
+import { DetailPageSkeleton } from "@/components/ui/Skeleton";
 
 export default function Loading() {
-  return <FormPageSkeleton groups={2} />;
+  return <DetailPageSkeleton />;
 }
