@@ -14,3 +14,6 @@ if git diff --cached -- ':!.husky/' | grep -E "(sk-ant-|sb_secret_|sb_publishabl
 fi
 
 echo "✅ Aucun secret détecté."
+
+# Lint (auto-fix) sur les fichiers stagés — bloque si erreurs ESLint
+npx lint-staged
