@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, m as motion } from "framer-motion";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { preload } from "swr";
 import { fetcher } from "@/lib/fetcher";
 import type { UserRole } from "@/types";
@@ -73,7 +73,6 @@ const COMMERCIAL_SHEET_ITEMS: NavItem[] = [
 export default function BottomNav({ role }: { role: UserRole }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -92,9 +91,9 @@ export default function BottomNav({ role }: { role: UserRole }) {
 
   const handleClick = (href: string) => {
     setPendingHref(href);
-    startTransition(() => {
-      router.push(href);
-    });
+    // Navigation urgente (pas de startTransition) → le loading.tsx s'affiche
+    // immédiatement au lieu de rester figé sur la page courante.
+    router.push(href);
   };
 
   useEffect(() => {
@@ -128,7 +127,7 @@ export default function BottomNav({ role }: { role: UserRole }) {
                 handleClick(href);
               }}
               aria-current={active ? "page" : undefined}
-              aria-busy={isPending && pendingHref === href ? true : undefined}
+              aria-busy={pendingHref === href ? true : undefined}
               className="flex-1 no-underline"
             >
               <motion.div
@@ -228,7 +227,7 @@ export default function BottomNav({ role }: { role: UserRole }) {
                           setSheetOpen(false);
                         }}
                         aria-current={active ? "page" : undefined}
-                        aria-busy={isPending && pendingHref === href ? true : undefined}
+                        aria-busy={pendingHref === href ? true : undefined}
                         className="no-underline block"
                       >
                         <motion.div

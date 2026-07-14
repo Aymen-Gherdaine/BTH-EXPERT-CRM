@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import useSWR from "swr";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { AnimatePresence, m as motion } from "framer-motion";
@@ -739,10 +740,27 @@ export default function ProspectionPageClient({
   initialProspects?: Prospect[];
   initialKanbanProspects?: Prospect[];
 }) {
-  const [prospects, setProspects] = useState<Prospect[]>(initialProspects);
-  const [kanbanProspects, setKanbanProspects] = useState<Prospect[]>(initialKanbanProspects);
-  const hasInitialData = initialProspects.length > 0 || initialKanbanProspects.length > 0;
-  const [loading, setLoading] = useState(!hasInitialData);
+  // Données via SWR (cache + revalidation en fond), comme Soumissions / Clients /
+  // Dépenses. Seed SSR → affichage instantané au retour, sans re-fetch visible.
+  const { data: activeRes, isLoading: activeLoading, mutate: mutateActive } = useSWR<{ data: Prospect[] }>(
+    "/api/prospects?statut=actif",
+    { fallbackData: initialProspects.length ? { data: initialProspects } : undefined }
+  );
+  const { data: kanbanRes, isLoading: kanbanLoading, mutate: mutateKanban } = useSWR<{ data: Prospect[] }>(
+    "/api/prospects",
+    { fallbackData: initialKanbanProspects.length ? { data: initialKanbanProspects } : undefined }
+  );
+  const prospects = activeRes?.data ?? [];
+  const kanbanProspects = kanbanRes?.data ?? [];
+  const loading = (activeLoading && !activeRes) || (kanbanLoading && !kanbanRes);
+
+  // Shims conservant l'API setState (valeur OU fonction) → les mutations
+  // optimistes existantes (drag-drop, statut) fonctionnent sans changement.
+  const setProspects = (u: Prospect[] | ((c: Prospect[]) => Prospect[])) =>
+    mutateActive(cur => ({ data: typeof u === "function" ? u(cur?.data ?? []) : u }), { revalidate: false });
+  const setKanbanProspects = (u: Prospect[] | ((c: Prospect[]) => Prospect[])) =>
+    mutateKanban(cur => ({ data: typeof u === "function" ? u(cur?.data ?? []) : u }), { revalidate: false });
+
   const [tab, setTab] = useState<Tab>("planning");
   const [search, setSearch] = useState("");
   const [filterResultat, setFilterResultat] = useState("");
@@ -754,19 +772,6 @@ export default function ProspectionPageClient({
   const [pendingLossMove, setPendingLossMove] = useState<PendingLossMove>(null);
   const [lossReason, setLossReason] = useState<LossReason>("Budget insuffisant");
   const kanbanScrollRef = useRef<HTMLDivElement | null>(null);
-
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    if (hasInitialData) return;
-    Promise.all([
-      fetch("/api/prospects?statut=actif").then(r => r.json()),
-      fetch("/api/prospects").then(r => r.json()),
-    ]).then(([activeJson, allJson]) => {
-      setProspects(activeJson.data ?? []);
-      setKanbanProspects(allJson.data ?? []);
-      setLoading(false);
-    });
-  }, []);
 
   /* Reset pagination on filter change */
   useEffect(() => { setHistPage(1); }, [search, filterResultat]);

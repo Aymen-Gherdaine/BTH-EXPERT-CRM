@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, m as motion } from "framer-motion";
 import { preload } from "swr";
@@ -102,7 +102,6 @@ function SidebarInner({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -148,9 +147,10 @@ function SidebarInner({
 
   const handleClick = (href: string) => {
     setPendingHref(href);
-    startTransition(() => {
-      router.push(href);
-    });
+    // Navigation URGENTE (pas de startTransition) : on quitte immédiatement la
+    // page courante et le loading.tsx de la destination s'affiche tout de suite,
+    // au lieu de rester figé sur l'ancienne page jusqu'à ce que tout soit prêt.
+    router.push(href);
   };
 
   return (
@@ -215,7 +215,7 @@ function SidebarInner({
                       onNavClick?.();
                     }}
                     aria-current={active ? "page" : undefined}
-                    aria-busy={isPending && pendingHref === href ? true : undefined}
+                    aria-busy={pendingHref === href ? true : undefined}
                     className="block no-underline mx-2"
                   >
                     <div className={[
@@ -227,7 +227,7 @@ function SidebarInner({
                       <span className="text-bth-green-700">
                         <Ic d={ICONS[icon]} size={16} sw={active ? 2 : 1.7} />
                       </span>
-                      <span className={isPending && pendingHref === href ? "opacity-70 animate-pulse" : ""}>
+                      <span className={pendingHref === href ? "opacity-70 animate-pulse" : ""}>
                         {label}
                       </span>
                     </div>
@@ -284,7 +284,7 @@ function SidebarInner({
                       setDropdownOpen(false);
                       onNavClick?.();
                     }}
-                    aria-busy={isPending && pendingHref === href ? true : undefined}
+                    aria-busy={pendingHref === href ? true : undefined}
                     className="flex items-center gap-[10px] px-[10px] py-[9px] rounded-bth-sm text-[13px]
                                font-medium text-bth-n-700 hover:bg-bth-n-50 transition-colors duration-100 no-underline">
                     <span className="text-bth-n-400 flex-shrink-0">

@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { m as motion } from "framer-motion";
 import { SoumissionView } from "../types";
 import { ST, I, fmtInt } from "../constants";
@@ -7,8 +8,12 @@ import { StatusBadge } from "./StatusBadge";
 import { Avatar } from "./Avatar";
 import { Ic } from "./Ic";
 
-function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
-  o: SoumissionView; idx: number; isAdmin: boolean; onClick: () => void; isActive: boolean;
+// memo : le parent (SoumissionsClient) se re-rend à l'ouverture du panneau de
+// détail, des modales, du versement… sans que `pageItems` change. Sans memo,
+// toutes les cartes visibles se re-rendraient à chaque fois. Les props sont
+// stables (o : même réf tant que pageItems ne change pas ; onOpen : useCallback).
+const SoumissionCard = memo(function SoumissionCard({ o, idx, isAdmin, onOpen, isActive }: {
+  o: SoumissionView; idx: number; isAdmin: boolean; onOpen: (o: SoumissionView) => void; isActive: boolean;
 }) {
   const c = ST[o.statut];
   const pct = o.total_ttc > 0 ? Math.min(100, ((o.versement_recu ?? 0) / o.total_ttc) * 100) : 0;
@@ -21,7 +26,7 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
     >
       <div
         className="card-hover submission-card"
-        onClick={onClick}
+        onClick={() => onOpen(o)}
         style={{
           background: isActive ? "#f2f7f3" : "linear-gradient(180deg, #fffdfa 0%, #ffffff 100%)",
           borderRadius: 8,
@@ -128,7 +133,7 @@ function SoumissionCard({ o, idx, isAdmin, onClick, isActive }: {
       </div>
     </motion.div>
   );
-}
+});
 
 export function CardGrid({ items, isAdmin, onOpen, selId, px }: {
   items: SoumissionView[]; isAdmin: boolean;
@@ -145,7 +150,7 @@ export function CardGrid({ items, isAdmin, onOpen, selId, px }: {
       {items.map((o, i) => (
         <SoumissionCard
           key={o.id} o={o} idx={i} isAdmin={isAdmin}
-          onClick={() => onOpen(o)} isActive={selId === o.id}
+          onOpen={onOpen} isActive={selId === o.id}
         />
       ))}
     </div>

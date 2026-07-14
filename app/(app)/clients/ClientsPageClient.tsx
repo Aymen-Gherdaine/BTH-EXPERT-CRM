@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, m as motion } from "framer-motion";
 import useSWR, { preload, useSWRConfig } from "swr";
 import { fetcher } from "@/lib/fetcher";
@@ -401,6 +401,10 @@ const CSS = `
   }
 `;
 
+// Référence stable pour les lignes non dépliées : évite un nouveau `[]` à chaque
+// render qui casserait le React.memo des lignes.
+const NO_SOUMISSIONS: Soumission[] = [];
+
 /* ── useBp (breakpoint desktop ≥ 768px, spécifique à cette page) ── */
 function useBp() {
   const [bp, setBp] = useState<"mobile" | "desktop">("mobile");
@@ -488,14 +492,17 @@ export default function ClientsPageClient({
   const cityCount = clientsRes?.cityCount ?? initialCityCount;
   const loading = clientsLoading && !clientsRes;
 
-  function toggleExpand(id: string) {
+  // Stabilisés (useCallback) : passés aux lignes memoïsées (ClientCard /
+  // ClientTableRow) → une référence stable évite de re-rendre toutes les lignes
+  // quand on n'en déplie qu'une.
+  const toggleExpand = useCallback((id: string) => {
     setExpandedId(prev => (prev === id ? null : id));
-  }
+  }, []);
 
-  function askDelete(c: ClientWithSoumissions, e: React.MouseEvent) {
+  const askDelete = useCallback((c: ClientWithSoumissions, e: React.MouseEvent) => {
     e.stopPropagation();
     setDeleteConfirm({ open: true, id: c.id, label: c.entreprise });
-  }
+  }, []);
 
   async function confirmDelete() {
     const targetId = deleteConfirm.id;
@@ -657,7 +664,7 @@ export default function ClientsPageClient({
               <ClientsTable
                 clients={paginated}
                 expandedId={expandedId}
-                expandedSoumissions={expandedSoumRes?.data ?? []}
+                expandedSoumissions={expandedSoumRes?.data ?? NO_SOUMISSIONS}
                 expandedSoumLoading={expandedSoumLoading}
                 canSeeAmounts={canSeeAmounts}
                 onToggle={toggleExpand}
@@ -699,10 +706,10 @@ export default function ClientsPageClient({
                   <ClientCard
                     key={client.id} client={client}
                     isExpanded={expandedId === client.id}
-                    soumissions={expandedId === client.id ? (expandedSoumRes?.data ?? []) : []}
+                    soumissions={expandedId === client.id ? (expandedSoumRes?.data ?? NO_SOUMISSIONS) : NO_SOUMISSIONS}
                     isLoadingSoum={expandedId === client.id && expandedSoumLoading}
                     canSeeAmounts={canSeeAmounts}
-                    onToggle={() => toggleExpand(client.id)}
+                    onToggle={toggleExpand}
                     onDelete={askDelete}
                   />
                 ))}

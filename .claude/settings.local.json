@@ -31,7 +31,8 @@
       "Bash(npx supabase *)",
       "Bash(node -e ' *)",
       "Bash(not exist *)",
-      "Bash(node)"
+      "Bash(node)",
+      "mcp__Claude_Code_Remote__send_later"
     ]
   }
 }

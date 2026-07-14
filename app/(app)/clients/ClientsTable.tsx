@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { AnimatePresence, m as motion } from "framer-motion";
 import type { Soumission } from "@/types";
 import { formatDateFr } from "@/lib/utils";
@@ -8,11 +8,15 @@ import { CT_D, CT_GRID, CT_HD, I, type ClientWithSoumissions } from "./lib";
 import { Avatar, Ic } from "./components";
 import { SoumMobileList, SoumissionsTable } from "./SoumissionsTable";
 
-export function ClientCard({ client, isExpanded, soumissions, isLoadingSoum, canSeeAmounts, onToggle, onDelete }: {
+// memo : déplier/replier une fiche ou ouvrir une modale re-rend le parent sans
+// changer les données des autres lignes. Props stables (client, onToggle
+// id-based en useCallback, tableau vide constant) → seules les lignes concernées
+// se re-rendent.
+export const ClientCard = memo(function ClientCard({ client, isExpanded, soumissions, isLoadingSoum, canSeeAmounts, onToggle, onDelete }: {
   client: ClientWithSoumissions; isExpanded: boolean;
   soumissions: Soumission[]; isLoadingSoum: boolean;
   canSeeAmounts: boolean;
-  onToggle: () => void;
+  onToggle: (id: string) => void;
   onDelete: (c: ClientWithSoumissions, e: React.MouseEvent) => void;
 }) {
   const [hov, setHov] = useState(false);
@@ -45,7 +49,7 @@ export function ClientCard({ client, isExpanded, soumissions, isLoadingSoum, can
         className="clients-card-main"
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
-        onClick={onToggle}
+        onClick={() => onToggle(client.id)}
         style={{
           display: "flex", alignItems: "center", gap: 12,
           padding: "13px 12px 13px 16px",
@@ -187,18 +191,18 @@ export function ClientCard({ client, isExpanded, soumissions, isLoadingSoum, can
       </AnimatePresence>
     </motion.div>
   );
-}
+});
 
 /* ══════════════════════════════════════════════════════════
    CLIENT TABLE ROW (desktop)
 ══════════════════════════════════════════════════════════ */
-function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, canSeeAmounts, onToggle, onDelete }: {
+const ClientTableRow = memo(function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, canSeeAmounts, onToggle, onDelete }: {
   client: ClientWithSoumissions;
   isExpanded: boolean;
   soumissions: Soumission[];
   isLoadingSoum: boolean;
   canSeeAmounts: boolean;
-  onToggle: () => void;
+  onToggle: (id: string) => void;
   onDelete: (c: ClientWithSoumissions, e: React.MouseEvent) => void;
 }) {
   const [hov, setHov] = useState(false);
@@ -208,7 +212,7 @@ function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, canSee
       <div
         onMouseEnter={() => setHov(true)}
         onMouseLeave={() => setHov(false)}
-        onClick={onToggle}
+        onClick={() => onToggle(client.id)}
         style={{
           display: "grid", gridTemplateColumns: CT_GRID,
           minHeight: 64, alignItems: "stretch",
@@ -326,7 +330,10 @@ function ClientTableRow({ client, isExpanded, soumissions, isLoadingSoum, canSee
       </AnimatePresence>
     </div>
   );
-}
+});
+
+// Référence stable pour les lignes non dépliées (voir NO_SOUMISSIONS côté page).
+const NO_SOUM: Soumission[] = [];
 
 /* ══════════════════════════════════════════════════════════
    CLIENTS TABLE (desktop)
@@ -378,10 +385,10 @@ export function ClientsTable({ clients, expandedId, expandedSoumissions, expande
             key={client.id}
             client={client}
             isExpanded={expandedId === client.id}
-            soumissions={expandedId === client.id ? expandedSoumissions : []}
+            soumissions={expandedId === client.id ? expandedSoumissions : NO_SOUM}
             isLoadingSoum={expandedId === client.id && expandedSoumLoading}
             canSeeAmounts={canSeeAmounts}
-            onToggle={() => onToggle(client.id)}
+            onToggle={onToggle}
             onDelete={onDelete}
           />
         ))}

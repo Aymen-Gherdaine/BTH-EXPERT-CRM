@@ -1,5 +1,6 @@
-import { CardsPageSkeleton } from "@/components/ui/Skeleton";
+import { ListPageSkeleton } from "@/components/ui/Skeleton";
 
+// Système unifié : tableau (desktop) / cartes (mobile).
 export default function Loading() {
-  return <CardsPageSkeleton count={6} />;
+  return <ListPageSkeleton kpis={3} rows={10} cards={9} />;
 }

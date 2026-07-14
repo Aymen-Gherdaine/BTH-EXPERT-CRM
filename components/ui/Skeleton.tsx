@@ -145,19 +145,31 @@ function Page({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Page liste : hero + table (optionnellement une rangée de KPIs). */
+/** Page liste : hero + contenu RESPONSIVE (tableau sur desktop, cartes sur
+ *  mobile) — copie exactement le système des pages listes (Soumissions,
+ *  Clients, Dépenses, Utilisateurs) qui sont toutes tableau/desktop + cartes/mobile.
+ *  Un seul skeleton pour toutes → système de chargement unifié. */
 export function ListPageSkeleton({
   kpis = 0,
   rows = 9,
+  cards = 9,
 }: {
   kpis?: number;
   rows?: number;
+  cards?: number;
 }) {
   return (
     <Page>
       <Hero kpis={kpis} />
       <div className="flex-1 overflow-hidden">
-        <TableBlock rows={rows} />
+        {/* Desktop : tableau */}
+        <div className="hidden md:block">
+          <TableBlock rows={rows} />
+        </div>
+        {/* Mobile : cartes */}
+        <div className="md:hidden">
+          <CardGrid count={cards} />
+        </div>
       </div>
     </Page>
   );
@@ -178,6 +190,49 @@ export function CardsPageSkeleton({
         <CardGrid count={count} />
       </div>
     </Page>
+  );
+}
+
+/** Page détail (consultation) : colonne centrée, fil d'Ariane, titre, méta,
+ *  boutons d'action, puis blocs de contenu. Copie la structure des pages
+ *  /soumissions/[id] et /prospection/[id] pour éviter tout saut de mise en page. */
+export function DetailPageSkeleton() {
+  return (
+    <div
+      className="h-full overflow-y-auto bg-bth-canvas"
+      role="status"
+      aria-busy="true"
+      aria-label="Chargement en cours"
+    >
+      <div className="p-4 sm:p-8 max-w-4xl mx-auto">
+        {/* Fil d'Ariane */}
+        <div className="flex items-center gap-2 mb-6">
+          <Skel className="h-3 w-24" />
+          <Skel className="h-3 w-3" />
+          <Skel className="h-3 w-40" />
+        </div>
+        {/* Titre */}
+        <Skel className="h-7 w-2/3 max-w-md mb-3" />
+        {/* Méta : réf · date · statut */}
+        <div className="flex items-center gap-3 mb-5">
+          <Skel className="h-3 w-20" />
+          <Skel className="h-3 w-24" />
+          <Skel className="h-6 w-20 bth-skel-pill" />
+        </div>
+        {/* Boutons d'action */}
+        <div className="flex flex-wrap gap-2 mb-8">
+          <Skel className="h-10 w-28 bth-skel-md" />
+          <Skel className="h-10 w-20 bth-skel-md" />
+          <Skel className="h-10 w-20 bth-skel-md" />
+        </div>
+        {/* Blocs de contenu */}
+        <div className="grid gap-4">
+          <Skel className="h-28 w-full bth-skel-lg" />
+          <Skel className="h-44 w-full bth-skel-lg" />
+          <Skel className="h-32 w-full bth-skel-lg" />
+        </div>
+      </div>
+    </div>
   );
 }
 

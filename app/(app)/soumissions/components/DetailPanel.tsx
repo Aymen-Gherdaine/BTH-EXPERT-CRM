@@ -36,7 +36,10 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
 
   const body = (
     <div className="sc submission-detail-body" style={{ flex: 1, overflowY: "auto", padding: "20px 22px 40px" }}>
-      {loading || !o ? (
+      {/* Le contenu s'affiche dès qu'on a la ligne cliquée (`o`) : plus de
+          skeleton plein à chaque ouverture. Seules les lignes budgétaires,
+          récupérées en arrière-plan, affichent un loader (voir plus bas). */}
+      {!o ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {sk(72)}{sk(180)}{sk(120)}{sk(140)}
         </div>
@@ -140,7 +143,11 @@ export function DetailPanel({ o, onClose, isAdmin, onStatusChange, onVersement, 
             Lignes budgétaires
           </p>
           <div style={{ borderRadius: 10, overflow: "hidden", border: "1px solid #e5e7eb", marginBottom: 16 }}>
-            {(o.lignes_budget ?? []).length === 0 ? (
+            {loading ? (
+              <div style={{ padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                {sk(20)}{sk(20)}
+              </div>
+            ) : (o.lignes_budget ?? []).length === 0 ? (
               <div style={{ padding: 16, fontSize: 13, color: "#9ca3af", textAlign: "center" }}>Aucune ligne</div>
             ) : (o.lignes_budget ?? []).map((l: LigneBudget, i: number) => (
               <div key={l.id ?? i} className="submission-budget-row" style={{

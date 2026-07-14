@@ -32,40 +32,21 @@ export async function GET() {
     .toISOString()
     .split("T")[0];
 
-  const [moisRes, accepteesRes, statsRes, versementsRes] = await Promise.all([
-    supabase
-      .from("soumissions")
-      .select("id")
-      .gte("date_offre", startOfMonth),
-    supabase
-      .from("soumissions")
-      .select("total_ttc")
-      .eq("statut", "Acceptée"),
-    supabase
-      .from("soumissions")
-      .select("statut"),
-    supabase
-      .from("soumissions")
-      .select("versement_recu"),
-  ]);
-
-  const soumissions_mois = moisRes.data?.length ?? 0;
-
-  const nombre_mandats_acceptes = accepteesRes.data?.length ?? 0;
-  const total_mandats_acceptes = accepteesRes.data?.reduce((s, r) => s + (r.total_ttc || 0), 0) ?? 0;
-
-  const all = statsRes.data ?? [];
-  const total = all.length;
-  const acceptees = all.filter((r) => r.statut === "Acceptée").length;
-  const taux_acceptation = total > 0 ? Math.round((acceptees / total) * 100) : 0;
-
-  const total_versements_recus = versementsRes.data?.reduce((s, r) => s + (r.versement_recu || 0), 0) ?? 0;
-
-  return NextResponse.json({
-    soumissions_mois,
-    nombre_mandats_acceptes,
-    total_mandats_acceptes,
-    taux_acceptation,
-    total_versements_recus,
+  // Agrégats calculés en base (RPC) : une seule passe côté Postgres au lieu de
+  // 4 scans complets de `soumissions` rapatriés puis comptés/sommés en JS.
+  // RLS respectée (SECURITY INVOKER) → chiffres scoping identique à avant.
+  const { data, error } = await supabase.rpc("dashboard_stats", {
+    p_start_of_month: startOfMonth,
   });
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const stats = data?.[0] ?? {
+    soumissions_mois: 0,
+    nombre_mandats_acceptes: 0,
+    total_mandats_acceptes: 0,
+    taux_acceptation: 0,
+    total_versements_recus: 0,
+  };
+
+  return NextResponse.json(stats);
 }
