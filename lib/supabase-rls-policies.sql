@@ -1,6 +1,9 @@
 -- BTH Expert CRM — Policies RLS Supabase
 -- Exécuter dans l'éditeur SQL de Supabase APRÈS le schéma principal
--- Ces policies autorisent toutes les opérations avec la clé anonyme (usage interne)
+-- Ces policies autorisent les opérations aux utilisateurs CONNECTÉS
+-- uniquement (rôle `authenticated`). L'accès anonyme est exclu :
+-- une policy sans `to authenticated` s'appliquerait à PUBLIC/anon,
+-- dont la clé est publique. Cf. migration 20260714160000 (SEC-01).
 
 -- =====================
 -- TABLE: clients
@@ -13,16 +16,16 @@ drop policy if exists "clients_update" on clients;
 drop policy if exists "clients_delete" on clients;
 
 create policy "clients_select" on clients
-  for select using (true);
+  for select to authenticated using (true);
 
 create policy "clients_insert" on clients
-  for insert with check (true);
+  for insert to authenticated with check (true);
 
 create policy "clients_update" on clients
-  for update using (true) with check (true);
+  for update to authenticated using (true) with check (true);
 
 create policy "clients_delete" on clients
-  for delete using (true);
+  for delete to authenticated using (true);
 
 -- =====================
 -- TABLE: soumissions
@@ -35,16 +38,16 @@ drop policy if exists "soumissions_update" on soumissions;
 drop policy if exists "soumissions_delete" on soumissions;
 
 create policy "soumissions_select" on soumissions
-  for select using (true);
+  for select to authenticated using (true);
 
 create policy "soumissions_insert" on soumissions
-  for insert with check (true);
+  for insert to authenticated with check (true);
 
 create policy "soumissions_update" on soumissions
-  for update using (true) with check (true);
+  for update to authenticated using (true) with check (true);
 
 create policy "soumissions_delete" on soumissions
-  for delete using (true);
+  for delete to authenticated using (true);
 
 -- =====================
 -- TABLE: lignes_budget
@@ -57,13 +60,13 @@ drop policy if exists "lignes_budget_update" on lignes_budget;
 drop policy if exists "lignes_budget_delete" on lignes_budget;
 
 create policy "lignes_budget_select" on lignes_budget
-  for select using (true);
+  for select to authenticated using (true);
 
 create policy "lignes_budget_insert" on lignes_budget
-  for insert with check (true);
+  for insert to authenticated with check (true);
 
 create policy "lignes_budget_update" on lignes_budget
-  for update using (true) with check (true);
+  for update to authenticated using (true) with check (true);
 
 create policy "lignes_budget_delete" on lignes_budget
-  for delete using (true);
+  for delete to authenticated using (true);

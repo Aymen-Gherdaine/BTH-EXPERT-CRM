@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { z } from "zod";
+import { ligneBudgetSchema } from "@/lib/schemas";
+import { validateBody } from "@/lib/schemas/helpers";
 
 async function getSupabase() {
   const cookieStore = await cookies();
@@ -22,6 +25,21 @@ async function getSupabase() {
   );
 }
 
+async function canManageSoumissions(supabase: Awaited<ReturnType<typeof getSupabase>>, userId: string) {
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .single<{ role: string }>();
+
+  return profile?.role === "admin" || profile?.role === "charge_projet";
+}
+
+// Corps attendu : { lignes: LigneBudget[] } — validé avant toute écriture.
+const lignesPutSchema = z.object({
+  lignes: z.array(ligneBudgetSchema),
+});
+
 // Replace all lignes for a soumission: DELETE existing + INSERT new batch
 export async function PUT(
   req: NextRequest,
@@ -30,9 +48,21 @@ export async function PUT(
   const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+  if (!(await canManageSoumissions(supabase, user.id))) {
+    return NextResponse.json({ error: "Action réservée aux administrateurs et chargés de projet" }, { status: 403 });
+  }
 
   const { id } = await params;
-  const { lignes } = await req.json();
+
+  let rawBody: unknown;
+  try {
+    rawBody = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Corps de requête invalide" }, { status: 400 });
+  }
+  const validation = validateBody(lignesPutSchema, rawBody);
+  if (!validation.success) return validation.response;
+  const { lignes } = validation.data;
 
   const { error: deleteError } = await supabase
     .from("lignes_budget")
