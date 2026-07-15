@@ -56,38 +56,30 @@ export async function PUT(
   if (!validation.success) return validation.response;
   const { lignes } = validation.data;
 
-  const { error: deleteError } = await supabase
-    .from("lignes_budget")
-    .delete()
-    .eq("soumission_id", id);
+  // Remplacement atomique (DELETE + INSERT dans une seule transaction via RPC).
+  // Auparavant, un échec entre le DELETE et l'INSERT effaçait DÉFINITIVEMENT
+  // toutes les lignes budgétaires. Cf. migration 20260715130000.
+  const rows = (Array.isArray(lignes) ? lignes : []).map(
+    (
+      l: { numero: number; designation: string; quantite: number; prix_unitaire: number; groupe?: string },
+      i: number
+    ) => ({
+      numero: l.numero,
+      designation: l.designation,
+      quantite: l.quantite,
+      prix_unitaire: l.prix_unitaire,
+      ordre: i + 1,
+      groupe: l.groupe ?? "Mission",
+    })
+  );
 
-  if (deleteError) {
+  const { error: rpcError } = await supabase.rpc("replace_lignes_budget_tx", {
+    p_soumission_id: id,
+    p_lignes: rows,
+  });
+
+  if (rpcError) {
     return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
-  }
-
-  if (Array.isArray(lignes) && lignes.length > 0) {
-    const rows = lignes.map(
-      (
-        l: { numero: number; designation: string; quantite: number; prix_unitaire: number; groupe?: string },
-        i: number
-      ) => ({
-        soumission_id: id,
-        numero: l.numero,
-        designation: l.designation,
-        quantite: l.quantite,
-        prix_unitaire: l.prix_unitaire,
-        ordre: i + 1,
-        groupe: l.groupe ?? "Mission",
-      })
-    );
-
-    const { error: insertError } = await supabase
-      .from("lignes_budget")
-      .insert(rows);
-
-    if (insertError) {
-      return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
-    }
   }
 
   return NextResponse.json({ success: true });

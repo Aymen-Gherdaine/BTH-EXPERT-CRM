@@ -453,16 +453,25 @@ export default function ParametresPageClient({ initialData }: { initialData: Par
     setSaving(true);
     setFeedback(null);
 
-    const supabase = createSupabaseBrowserClient();
-    const { error } = await supabase.from("parametres").upsert(
-      { id: 1, ...form, updated_at: new Date().toISOString() },
-      { onConflict: "id" }
-    );
-
-    if (error) {
-      setFeedback({ type: "error", message: "Erreur lors de la sauvegarde : " + error.message });
-    } else {
-      setFeedback({ type: "success", message: "Paramètres sauvegardés avec succès." });
+    // L'écriture passe par /api/parametres (gantée admin / chargé de projet,
+    // service-role) : la table `parametres` interdit toute écriture cliente.
+    try {
+      const res = await fetch("/api/parametres", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (res.ok) {
+        setFeedback({ type: "success", message: "Paramètres sauvegardés avec succès." });
+      } else {
+        const body = await res.json().catch(() => null);
+        setFeedback({
+          type: "error",
+          message: body?.error ?? "Erreur lors de la sauvegarde des paramètres.",
+        });
+      }
+    } catch {
+      setFeedback({ type: "error", message: "Erreur réseau lors de la sauvegarde." });
     }
 
     setSaving(false);

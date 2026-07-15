@@ -204,3 +204,26 @@ export const exportDocumentSchema = z.object({
     signataire2_titre: z.string().nullable().optional(),
   }).optional(),
 })
+
+// ── Paramètres société (écriture réservée admin / chargé de projet) ────────
+// Corps accepté par PUT /api/parametres. Liste blanche stricte : on n'écrit
+// que ces colonnes (jamais `id`, jamais un champ arbitraire). Les URLs de
+// signature sont des CHEMINS d'objet du bucket privé (pas des URLs).
+export const parametresUpdateSchema = z.object({
+  nom_societe: z.string().min(1, "Nom de société requis").max(200),
+  adresse: z.string().max(300),
+  ville: z.string().max(120),
+  email_contact: z.string().max(200).email("Email invalide").or(z.literal("")),
+  telephone: z.string().max(40),
+  site_web: z.string().max(200),
+  signataire1_nom: z.string().max(120),
+  signataire1_titre: z.string().max(120),
+  signataire2_nom: z.string().max(120),
+  signataire2_titre: z.string().max(120),
+  tva_pct: z.number().min(0).max(100),
+  delai_jours: z.number().int().min(0).max(3650),
+  validite_jours: z.number().int().min(0).max(3650),
+  modalites_paiement: z.string().max(2000),
+  signature_responsable_url: z.string().max(500),
+  signature_autorise_url: z.string().max(500),
+})
